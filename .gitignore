@@ -47,6 +47,12 @@ artifacts/
 *.ldf
 AdminDemo.Api/data/
 
+# HTTPS certificates (development only)
+AdminDemo.Api/https/*.pem
+AdminDemo.Api/https/*.key
+AdminDemo.Api/https/*.pfx
+!AdminDemo.Api/https/.gitkeep
+
 # Docker
 .docker/
 

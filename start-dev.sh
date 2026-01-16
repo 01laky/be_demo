@@ -10,8 +10,17 @@ echo "🚀 Spúšťam Admin Demo API v Docker kontajneri..."
 echo "🛑 Zastavujem existujúce kontajnery..."
 docker-compose -f docker-compose.dev.yml down 2>/dev/null || true
 
-# Vytvor adresár pre databázu ak neexistuje
+# Vytvor adresáre ak neexistujú
 mkdir -p AdminDemo.Api/data
+mkdir -p AdminDemo.Api/https
+
+# Vytvor HTTPS certifikát ak neexistuje
+if [ ! -f "AdminDemo.Api/https/dev-cert.pfx" ]; then
+    echo "🔐 Vytváram development HTTPS certifikát..."
+    cd AdminDemo.Api
+    ./generate-dev-cert.sh
+    cd ..
+fi
 
 # Zostav a spusti kontajnery
 echo "🔨 Zostavujem Docker image..."
@@ -32,11 +41,15 @@ if [ ! -f "AdminDemo.Api/data/AdminDemoDb.db" ]; then
 fi
 
 # Skontroluj či aplikácia beží
-if curl -s http://localhost:8080/swagger/index.html > /dev/null 2>&1; then
+if curl -s -k https://localhost:8001/swagger/index.html > /dev/null 2>&1 || curl -s http://localhost:8000/swagger/index.html > /dev/null 2>&1; then
     echo "✅ Aplikácia úspešne spustená!"
     echo ""
-    echo "📍 URL: http://localhost:8080"
-    echo "📚 Swagger UI: http://localhost:8080/swagger"
+    echo "📍 HTTP URL: http://localhost:8000"
+    echo "🔒 HTTPS URL: https://localhost:8001"
+    echo "📚 Swagger UI (HTTP): http://localhost:8000/swagger"
+    echo "📚 Swagger UI (HTTPS): https://localhost:8001/swagger"
+    echo ""
+    echo "⚠️  Poznámka: HTTPS používa self-signed certifikát. Prehliadač môže zobraziť varovanie."
     echo ""
     echo "📋 Užitočné príkazy:"
     echo "   - Zobraziť logy: docker-compose -f docker-compose.dev.yml logs -f"

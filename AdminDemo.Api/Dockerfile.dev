@@ -1,8 +1,9 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0
 WORKDIR /app
 
-# Expose port
-EXPOSE 8080
+# Expose ports
+EXPOSE 8000
+EXPOSE 8001
 
 # Install dotnet-ef tools
 RUN dotnet tool install --global dotnet-ef --version 10.0.2
@@ -15,5 +16,5 @@ RUN dotnet restore
 # Copy everything else
 COPY . .
 
-# Run migrations and start the app
-ENTRYPOINT ["dotnet", "watch", "run", "--urls", "http://0.0.0.0:8080"]
+# Run migrations and start the app with HTTPS
+ENTRYPOINT ["dotnet", "watch", "run", "--urls", "https://0.0.0.0:8001;http://0.0.0.0:8000"]
