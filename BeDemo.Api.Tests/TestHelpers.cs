@@ -48,18 +48,31 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
             }, ServiceLifetime.Scoped);
             
             // Ensure database is created and migrated
+            // Migrate() will create database if it doesn't exist and apply all migrations including UserProfiles table
             var serviceProvider = services.BuildServiceProvider();
             using (var scope = serviceProvider.CreateScope())
             {
                 var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                context.Database.EnsureCreated();
                 try
                 {
+                    // Migrate() creates database if it doesn't exist and applies all migrations
+                    // This is the correct way to ensure database schema matches the latest migrations
                     context.Database.Migrate();
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Migration might fail if database already exists, that's OK
+                    // If Migrate() fails, try to delete and recreate (database might have been created without migrations)
+                    try
+                    {
+                        context.Database.EnsureDeleted();
+                        context.Database.Migrate();
+                    }
+                    catch (Exception ex2)
+                    {
+                        // If both fail, log the error but continue
+                        // Connection might be temporarily unavailable
+                        Console.WriteLine($"Warning: Database migration failed in test setup: {ex.Message}, retry: {ex2.Message}");
+                    }
                 }
             }
         });
