@@ -74,6 +74,23 @@ public static class DatabaseInitializer
             else
             {
                 Console.WriteLine("ℹ️  Admin user already exists");
+                
+                // Ensure admin user has a UserProfile (in case it was created before UserProfile was added)
+                var existingProfile = await context.UserProfiles.FirstOrDefaultAsync(up => up.UserId == adminUser.Id);
+                if (existingProfile == null)
+                {
+                    var adminProfile = new UserProfile
+                    {
+                        UserId = adminUser.Id,
+                        Nickname = "Admin",
+                        Age = 30,
+                        Rod = "M",
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    context.UserProfiles.Add(adminProfile);
+                    await context.SaveChangesAsync();
+                    Console.WriteLine("✅ Created UserProfile for existing admin user (Profile ID: {0})", adminProfile.Id);
+                }
             }
         }
         catch (Exception ex)

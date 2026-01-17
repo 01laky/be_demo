@@ -14,6 +14,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Face> Faces { get; set; } = null!;
     public DbSet<Page> Pages { get; set; } = null!;
     public DbSet<PageType> PageTypes { get; set; } = null!;
+    public DbSet<UserProfile> UserProfiles { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -70,6 +71,25 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                   .WithOne(p => p.PageType)
                   .HasForeignKey(p => p.PageTypeId)
                   .OnDelete(DeleteBehavior.Restrict); // Prevent deletion if pages exist
+        });
+
+        // Configure UserProfile entity
+        builder.Entity<UserProfile>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UserId).IsRequired().HasMaxLength(450); // Identity user ID length
+            entity.Property(e => e.Nickname).HasMaxLength(100);
+            entity.Property(e => e.Rod).HasMaxLength(10); // "M", "F", "O", etc.
+            entity.Property(e => e.CreatedAt).IsRequired();
+
+            // One-to-one relationship: ApplicationUser -> UserProfile
+            entity.HasOne(e => e.User)
+                  .WithOne(u => u.UserProfile)
+                  .HasForeignKey<UserProfile>(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade); // If User is deleted, delete UserProfile
+
+            // Ensure one UserProfile per User
+            entity.HasIndex(e => e.UserId).IsUnique();
         });
     }
 }

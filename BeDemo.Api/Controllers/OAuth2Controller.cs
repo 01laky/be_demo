@@ -175,8 +175,17 @@ public class OAuth2Controller : ControllerBase
         // If registration succeeded
         if (result.Succeeded)
         {
-            // Ensure user is fully persisted before returning
+            // Ensure user is fully persisted before creating UserProfile
             // This helps with test timing issues in in-memory databases
+            await _context.SaveChangesAsync();
+            
+            // Create UserProfile automatically for new user (one-to-one relationship)
+            var userProfile = new UserProfile
+            {
+                UserId = user.Id,
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.UserProfiles.Add(userProfile);
             await _context.SaveChangesAsync();
             
             // Verify user can be found immediately (for test reliability)
@@ -188,8 +197,8 @@ public class OAuth2Controller : ControllerBase
                 verifyUser = await _userManager.FindByEmailAsync(model.Email);
             }
             
-            _logger.LogInformation("User registered successfully: {Email}", model.Email);
-            return Ok(new { message = "User registered successfully", userId = user.Id });
+            _logger.LogInformation("User registered successfully: {Email} with UserProfile ID: {ProfileId}", model.Email, userProfile.Id);
+            return Ok(new { message = "User registered successfully", userId = user.Id, profileId = userProfile.Id });
         }
 
         // If registration failed (e.g., email already exists, password doesn't meet requirements), returns errors

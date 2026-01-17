@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using BeDemo.Api.Models;
+using BeDemo.Api.Data;
 
 namespace BeDemo.Api.Controllers;
 
