@@ -33,12 +33,18 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
             }
 
             // Use PostgreSQL for tests - use a single test database
-            var connectionString = "Host=localhost;Port=5432;Database=bedemo_test;Username=bedemo_user;Password=bedemo_password";
+            // Add MaxPoolSize to prevent "too many clients already" error
+            var connectionString = "Host=localhost;Port=5432;Database=bedemo_test;Username=bedemo_user;Password=bedemo_password;MaxPoolSize=20;Connection Lifetime=0";
             
-            // Add PostgreSQL database
+            // Add PostgreSQL database with connection pooling settings
             services.AddDbContext<ApplicationDbContext>(options =>
             {
-                options.UseNpgsql(connectionString);
+                options.UseNpgsql(connectionString, npgsqlOptions =>
+                {
+                    npgsqlOptions.CommandTimeout(30); // 30 second timeout
+                });
+                // Enable sensitive data logging only in test environment
+                options.EnableSensitiveDataLogging();
             }, ServiceLifetime.Scoped);
             
             // Ensure database is created and migrated

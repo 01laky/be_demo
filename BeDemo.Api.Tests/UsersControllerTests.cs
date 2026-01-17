@@ -1,0 +1,239 @@
+/*
+ * UsersControllerTests.cs - Unit tests for UsersController
+ * 
+ * Tests all endpoints in UsersController:
+ * - GET /api/users - Get all users
+ * - GET /api/users/{id} - Get user by ID
+ * - POST /api/users - Create new user
+ * - PUT /api/users/{id} - Update user
+ */
+
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
+using FluentAssertions;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Xunit;
+using BeDemo.Api.Models.DTOs;
+
+namespace BeDemo.Api.Tests;
+
+/// <summary>
+/// Unit tests for UsersController
+/// </summary>
+public class UsersControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>, IDisposable
+{
+    private readonly CustomWebApplicationFactory<Program> _factory;
+    private readonly HttpClient _client;
+    private string? _authToken;
+
+    public UsersControllerTests(CustomWebApplicationFactory<Program> factory)
+    {
+        _factory = factory;
+        _client = _factory.CreateClient();
+    }
+
+    /// <summary>
+    /// Helper method to authenticate and get JWT token
+    /// </summary>
+    private async Task<string> GetAuthTokenAsync()
+    {
+        if (_authToken != null)
+            return _authToken;
+
+        var email = $"admin_{Guid.NewGuid()}@test.com";
+        var password = "Test123!@#";
+
+        // Register user
+        await _client.PostAsJsonAsync("/api/oauth2/register", new
+        {
+            email,
+            password,
+            firstName = "Admin",
+            lastName = "User"
+        });
+
+        // Get token
+        var tokenRequest = new OAuth2TokenRequest
+        {
+            GrantType = "password",
+            ClientId = "be-demo-client",
+            ClientSecret = "be-demo-secret-very-strong-key",
+            Username = email,
+            Password = password
+        };
+
+        HttpResponseMessage? response = null;
+        for (int i = 0; i < 15; i++)
+        {
+            await Task.Delay(150 * (i + 1));
+            response = await _client.PostAsJsonAsync("/api/oauth2/token", tokenRequest);
+            if (response.StatusCode == HttpStatusCode.OK)
+                break;
+        }
+
+        response.Should().NotBeNull();
+        response!.StatusCode.Should().Be(HttpStatusCode.OK);
+        var tokenResponse = await response.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
+        tokenResponse.Should().NotBeNull();
+        _authToken = tokenResponse!.AccessToken;
+        return _authToken;
+    }
+
+    [Fact]
+    public async Task GetUsers_ShouldReturnUnauthorized_WhenNoToken()
+    {
+        // Act
+        var response = await _client.GetAsync("/api/users");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task GetUsers_ShouldReturnUsersList_WhenAuthenticated()
+    {
+        // Arrange
+        var token = await GetAuthTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        // Act
+        var response = await _client.GetAsync("/api/users");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var users = await response.Content.ReadFromJsonAsync<List<object>>();
+        users.Should().NotBeNull();
+        users!.Should().BeAssignableTo<IEnumerable<object>>();
+    }
+
+    [Fact]
+    public async Task GetUser_ShouldReturnUser_WhenValidId()
+    {
+        // Arrange
+        var token = await GetAuthTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        // Create a user first
+        var createResponse = await _client.PostAsJsonAsync("/api/users", new
+        {
+            email = $"test_{Guid.NewGuid()}@test.com",
+            password = "Test123!@#",
+            firstName = "Test",
+            lastName = "User"
+        });
+        createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        var createdUserJson = await createResponse.Content.ReadFromJsonAsync<JsonElement>();
+        string userId = createdUserJson.GetProperty("id").GetString() ?? string.Empty;
+
+        // Act
+        var response = await _client.GetAsync($"/api/users/{userId}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var user = await response.Content.ReadFromJsonAsync<JsonElement>();
+        user.ValueKind.Should().Be(JsonValueKind.Object);
+        user.GetProperty("id").GetString().Should().Be(userId);
+    }
+
+    [Fact]
+    public async Task GetUser_ShouldReturnNotFound_WhenInvalidId()
+    {
+        // Arrange
+        var token = await GetAuthTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        // Act
+        var response = await _client.GetAsync("/api/users/invalid-id");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task CreateUser_ShouldReturnCreated_WhenValidData()
+    {
+        // Arrange
+        var token = await GetAuthTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var createRequest = new
+        {
+            email = $"test_{Guid.NewGuid()}@test.com",
+            password = "Test123!@#",
+            firstName = "Test",
+            lastName = "User"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/users", createRequest);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var user = await response.Content.ReadFromJsonAsync<JsonElement>();
+        user.ValueKind.Should().Be(JsonValueKind.Object);
+        user.GetProperty("email").GetString().Should().Be(createRequest.email);
+    }
+
+    [Fact]
+    public async Task CreateUser_ShouldReturnBadRequest_WhenInvalidEmail()
+    {
+        // Arrange
+        var token = await GetAuthTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var createRequest = new
+        {
+            email = "invalid-email",
+            password = "Test123!@#",
+            firstName = "Test",
+            lastName = "User"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/users", createRequest);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task UpdateUser_ShouldReturnOk_WhenValidData()
+    {
+        // Arrange
+        var token = await GetAuthTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        // Create a user first
+        var createResponse = await _client.PostAsJsonAsync("/api/users", new
+        {
+            email = $"test_{Guid.NewGuid()}@test.com",
+            password = "Test123!@#",
+            firstName = "Test",
+            lastName = "User"
+        });
+        createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        var createdUser = await createResponse.Content.ReadFromJsonAsync<JsonElement>();
+        string userId = createdUser.GetProperty("id").GetString() ?? string.Empty;
+
+        var updateRequest = new
+        {
+            firstName = "Updated",
+            lastName = "Name"
+        };
+
+        // Act
+        var response = await _client.PutAsJsonAsync($"/api/users/{userId}", updateRequest);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var updatedUser = await response.Content.ReadFromJsonAsync<JsonElement>();
+        updatedUser.ValueKind.Should().Be(JsonValueKind.Object);
+        updatedUser.GetProperty("firstName").GetString().Should().Be("Updated");
+    }
+
+    public void Dispose()
+    {
+        _client?.Dispose();
+    }
+}

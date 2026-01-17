@@ -1,0 +1,305 @@
+/*
+ * PagesControllerTests.cs - Unit tests for PagesController
+ * 
+ * Tests all endpoints in PagesController:
+ * - GET /api/pages - Get all pages (optionally filtered by faceId)
+ * - GET /api/pages/{id} - Get page by ID
+ * - POST /api/pages - Create new page
+ * - PUT /api/pages/{id} - Update page
+ * - DELETE /api/pages/{id} - Delete page
+ */
+
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
+using FluentAssertions;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Xunit;
+using BeDemo.Api.Models.DTOs;
+
+namespace BeDemo.Api.Tests;
+
+/// <summary>
+/// Unit tests for PagesController
+/// </summary>
+public class PagesControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>, IDisposable
+{
+    private readonly CustomWebApplicationFactory<Program> _factory;
+    private readonly HttpClient _client;
+    private string? _authToken;
+
+    public PagesControllerTests(CustomWebApplicationFactory<Program> factory)
+    {
+        _factory = factory;
+        _client = _factory.CreateClient();
+    }
+
+    /// <summary>
+    /// Helper method to authenticate and get JWT token
+    /// </summary>
+    private async Task<string> GetAuthTokenAsync()
+    {
+        if (_authToken != null)
+            return _authToken;
+
+        var email = $"admin_{Guid.NewGuid()}@test.com";
+        var password = "Test123!@#";
+
+        await _client.PostAsJsonAsync("/api/oauth2/register", new
+        {
+            email,
+            password,
+            firstName = "Admin",
+            lastName = "User"
+        });
+
+        var tokenRequest = new OAuth2TokenRequest
+        {
+            GrantType = "password",
+            ClientId = "be-demo-client",
+            ClientSecret = "be-demo-secret-very-strong-key",
+            Username = email,
+            Password = password
+        };
+
+        HttpResponseMessage? response = null;
+        for (int i = 0; i < 15; i++)
+        {
+            await Task.Delay(150 * (i + 1));
+            response = await _client.PostAsJsonAsync("/api/oauth2/token", tokenRequest);
+            if (response.StatusCode == HttpStatusCode.OK)
+                break;
+        }
+
+        response.Should().NotBeNull();
+        response!.StatusCode.Should().Be(HttpStatusCode.OK);
+        var tokenResponse = await response.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
+        tokenResponse.Should().NotBeNull();
+        _authToken = tokenResponse!.AccessToken;
+        return _authToken;
+    }
+
+    /// <summary>
+    /// Helper method to create a Face for testing
+    /// </summary>
+    private async Task<int> CreateTestFaceAsync()
+    {
+        var token = await GetAuthTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var faceResponse = await _client.PostAsJsonAsync("/api/faces", new
+        {
+            index = $"test_{Guid.NewGuid()}",
+            title = "Test Face",
+            description = "Test Description"
+        });
+
+        faceResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        var face = await faceResponse.Content.ReadFromJsonAsync<JsonElement>();
+        return (int)face.GetProperty("id").GetInt32();
+    }
+
+    /// <summary>
+    /// Helper method to create a PageType for testing
+    /// </summary>
+    private async Task<int> CreateTestPageTypeAsync()
+    {
+        var token = await GetAuthTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var pageTypeResponse = await _client.PostAsJsonAsync("/api/pagetypes", new
+        {
+            index = $"test_{Guid.NewGuid()}"
+        });
+
+        pageTypeResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        var pageType = await pageTypeResponse.Content.ReadFromJsonAsync<JsonElement>();
+        return (int)pageType.GetProperty("id").GetInt32();
+    }
+
+    [Fact]
+    public async Task GetPages_ShouldReturnUnauthorized_WhenNoToken()
+    {
+        // Act
+        var response = await _client.GetAsync("/api/pages");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task GetPages_ShouldReturnPagesList_WhenAuthenticated()
+    {
+        // Arrange
+        var token = await GetAuthTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        // Act
+        var response = await _client.GetAsync("/api/pages");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var pages = await response.Content.ReadFromJsonAsync<List<object>>();
+        pages.Should().NotBeNull();
+        pages!.Should().BeAssignableTo<IEnumerable<object>>();
+    }
+
+    [Fact]
+    public async Task GetPage_ShouldReturnPage_WhenValidId()
+    {
+        // Arrange
+        var token = await GetAuthTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var faceId = await CreateTestFaceAsync();
+        var pageTypeId = await CreateTestPageTypeAsync();
+
+        var createResponse = await _client.PostAsJsonAsync("/api/pages", new
+        {
+            faceId,
+            pageTypeId,
+            name = "Test Page",
+            path = "/test",
+            index = 0
+        });
+
+        createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        var createdPage = await createResponse.Content.ReadFromJsonAsync<JsonElement>();
+        createdPage.Should().NotBeNull();
+        int pageId = (int)createdPage.GetProperty("id").GetInt32();
+
+        // Act
+        var response = await _client.GetAsync($"/api/pages/{pageId}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var page = await response.Content.ReadFromJsonAsync<JsonElement>();
+        page.Should().NotBeNull();
+        page.GetProperty("id").GetInt32().Should().Be(pageId);
+    }
+
+    [Fact]
+    public async Task CreatePage_ShouldReturnCreated_WhenValidData()
+    {
+        // Arrange
+        var token = await GetAuthTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var faceId = await CreateTestFaceAsync();
+        var pageTypeId = await CreateTestPageTypeAsync();
+
+        var createRequest = new
+        {
+            faceId,
+            pageTypeId,
+            name = "Test Page",
+            path = "/test",
+            index = 0
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/pages", createRequest);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var page = await response.Content.ReadFromJsonAsync<JsonElement>();
+        page.Should().NotBeNull();
+        page.GetProperty("name").GetString().Should().Be("Test Page");
+    }
+
+    [Fact]
+    public async Task CreatePage_ShouldReturnBadRequest_WhenFaceNotFound()
+    {
+        // Arrange
+        var token = await GetAuthTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var pageTypeId = await CreateTestPageTypeAsync();
+
+        var createRequest = new
+        {
+            faceId = 99999, // Non-existent face ID
+            pageTypeId,
+            name = "Test Page",
+            path = "/test",
+            index = 0
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/pages", createRequest);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task UpdatePage_ShouldReturnOk_WhenValidData()
+    {
+        // Arrange
+        var token = await GetAuthTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var faceId = await CreateTestFaceAsync();
+        var pageTypeId = await CreateTestPageTypeAsync();
+
+        var createResponse = await _client.PostAsJsonAsync("/api/pages", new
+        {
+            faceId,
+            pageTypeId,
+            name = "Test Page",
+            path = "/test",
+            index = 0
+        });
+
+        var createdPage = await createResponse.Content.ReadFromJsonAsync<JsonElement>();
+        int pageId = (int)createdPage.GetProperty("id").GetInt32();
+
+        var updateRequest = new
+        {
+            name = "Updated Page Name"
+        };
+
+        // Act
+        var response = await _client.PutAsJsonAsync($"/api/pages/{pageId}", updateRequest);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var updatedPage = await response.Content.ReadFromJsonAsync<JsonElement>();
+        updatedPage.Should().NotBeNull();
+        updatedPage.GetProperty("name").GetString().Should().Be("Updated Page Name");
+    }
+
+    [Fact]
+    public async Task DeletePage_ShouldReturnNoContent_WhenValidId()
+    {
+        // Arrange
+        var token = await GetAuthTokenAsync();
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var faceId = await CreateTestFaceAsync();
+        var pageTypeId = await CreateTestPageTypeAsync();
+
+        var createResponse = await _client.PostAsJsonAsync("/api/pages", new
+        {
+            faceId,
+            pageTypeId,
+            name = "Test Page",
+            path = "/test",
+            index = 0
+        });
+
+        var createdPage = await createResponse.Content.ReadFromJsonAsync<JsonElement>();
+        int pageId = (int)createdPage.GetProperty("id").GetInt32();
+
+        // Act
+        var response = await _client.DeleteAsync($"/api/pages/{pageId}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    public void Dispose()
+    {
+        _client?.Dispose();
+    }
+}
