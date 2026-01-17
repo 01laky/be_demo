@@ -45,13 +45,18 @@ artifacts/
 *.db
 *.mdf
 *.ldf
-AdminDemo.Api/data/
+BeDemo.Api/data/
 
 # HTTPS certificates (development only)
-AdminDemo.Api/https/*.pem
-AdminDemo.Api/https/*.key
-AdminDemo.Api/https/*.pfx
-!AdminDemo.Api/https/.gitkeep
+BeDemo.Api/https/*.pem
+BeDemo.Api/https/*.key
+BeDemo.Api/https/*.pfx
+!BeDemo.Api/https/.gitkeep
+
+# Environment variables
+.env
+.env.local
+.env.*.local
 
 # Docker
 .docker/
