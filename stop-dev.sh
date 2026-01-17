@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Script na zastavenie Admin Demo API Docker kontajnerov
+# Script to stop Be Demo API Docker containers
 
-echo "🛑 Zastavujem Admin Demo API kontajnery..."
+echo "🛑 Stopping Be Demo API containers..."
 
 docker-compose -f docker-compose.dev.yml down
 
-echo "✅ Kontajnery zastavené a odstránené"
+echo "✅ Containers stopped and removed"

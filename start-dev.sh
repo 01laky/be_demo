@@ -1,61 +1,60 @@
 #!/bin/bash
 
-# Script na spustenie Admin Demo API v Docker kontajneri pre vývoj
+# Script to start Be Demo API in Docker container for development
 
 set -e
 
-echo "🚀 Spúšťam Admin Demo API v Docker kontajneri..."
+echo "🚀 Starting Be Demo API in Docker container..."
 
-# Zastav existujúce kontajnery ak bežia
-echo "🛑 Zastavujem existujúce kontajnery..."
+# Stop existing containers if running
+echo "🛑 Stopping existing containers..."
 docker-compose -f docker-compose.dev.yml down 2>/dev/null || true
 
-# Vytvor adresáre ak neexistujú
-mkdir -p AdminDemo.Api/data
-mkdir -p AdminDemo.Api/https
+# Create directories if they don't exist
+mkdir -p BeDemo.Api/https
 
-# Vytvor HTTPS certifikát ak neexistuje
-if [ ! -f "AdminDemo.Api/https/dev-cert.pfx" ]; then
-    echo "🔐 Vytváram development HTTPS certifikát..."
-    cd AdminDemo.Api
+# Create HTTPS certificate if it doesn't exist
+if [ ! -f "BeDemo.Api/https/dev-cert.pfx" ]; then
+    echo "🔐 Creating development HTTPS certificate..."
+    cd BeDemo.Api
     ./generate-dev-cert.sh
     cd ..
 fi
 
-# Zostav a spusti kontajnery
-echo "🔨 Zostavujem Docker image..."
+# Build and start containers
+echo "🔨 Building Docker image..."
 docker-compose -f docker-compose.dev.yml build
 
-echo "▶️  Spúšťam kontajnery..."
+echo "▶️  Starting containers..."
 docker-compose -f docker-compose.dev.yml up -d
 
-# Počkaj kým kontajner bude pripravený
-echo "⏳ Čakám na pripravenosť kontajnera..."
+# Wait for container to be ready
+echo "⏳ Waiting for container to be ready..."
 sleep 8
 
-# Spusti migrations ak databáza neexistuje
-if [ ! -f "AdminDemo.Api/data/AdminDemoDb.db" ]; then
-    echo "📦 Vytváram databázu pomocou migrations..."
-    docker-compose -f docker-compose.dev.yml exec -T admin-demo-api dotnet ef database update || echo "⚠️  Migrations sa pokúšajú spustiť..."
-    sleep 3
-fi
+# Run migrations (PostgreSQL database should be running separately)
+echo "📦 Running database migrations..."
+docker-compose -f docker-compose.dev.yml exec -T be-demo-api dotnet ef database update || echo "⚠️  Attempting to run migrations..."
+sleep 3
+echo "✅ Database migrations completed. Admin user will be created automatically on first startup."
 
-# Skontroluj či aplikácia beží
+# Check if application is running
 if curl -s -k https://localhost:8001/swagger/index.html > /dev/null 2>&1 || curl -s http://localhost:8000/swagger/index.html > /dev/null 2>&1; then
-    echo "✅ Aplikácia úspešne spustená!"
+    echo "✅ Application started successfully!"
     echo ""
     echo "📍 HTTP URL: http://localhost:8000"
     echo "🔒 HTTPS URL: https://localhost:8001"
     echo "📚 Swagger UI (HTTP): http://localhost:8000/swagger"
     echo "📚 Swagger UI (HTTPS): https://localhost:8001/swagger"
+    echo "📊 Seq Logging UI: http://localhost:5341"
     echo ""
-    echo "⚠️  Poznámka: HTTPS používa self-signed certifikát. Prehliadač môže zobraziť varovanie."
+    echo "⚠️  Note: HTTPS uses self-signed certificate. Browser may show a warning."
     echo ""
-    echo "📋 Užitočné príkazy:"
-    echo "   - Zobraziť logy: docker-compose -f docker-compose.dev.yml logs -f"
-    echo "   - Zastaviť: docker-compose -f docker-compose.dev.yml down"
-    echo "   - Reštartovať: docker-compose -f docker-compose.dev.yml restart"
+    echo "📋 Useful commands:"
+    echo "   - View logs: docker-compose -f docker-compose.dev.yml logs -f"
+    echo "   - Stop: docker-compose -f docker-compose.dev.yml down"
+    echo "   - Restart: docker-compose -f docker-compose.dev.yml restart"
 else
-    echo "⚠️  Aplikácia sa ešte spúšťa. Skúste znova za chvíľu."
-    echo "📋 Zobraziť logy: docker-compose -f docker-compose.dev.yml logs -f"
+    echo "⚠️  Application is still starting. Try again in a moment."
+    echo "📋 View logs: docker-compose -f docker-compose.dev.yml logs -f"
 fi

@@ -1,41 +1,41 @@
-# Inštalácia dôveryhodného HTTPS certifikátu
+# Installing Trusted HTTPS Certificate
 
-Pre odstránenie varovaní o bezpečnosti v prehliadači je potrebné nainštalovať mkcert CA do systémového trust store.
+To remove security warnings in the browser, you need to install mkcert CA into the system trust store.
 
-## Rýchla inštalácia
+## Quick Installation
 
-Spustite tento príkaz v termináli:
+Run this command in the terminal:
 
 ```bash
 mkcert -install
 ```
 
-Tento príkaz:
-- Vytvorí lokálny CA (Certificate Authority) certifikát
-- Pridá ho do macOS keychain ako dôveryhodný root certifikát
-- Umožní všetkým certifikátom vytvoreným pomocou `mkcert` byť automaticky dôveryhodnými
+This command will:
+- Create a local CA (Certificate Authority) certificate
+- Add it to macOS keychain as a trusted root certificate
+- Allow all certificates created using `mkcert` to be automatically trusted
 
-## Po inštalácii
+## After Installation
 
-1. **Reštartujte prehliadač** (alebo všetky okná)
-2. Obnovte stránku `https://localhost:8001/swagger`
-3. Varovanie by už nemalo byť viditeľné ✅
+1. **Restart your browser** (or all windows)
+2. Refresh the page `https://localhost:8001/swagger`
+3. The warning should no longer be visible ✅
 
-## Overenie
+## Verification
 
-Po inštalácii mkcert CA, všetky certifikáty vytvorené pomocou `mkcert` budú automaticky dôveryhodné v:
+After installing mkcert CA, all certificates created using `mkcert` will be automatically trusted in:
 - ✅ Chrome
 - ✅ Safari  
 - ✅ Firefox
 - ✅ Edge
-- ✅ Všetkých ostatných prehliadačoch
+- ✅ All other browsers
 
-## Alternatíva (ak nemôžete použiť sudo)
+## Alternative (if you cannot use sudo)
 
-Ak nemôžete spustiť `mkcert -install`, môžete manuálne pridať certifikát:
+If you cannot run `mkcert -install`, you can manually add the certificate:
 
-1. Otvorte Keychain Access
-2. Drag & drop súbor: `AdminDemo.Api/https/dev-cert.pem`
-3. Dvojklik na certifikát → Trust → Always Trust
+1. Open Keychain Access
+2. Drag & drop the file: `BeDemo.Api/https/dev-cert.pem`
+3. Double-click the certificate → Trust → Always Trust
 
-**Poznámka:** mkcert je lepšie riešenie, pretože vytvára lokálny CA, ktorý môže podpisovať viacero certifikátov.
+**Note:** mkcert is a better solution because it creates a local CA that can sign multiple certificates.
