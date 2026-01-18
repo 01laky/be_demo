@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using BeDemo.Api.Data;
+using BeDemo.Api.Models;
 
 namespace BeDemo.Api.Tests;
 
@@ -47,31 +48,45 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
                 options.EnableSensitiveDataLogging();
             }, ServiceLifetime.Scoped);
             
-            // Ensure database is created and migrated
-            // Migrate() will create database if it doesn't exist and apply all migrations including UserProfiles table
+            // Ensure fresh test database for each test run
+            // Always delete and recreate to ensure clean state - tests should not depend on previous test data
             var serviceProvider = services.BuildServiceProvider();
             using (var scope = serviceProvider.CreateScope())
             {
                 var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
                 try
                 {
-                    // Migrate() creates database if it doesn't exist and applies all migrations
-                    // This is the correct way to ensure database schema matches the latest migrations
+                    // Always delete test database first to ensure fresh start
+                    // This prevents test data from previous runs affecting current tests
+                    context.Database.EnsureDeleted();
+                    
+                    // Create fresh database with all migrations applied
+                    // This ensures database schema matches the latest migrations
                     context.Database.Migrate();
+                    
+                    // Seed UserRoles after migration (required for user creation)
+                    // Use GetAwaiter().GetResult() since ConfigureWebHost is not async
+                    BeDemo.Api.Scripts.DatabaseSeeder.SeedUserRolesAsync(context).GetAwaiter().GetResult();
                 }
                 catch (Exception ex)
                 {
-                    // If Migrate() fails, try to delete and recreate (database might have been created without migrations)
+                    // If database setup fails, log the error but continue
+                    // Connection might be temporarily unavailable, but we want to see the error
+                    Console.WriteLine($"❌ Test database setup failed: {ex.Message}");
+                    Console.WriteLine($"   Stack trace: {ex.StackTrace}");
+                    
+                    // Try once more with EnsureDeleted + Migrate
                     try
                     {
                         context.Database.EnsureDeleted();
                         context.Database.Migrate();
+                        BeDemo.Api.Scripts.DatabaseSeeder.SeedUserRolesAsync(context).GetAwaiter().GetResult();
                     }
                     catch (Exception ex2)
                     {
-                        // If both fail, log the error but continue
-                        // Connection might be temporarily unavailable
-                        Console.WriteLine($"Warning: Database migration failed in test setup: {ex.Message}, retry: {ex2.Message}");
+                        Console.WriteLine($"❌ Test database setup retry also failed: {ex2.Message}");
+                        // Don't throw - let tests run and fail with database errors if needed
+                        // This helps identify connection issues
                     }
                 }
             }
