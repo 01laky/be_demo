@@ -2,7 +2,9 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using BeDemo.Api.Models;
+using BeDemo.Api.Data;
 
 namespace BeDemo.Api.Controllers;
 
@@ -13,13 +15,16 @@ public class UsersController : ControllerBase
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<UsersController> _logger;
+    private readonly ApplicationDbContext _context;
 
     public UsersController(
         UserManager<ApplicationUser> userManager,
-        ILogger<UsersController> logger)
+        ILogger<UsersController> logger,
+        ApplicationDbContext context)
     {
         _userManager = userManager;
         _logger = logger;
+        _context = context;
     }
 
     /// <summary>
@@ -102,12 +107,21 @@ public class UsersController : ControllerBase
 
         try
         {
+            // Get USER role (default role for new users)
+            var userRole = await _context.UserRoles.FirstOrDefaultAsync(r => r.Name == UserRole.RoleNames.User);
+            if (userRole == null)
+            {
+                _logger.LogError("USER role not found. Please ensure UserRoles are seeded.");
+                return StatusCode(500, new { error = "System configuration error: USER role not found" });
+            }
+
             var user = new ApplicationUser
             {
                 UserName = model.Email,
                 Email = model.Email,
                 FirstName = model.FirstName,
                 LastName = model.LastName,
+                UserRoleId = userRole.Id // Assign default USER role
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);

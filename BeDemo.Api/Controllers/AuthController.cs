@@ -12,13 +12,16 @@ public class AuthController : ControllerBase
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
+    private readonly ApplicationDbContext _context;
 
     public AuthController(
         UserManager<ApplicationUser> userManager,
-        SignInManager<ApplicationUser> signInManager)
+        SignInManager<ApplicationUser> signInManager,
+        ApplicationDbContext context)
     {
         _userManager = userManager;
         _signInManager = signInManager;
+        _context = context;
     }
 
     [HttpPost("register")]
@@ -29,12 +32,20 @@ public class AuthController : ControllerBase
             return BadRequest(ModelState);
         }
 
+        // Get USER role (default role for new users)
+        var userRole = await _context.UserRoles.FirstOrDefaultAsync(r => r.Name == UserRole.RoleNames.User);
+        if (userRole == null)
+        {
+            return BadRequest(new { error = "System configuration error: USER role not found" });
+        }
+
         var user = new ApplicationUser
         {
             UserName = model.Email,
             Email = model.Email,
             FirstName = model.FirstName,
-            LastName = model.LastName
+            LastName = model.LastName,
+            UserRoleId = userRole.Id // Assign default USER role
         };
 
         var result = await _userManager.CreateAsync(user, model.Password);
