@@ -300,29 +300,60 @@ public static class DatabaseDiagramGenerator
     /// </summary>
     private static async Task SaveDiagramToFileAsync(string diagram)
     {
-        // Get the path to db_demo directory (two levels up from Scripts directory)
-        var scriptDir = Path.GetDirectoryName(typeof(DatabaseDiagramGenerator).Assembly.Location) ?? ".";
-        var projectDir = Path.GetFullPath(Path.Combine(scriptDir, "..", "..", "..", ".."));
-        var dbDemoDir = Path.Combine(projectDir, "..", "db_demo");
-        var readmePath = Path.Combine(dbDemoDir, "README.md");
-
-        // If db_demo directory doesn't exist, try alternative path (when running from Docker)
-        if (!Directory.Exists(dbDemoDir))
+        // Try multiple paths to find db_demo directory
+        var possiblePaths = new List<string>();
+        
+        // 1. Try relative to current execution directory (for local development)
+        var currentDir = Directory.GetCurrentDirectory();
+        var currentDirDbDemo = Path.Combine(currentDir, "..", "db_demo");
+        if (Path.IsPathRooted(currentDirDbDemo))
         {
-            // Try relative path from current execution directory
-            var currentDir = Directory.GetCurrentDirectory();
-            if (currentDir.Contains("db_demo"))
+            possiblePaths.Add(Path.GetFullPath(currentDirDbDemo));
+        }
+        
+        // 2. Try from assembly location (for compiled builds)
+        var assemblyDir = Path.GetDirectoryName(typeof(DatabaseDiagramGenerator).Assembly.Location);
+        if (!string.IsNullOrEmpty(assemblyDir))
+        {
+            var assemblyDbDemo = Path.GetFullPath(Path.Combine(assemblyDir, "..", "..", "..", "..", "..", "db_demo"));
+            possiblePaths.Add(assemblyDbDemo);
+        }
+        
+        // 3. Try from BeDemo.Api directory (common structure)
+        var apiDir = Path.Combine(currentDir, "BeDemo.Api");
+        if (!Directory.Exists(apiDir))
+        {
+            apiDir = Path.Combine(currentDir, "be_demo", "BeDemo.Api");
+        }
+        if (Directory.Exists(apiDir))
+        {
+            var apiDbDemo = Path.GetFullPath(Path.Combine(apiDir, "..", "..", "db_demo"));
+            possiblePaths.Add(apiDbDemo);
+        }
+
+        // Find the first existing db_demo directory
+        string? dbDemoDir = null;
+        foreach (var path in possiblePaths.Distinct())
+        {
+            if (Directory.Exists(path) && File.Exists(Path.Combine(path, "README.md")))
             {
-                dbDemoDir = currentDir;
-                readmePath = Path.Combine(dbDemoDir, "README.md");
-            }
-            else
-            {
-                // If we can't find db_demo, skip saving
-                Console.WriteLine($"⚠️  db_demo directory not found, skipping diagram save");
-                return;
+                dbDemoDir = path;
+                break;
             }
         }
+
+        if (dbDemoDir == null)
+        {
+            Console.WriteLine($"⚠️  db_demo directory not found. Tried paths:");
+            foreach (var path in possiblePaths)
+            {
+                Console.WriteLine($"   - {path}");
+            }
+            Console.WriteLine("   Skipping diagram save");
+            return;
+        }
+
+        var readmePath = Path.Combine(dbDemoDir, "README.md");
 
         string existingContent = "";
         if (File.Exists(readmePath))
