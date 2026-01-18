@@ -10,6 +10,10 @@ namespace BeDemo.Api.Tests;
 
 public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProgram> where TProgram : class
 {
+    // Static flag to ensure database is initialized only once across all test instances
+    private static readonly object _dbInitLock = new object();
+    private static bool _databaseInitialized = false;
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         // Set environment to Testing to skip database initialization
@@ -49,44 +53,55 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
             }, ServiceLifetime.Scoped);
             
             // Ensure fresh test database for each test run
-            // Always delete and recreate to ensure clean state - tests should not depend on previous test data
-            var serviceProvider = services.BuildServiceProvider();
-            using (var scope = serviceProvider.CreateScope())
+            // Initialize database only once using static flag (thread-safe for parallel test execution)
+            lock (_dbInitLock)
             {
-                var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                try
+                if (!_databaseInitialized)
                 {
-                    // Always delete test database first to ensure fresh start
-                    // This prevents test data from previous runs affecting current tests
-                    context.Database.EnsureDeleted();
-                    
-                    // Create fresh database with all migrations applied
-                    // This ensures database schema matches the latest migrations
-                    context.Database.Migrate();
-                    
-                    // Seed UserRoles after migration (required for user creation)
-                    // Use GetAwaiter().GetResult() since ConfigureWebHost is not async
-                    BeDemo.Api.Scripts.DatabaseSeeder.SeedUserRolesAsync(context).GetAwaiter().GetResult();
-                }
-                catch (Exception ex)
-                {
-                    // If database setup fails, log the error but continue
-                    // Connection might be temporarily unavailable, but we want to see the error
-                    Console.WriteLine($"❌ Test database setup failed: {ex.Message}");
-                    Console.WriteLine($"   Stack trace: {ex.StackTrace}");
-                    
-                    // Try once more with EnsureDeleted + Migrate
-                    try
+                    var serviceProvider = services.BuildServiceProvider();
+                    using (var scope = serviceProvider.CreateScope())
                     {
-                        context.Database.EnsureDeleted();
-                        context.Database.Migrate();
-                        BeDemo.Api.Scripts.DatabaseSeeder.SeedUserRolesAsync(context).GetAwaiter().GetResult();
-                    }
-                    catch (Exception ex2)
-                    {
-                        Console.WriteLine($"❌ Test database setup retry also failed: {ex2.Message}");
-                        // Don't throw - let tests run and fail with database errors if needed
-                        // This helps identify connection issues
+                        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                        try
+                        {
+                            // Always delete test database first to ensure fresh start
+                            // This prevents test data from previous runs affecting current tests
+                            context.Database.EnsureDeleted();
+                            
+                            // Create fresh database with all migrations applied
+                            // This ensures database schema matches the latest migrations
+                            context.Database.Migrate();
+                            
+                            // Seed UserRoles after migration (required for user creation)
+                            // Use GetAwaiter().GetResult() since ConfigureWebHost is not async
+                            BeDemo.Api.Scripts.DatabaseSeeder.SeedUserRolesAsync(context).GetAwaiter().GetResult();
+                            
+                            _databaseInitialized = true;
+                            Console.WriteLine("✅ Test database initialized: bedemo_test (fresh, migrated, seeded)");
+                        }
+                        catch (Exception ex)
+                        {
+                            // If database setup fails, log the error but continue
+                            // Connection might be temporarily unavailable, but we want to see the error
+                            Console.WriteLine($"❌ Test database setup failed: {ex.Message}");
+                            Console.WriteLine($"   Stack trace: {ex.StackTrace}");
+                            
+                            // Try once more with EnsureDeleted + Migrate
+                            try
+                            {
+                                context.Database.EnsureDeleted();
+                                context.Database.Migrate();
+                                BeDemo.Api.Scripts.DatabaseSeeder.SeedUserRolesAsync(context).GetAwaiter().GetResult();
+                                _databaseInitialized = true;
+                                Console.WriteLine("✅ Test database initialized on retry: bedemo_test");
+                            }
+                            catch (Exception ex2)
+                            {
+                                Console.WriteLine($"❌ Test database setup retry also failed: {ex2.Message}");
+                                // Don't throw - let tests run and fail with database errors if needed
+                                // This helps identify connection issues
+                            }
+                        }
                     }
                 }
             }
