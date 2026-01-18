@@ -24,6 +24,20 @@ using BeDemo.Api.Scripts;
 using Serilog;
 using Grpc.Net.Client;
 
+// Check for generate-diagram command line argument
+if (args.Length > 0 && args[0] == "generate-diagram")
+{
+    // Quick test to generate diagram
+    var diagramConnStr = "Host=localhost;Port=5432;Database=bedemo;Username=bedemo_user;Password=bedemo_password";
+    var diagramOptions = new DbContextOptionsBuilder<ApplicationDbContext>()
+        .UseNpgsql(diagramConnStr)
+        .Options;
+    
+    using var diagramContext = new ApplicationDbContext(diagramOptions);
+    await BeDemo.Api.Scripts.DatabaseDiagramGenerator.GenerateDiagramAsync(diagramContext, diagramConnStr);
+    return; // Exit after generating diagram
+}
+
 // Creates WebApplicationBuilder, which is used to configure the application
 var builder = WebApplication.CreateBuilder(args);
 

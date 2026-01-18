@@ -366,7 +366,134 @@ lsof -ti:8000,8001 | xargs kill -9
 The database schema diagram is automatically generated after each migration and displayed below:
 
 <!-- AUTO-GENERATED DATABASE DIAGRAM - DO NOT EDIT -->
-<!-- This section is automatically updated when migrations run -->
+
+```mermaid
+erDiagram
+
+    AspNetRoleClaims {
+        integer Id PK NOT NULL
+        text RoleId NOT NULL
+        text ClaimType
+        text ClaimValue
+    }
+
+    AspNetRoles {
+        text Id PK NOT NULL
+        varchar Name
+        varchar NormalizedName
+        text ConcurrencyStamp
+    }
+
+    AspNetUserClaims {
+        integer Id PK NOT NULL
+        text UserId NOT NULL
+        text ClaimType
+        text ClaimValue
+    }
+
+    AspNetUserLogins {
+        text LoginProvider PK NOT NULL
+        text ProviderKey PK NOT NULL
+        text ProviderDisplayName
+        text UserId NOT NULL
+    }
+
+    AspNetUserRoles {
+        text UserId PK NOT NULL
+        text UserId NOT NULL
+        text RoleId PK NOT NULL
+        text RoleId NOT NULL
+    }
+
+    AspNetUserTokens {
+        text UserId PK NOT NULL
+        text UserId NOT NULL
+        text LoginProvider PK NOT NULL
+        text Name PK NOT NULL
+        text Value
+    }
+
+    AspNetUsers {
+        text Id PK NOT NULL
+        text FirstName
+        text LastName
+        timestamp CreatedAt NOT NULL
+        varchar UserName
+        varchar NormalizedUserName
+        varchar Email
+        varchar NormalizedEmail
+        boolean EmailConfirmed NOT NULL
+        text PasswordHash
+        text SecurityStamp
+        text ConcurrencyStamp
+        text PhoneNumber
+        boolean PhoneNumberConfirmed NOT NULL
+        boolean TwoFactorEnabled NOT NULL
+        timestamp LockoutEnd
+        boolean LockoutEnabled NOT NULL
+        integer AccessFailedCount NOT NULL
+        integer UserRoleId NOT NULL
+    }
+
+    Faces {
+        integer Id PK NOT NULL
+        varchar Index NOT NULL
+        varchar Title NOT NULL
+        varchar Description
+        varchar Color
+        timestamp CreatedAt NOT NULL
+        timestamp UpdatedAt
+    }
+
+    PageTypes {
+        integer Id PK NOT NULL
+        varchar Index NOT NULL
+        timestamp CreatedAt NOT NULL
+        timestamp UpdatedAt
+    }
+
+    Pages {
+        integer Id PK NOT NULL
+        integer FaceId NOT NULL
+        integer PageTypeId NOT NULL
+        varchar Name NOT NULL
+        varchar Description
+        varchar Path NOT NULL
+        integer Index NOT NULL
+        timestamp CreatedAt NOT NULL
+        timestamp UpdatedAt
+    }
+
+    UserProfiles {
+        integer Id PK NOT NULL
+        varchar UserId NOT NULL
+        varchar Nickname
+        integer Age
+        varchar Rod
+        timestamp CreatedAt NOT NULL
+        timestamp UpdatedAt
+    }
+
+    UserRoles {
+        integer Id PK NOT NULL
+        varchar Name NOT NULL
+        varchar Description
+        timestamp CreatedAt NOT NULL
+    }
+
+    AspNetRoles ||--o{ AspNetRoleClaims : "has"
+    AspNetUsers ||--o{ AspNetUserClaims : "has"
+    AspNetUsers ||--o{ AspNetUserLogins : "has"
+    AspNetRoles ||--o{ AspNetUserRoles : "has"
+    AspNetUsers ||--o{ AspNetUserRoles : "has"
+    AspNetUsers ||--o{ AspNetUserTokens : "has"
+    UserRoles ||--o{ AspNetUsers : "has"
+    Faces ||--o{ Pages : "has"
+    PageTypes ||--o{ Pages : "has"
+    AspNetUsers ||--o{ UserProfiles : "has"
+```
+
+
 <!-- END AUTO-GENERATED DATABASE DIAGRAM -->
 
 ## Additional Documentation

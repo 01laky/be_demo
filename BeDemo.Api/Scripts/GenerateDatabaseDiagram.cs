@@ -52,17 +52,16 @@ public static class DatabaseDiagramGenerator
         }.ToString();
 
         var tables = new List<TableInfo>();
+        var tableNames = new List<string>();
         
-        // Extract table information from PostgreSQL information_schema
+        // First, get all table names (excluding system tables)
         await using (var conn = new NpgsqlConnection(connectionString))
         {
             await conn.OpenAsync();
             
-            // Get all tables (excluding system tables)
             var tablesQuery = @"
                 SELECT 
-                    table_name,
-                    table_type
+                    table_name
                 FROM information_schema.tables
                 WHERE table_schema = 'public'
                   AND table_type = 'BASE TABLE'
@@ -75,17 +74,26 @@ public static class DatabaseDiagramGenerator
             {
                 while (await reader.ReadAsync())
                 {
-                    var tableName = reader.GetString(0);
-                    var columns = await GetTableColumnsAsync(conn, tableName);
-                    var foreignKeys = await GetForeignKeysAsync(conn, tableName);
-                    
-                    tables.Add(new TableInfo
-                    {
-                        Name = tableName,
-                        Columns = columns,
-                        ForeignKeys = foreignKeys
-                    });
+                    tableNames.Add(reader.GetString(0));
                 }
+            }
+        }
+
+        // Then, get columns and foreign keys for each table using separate connections
+        foreach (var tableName in tableNames)
+        {
+            await using (var conn = new NpgsqlConnection(connectionString))
+            {
+                await conn.OpenAsync();
+                var columns = await GetTableColumnsAsync(conn, tableName);
+                var foreignKeys = await GetForeignKeysAsync(conn, tableName);
+                
+                tables.Add(new TableInfo
+                {
+                    Name = tableName,
+                    Columns = columns,
+                    ForeignKeys = foreignKeys
+                });
             }
         }
 
@@ -101,10 +109,10 @@ public static class DatabaseDiagramGenerator
         
         var query = @"
             SELECT 
-                column_name,
-                data_type,
-                is_nullable,
-                column_default,
+                c.column_name,
+                c.data_type,
+                c.is_nullable,
+                c.column_default,
                 CASE 
                     WHEN tc.constraint_type = 'PRIMARY KEY' THEN true
                     ELSE false
@@ -116,6 +124,7 @@ public static class DatabaseDiagramGenerator
                 AND c.table_schema = kcu.table_schema
             LEFT JOIN information_schema.table_constraints tc
                 ON kcu.constraint_name = tc.constraint_name
+                AND kcu.table_schema = tc.table_schema
                 AND tc.constraint_type = 'PRIMARY KEY'
             WHERE c.table_schema = 'public'
               AND c.table_name = @tableName
