@@ -53,6 +53,15 @@ public class UsersController : ControllerBase
 
             var query = _context.Users.AsQueryable();
 
+            // Exclude users who blocked current user or were blocked by current user
+            var blockedByMe = _context.UserBlocks
+                .Where(b => b.BlockerId == currentUserId)
+                .Select(b => b.BlockedId);
+            var blockedMe = _context.UserBlocks
+                .Where(b => b.BlockedId == currentUserId)
+                .Select(b => b.BlockerId);
+            query = query.Where(u => !blockedByMe.Contains(u.Id) && !blockedMe.Contains(u.Id));
+
             if (forAddFriend)
             {
                 var friendIds = await _context.Friendships

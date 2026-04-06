@@ -27,9 +27,17 @@ public class MessagesController : ControllerBase
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
 
+        // Get blocked user IDs (both directions)
+        var blockedIds = await _context.UserBlocks
+            .Where(b => b.BlockerId == UserId || b.BlockedId == UserId)
+            .Select(b => b.BlockerId == UserId ? b.BlockedId : b.BlockerId)
+            .ToListAsync();
+
         var messages = await _context.Messages
             .Where(m => m.SenderId == UserId || m.ReceiverId == UserId)
             .Where(m => !m.IsMessageRequest || m.MessageRequestStatus == MessageRequestStatus.Accepted)
+            .Where(m => !blockedIds.Contains(m.SenderId) && !blockedIds.Contains(m.ReceiverId) || m.SenderId == UserId || m.ReceiverId == UserId)
+            .Where(m => !blockedIds.Contains(m.SenderId == UserId ? m.ReceiverId : m.SenderId))
             .Include(m => m.Sender)
             .Include(m => m.Receiver)
             .OrderByDescending(m => m.SentAt)
@@ -66,8 +74,15 @@ public class MessagesController : ControllerBase
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
 
+        // Get blocked user IDs (both directions)
+        var blockedIds = await _context.UserBlocks
+            .Where(b => b.BlockerId == UserId || b.BlockedId == UserId)
+            .Select(b => b.BlockerId == UserId ? b.BlockedId : b.BlockerId)
+            .ToListAsync();
+
         var requests = await _context.Messages
             .Where(m => m.ReceiverId == UserId && m.IsMessageRequest && m.MessageRequestStatus == MessageRequestStatus.Pending)
+            .Where(m => !blockedIds.Contains(m.SenderId))
             .Include(m => m.Sender)
             .GroupBy(m => m.SenderId)
             .Select(g => new
@@ -99,6 +114,14 @@ public class MessagesController : ControllerBase
     {
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
+
+        // Check if blocked
+        var isBlocked = await _context.UserBlocks
+            .AnyAsync(b =>
+                (b.BlockerId == UserId && b.BlockedId == otherUserId) ||
+                (b.BlockerId == otherUserId && b.BlockedId == UserId));
+        if (isBlocked)
+            return Ok(Array.Empty<object>());
 
         var messages = await _context.Messages
             .Where(m =>

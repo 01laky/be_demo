@@ -44,6 +44,11 @@ public class UserProfile
     public string? Rod { get; set; }
 
     /// <summary>
+    /// Global avatar URL (shown in all faces when no face-specific avatar is set).
+    /// </summary>
+    public string? AvatarUrl { get; set; }
+
+    /// <summary>
     /// Timestamp when the profile was created
     /// </summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

@@ -23,6 +23,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<UserFaceProfile> UserFaceProfiles { get; set; } = null!;
     public new DbSet<UserRole> UserRoles { get; set; } = null!;
     public DbSet<UserFaceRole> UserFaceRoles { get; set; } = null!;
+    public DbSet<UserBlock> UserBlocks { get; set; } = null!;
+    public DbSet<UserFollow> UserFollows { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -276,6 +278,44 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => e.CreatedAt);
+        });
+
+        // Configure UserBlock entity
+        builder.Entity<UserBlock>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.BlockerId, e.BlockedId }).IsUnique();
+            entity.Property(e => e.BlockerId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.BlockedId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.CreatedAt).IsRequired();
+
+            entity.HasOne(e => e.Blocker)
+                .WithMany()
+                .HasForeignKey(e => e.BlockerId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Blocked)
+                .WithMany()
+                .HasForeignKey(e => e.BlockedId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure UserFollow entity
+        builder.Entity<UserFollow>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.FollowerId, e.FollowedId }).IsUnique();
+            entity.Property(e => e.FollowerId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.FollowedId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.CreatedAt).IsRequired();
+
+            entity.HasOne(e => e.Follower)
+                .WithMany()
+                .HasForeignKey(e => e.FollowerId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Followed)
+                .WithMany()
+                .HasForeignKey(e => e.FollowedId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Configure ApplicationUser entity - UserRole relationship

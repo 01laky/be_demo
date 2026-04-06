@@ -36,8 +36,15 @@ public class FriendRequestsController : ControllerBase
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
 
+        // Exclude blocked users
+        var blockedIds = await _context.UserBlocks
+            .Where(b => b.BlockerId == UserId || b.BlockedId == UserId)
+            .Select(b => b.BlockerId == UserId ? b.BlockedId : b.BlockerId)
+            .ToListAsync();
+
         var requests = await _context.FriendRequests
             .Where(r => r.ReceiverId == UserId && r.Status == FriendRequestStatus.Pending)
+            .Where(r => !blockedIds.Contains(r.SenderId))
             .Include(r => r.Sender)
             .OrderByDescending(r => r.CreatedAt)
             .Select(r => new
@@ -61,6 +68,14 @@ public class FriendRequestsController : ControllerBase
             return Unauthorized();
         if (string.IsNullOrEmpty(dto?.ReceiverId) || dto.ReceiverId == UserId)
             return BadRequest();
+
+        // Check if either user has blocked the other
+        var isBlocked = await _context.UserBlocks
+            .AnyAsync(b =>
+                (b.BlockerId == UserId && b.BlockedId == dto.ReceiverId) ||
+                (b.BlockerId == dto.ReceiverId && b.BlockedId == UserId));
+        if (isBlocked)
+            return BadRequest(new { error = "Cannot send friend request to this user" });
 
         var exists = await _context.FriendRequests
             .AnyAsync(r =>

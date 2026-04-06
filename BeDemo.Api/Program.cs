@@ -248,6 +248,19 @@ builder.Services.AddOpenApi();
 // Creates WebApplication instance - this instance represents our application
 var app = builder.Build();
 
+// Ensure wwwroot and uploads/avatars exist so UseStaticFiles can serve uploaded avatars
+var webRoot = app.Environment.WebRootPath;
+if (string.IsNullOrEmpty(webRoot))
+    webRoot = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+try
+{
+    Directory.CreateDirectory(Path.Combine(webRoot, "uploads", "avatars"));
+}
+catch (Exception ex)
+{
+    Log.Warning(ex, "Could not create wwwroot/uploads/avatars directory");
+}
+
 // ============================================================================
 // DATABASE INITIALIZATION
 // ============================================================================
@@ -380,6 +393,9 @@ app.UseMiddleware<RoutingMiddleware>();
 // Adds custom OAuth2 middleware - validates client credentials and request signatures
 // This middleware executes after routing, before authentication
 app.UseMiddleware<OAuth2Middleware>();
+
+// Serve static files (e.g. uploaded avatars from wwwroot/uploads)
+app.UseStaticFiles();
 
 // Adds authentication middleware - extracts and validates JWT tokens from requests
 app.UseAuthentication();

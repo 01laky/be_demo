@@ -542,6 +542,53 @@ erDiagram
         varchar Color
         timestamp CreatedAt NOT NULL
         timestamp UpdatedAt
+        boolean IsPublic NOT NULL
+        text GradientSettings
+    }
+
+    FriendRequests {
+        integer Id PK NOT NULL
+        varchar SenderId NOT NULL
+        varchar ReceiverId NOT NULL
+        integer Status NOT NULL
+        timestamp CreatedAt NOT NULL
+        timestamp RespondedAt
+    }
+
+    Friendships {
+        integer Id PK NOT NULL
+        varchar UserId NOT NULL
+        varchar FriendId NOT NULL
+        timestamp CreatedAt NOT NULL
+    }
+
+    Messages {
+        integer Id PK NOT NULL
+        varchar SenderId NOT NULL
+        varchar ReceiverId NOT NULL
+        text Content NOT NULL
+        timestamp SentAt NOT NULL
+        timestamp ReadAt
+        boolean IsMessageRequest NOT NULL
+        integer MessageRequestStatus
+    }
+
+    Notifications {
+        integer Id PK NOT NULL
+        varchar UserId NOT NULL
+        varchar Title NOT NULL
+        text Message NOT NULL
+        varchar Type NOT NULL
+        timestamp CreatedAt NOT NULL
+    }
+
+    PageRouteTranslations {
+        integer Id PK NOT NULL
+        integer PageId NOT NULL
+        varchar LanguageCode NOT NULL
+        varchar TranslatedRoute NOT NULL
+        timestamp CreatedAt NOT NULL
+        timestamp UpdatedAt
     }
 
     PageTypes {
@@ -561,6 +608,35 @@ erDiagram
         integer Index NOT NULL
         timestamp CreatedAt NOT NULL
         timestamp UpdatedAt
+        text GridSchema
+    }
+
+    UserBlocks {
+        integer Id PK NOT NULL
+        varchar BlockerId NOT NULL
+        varchar BlockedId NOT NULL
+        timestamp CreatedAt NOT NULL
+    }
+
+    UserFaceProfiles {
+        integer Id PK NOT NULL
+        integer UserProfileId NOT NULL
+        integer FaceId NOT NULL
+        varchar DisplayName
+        varchar AvatarUrl
+        text Settings
+        boolean IsActive NOT NULL
+        timestamp CreatedAt NOT NULL
+        timestamp UpdatedAt
+    }
+
+    UserFaceRoles {
+        varchar UserId PK NOT NULL
+        varchar UserId NOT NULL
+        integer FaceId NOT NULL
+        integer FaceId PK NOT NULL
+        integer UserRoleId NOT NULL
+        timestamp CreatedAt NOT NULL
     }
 
     UserProfiles {
@@ -571,6 +647,7 @@ erDiagram
         varchar Rod
         timestamp CreatedAt NOT NULL
         timestamp UpdatedAt
+        text AvatarUrl
     }
 
     UserRoles {
@@ -578,6 +655,7 @@ erDiagram
         varchar Name NOT NULL
         varchar Description
         timestamp CreatedAt NOT NULL
+        integer Scope NOT NULL
     }
 
     AspNetRoles ||--o{ AspNetRoleClaims : "has"
@@ -587,8 +665,23 @@ erDiagram
     AspNetUsers ||--o{ AspNetUserRoles : "has"
     AspNetUsers ||--o{ AspNetUserTokens : "has"
     UserRoles ||--o{ AspNetUsers : "has"
+    AspNetUsers ||--o{ FriendRequests : "has"
+    AspNetUsers ||--o{ FriendRequests : "has"
+    AspNetUsers ||--o{ Friendships : "has"
+    AspNetUsers ||--o{ Friendships : "has"
+    AspNetUsers ||--o{ Messages : "has"
+    AspNetUsers ||--o{ Messages : "has"
+    AspNetUsers ||--o{ Notifications : "has"
+    Pages ||--o{ PageRouteTranslations : "has"
     Faces ||--o{ Pages : "has"
     PageTypes ||--o{ Pages : "has"
+    AspNetUsers ||--o{ UserBlocks : "has"
+    AspNetUsers ||--o{ UserBlocks : "has"
+    Faces ||--o{ UserFaceProfiles : "has"
+    UserProfiles ||--o{ UserFaceProfiles : "has"
+    Faces ||--o{ UserFaceRoles : "has"
+    UserRoles ||--o{ UserFaceRoles : "has"
+    AspNetUsers ||--o{ UserFaceRoles : "has"
     AspNetUsers ||--o{ UserProfiles : "has"
 ```
 

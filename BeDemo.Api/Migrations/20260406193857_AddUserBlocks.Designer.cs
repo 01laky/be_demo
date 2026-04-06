@@ -3,6 +3,7 @@ using System;
 using BeDemo.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BeDemo.Api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260406193857_AddUserBlocks")]
+    partial class AddUserBlocks
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -511,37 +514,6 @@ namespace BeDemo.Api.Migrations
                     b.ToTable("UserFaceRoles");
                 });
 
-            modelBuilder.Entity("BeDemo.Api.Models.UserFollow", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("FollowedId")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("character varying(450)");
-
-                    b.Property<string>("FollowerId")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("character varying(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FollowedId");
-
-                    b.HasIndex("FollowerId", "FollowedId")
-                        .IsUnique();
-
-                    b.ToTable("UserFollows");
-                });
-
             modelBuilder.Entity("BeDemo.Api.Models.UserProfile", b =>
                 {
                     b.Property<int>("Id")
@@ -918,25 +890,6 @@ namespace BeDemo.Api.Migrations
                     b.Navigation("User");
 
                     b.Navigation("UserRole");
-                });
-
-            modelBuilder.Entity("BeDemo.Api.Models.UserFollow", b =>
-                {
-                    b.HasOne("BeDemo.Api.Models.ApplicationUser", "Followed")
-                        .WithMany()
-                        .HasForeignKey("FollowedId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BeDemo.Api.Models.ApplicationUser", "Follower")
-                        .WithMany()
-                        .HasForeignKey("FollowerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Followed");
-
-                    b.Navigation("Follower");
                 });
 
             modelBuilder.Entity("BeDemo.Api.Models.UserProfile", b =>

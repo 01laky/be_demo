@@ -19,6 +19,7 @@ public static class Routing
     private static readonly string[] PublicPaths = new[]
     {
         "/api/",        // All /api/* paths are public (e.g., /api/faces, /api/users, /api/pages)
+        "/uploads/",    // Static files (e.g. uploaded avatars)
         "/swagger",
         "/swagger-ui",
         "/openapi",
