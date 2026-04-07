@@ -129,8 +129,8 @@ public static class DatabaseSeeder
 
     private static async Task SeedPageTypesAsync(ApplicationDbContext context)
     {
-        // "list" removed — typed lists are fixed FE routes (/list/:componentTypeId), not CMS pages.
-        var pageTypeIndices = new[] { "home", "detail", "edit", "create", "static", "wall" };
+        // Only CMS-facing types: home, static (login/register-style), wall. List/detail/edit/create are fixed FE routes.
+        var pageTypeIndices = new[] { "home", "static", "wall" };
 
         foreach (var index in pageTypeIndices)
         {
@@ -211,10 +211,9 @@ public static class DatabaseSeeder
         // Get PageTypes
         var homePageType = await context.PageTypes.FirstOrDefaultAsync(pt => pt.Index == "home");
         var staticPageType = await context.PageTypes.FirstOrDefaultAsync(pt => pt.Index == "static");
-        var detailPageType = await context.PageTypes.FirstOrDefaultAsync(pt => pt.Index == "detail");
         var wallPageType = await context.PageTypes.FirstOrDefaultAsync(pt => pt.Index == "wall");
 
-        if (homePageType == null || staticPageType == null || detailPageType == null)
+        if (homePageType == null || staticPageType == null)
         {
             throw new InvalidOperationException("Required PageTypes not found. Please seed PageTypes first.");
         }
@@ -266,11 +265,10 @@ public static class DatabaseSeeder
             var basicPages = new List<Page>
             {
                 new Page { FaceId = basicFace.Id, PageTypeId = homePageType.Id, Name = "Home", Path = "/home", Index = 0, CreatedAt = DateTime.UtcNow },
-                new Page { FaceId = basicFace.Id, PageTypeId = detailPageType.Id, Name = "Detail", Path = "/detail", Index = 1, CreatedAt = DateTime.UtcNow },
             };
             if (wallPageType != null)
             {
-                basicPages.Add(new Page { FaceId = basicFace.Id, PageTypeId = wallPageType.Id, Name = "Wall", Path = "/wall", Index = 2, CreatedAt = DateTime.UtcNow });
+                basicPages.Add(new Page { FaceId = basicFace.Id, PageTypeId = wallPageType.Id, Name = "Wall", Path = "/wall", Index = 1, CreatedAt = DateTime.UtcNow });
             }
             context.Pages.AddRange(basicPages);
         }
@@ -295,11 +293,10 @@ public static class DatabaseSeeder
             var konceptPages = new List<Page>
             {
                 new Page { FaceId = konceptFace.Id, PageTypeId = homePageType.Id, Name = "Home", Path = "/home", Index = 0, CreatedAt = DateTime.UtcNow },
-                new Page { FaceId = konceptFace.Id, PageTypeId = detailPageType.Id, Name = "Detail", Path = "/detail", Index = 1, CreatedAt = DateTime.UtcNow },
             };
             if (wallPageType != null)
             {
-                konceptPages.Add(new Page { FaceId = konceptFace.Id, PageTypeId = wallPageType.Id, Name = "Wall", Path = "/wall", Index = 2, CreatedAt = DateTime.UtcNow });
+                konceptPages.Add(new Page { FaceId = konceptFace.Id, PageTypeId = wallPageType.Id, Name = "Wall", Path = "/wall", Index = 1, CreatedAt = DateTime.UtcNow });
             }
             context.Pages.AddRange(konceptPages);
         }

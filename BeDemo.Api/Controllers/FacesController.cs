@@ -496,9 +496,8 @@ public class FacesController : ControllerBase
             _context.Faces.Add(face);
             await _context.SaveChangesAsync();
 
-            // Add default pages (Home, Detail; Wall for non-public faces). No CMS "list" page — FE uses /list/:componentTypeId.
+            // Default pages: Home; Wall for non-public. Typed list/detail flows are FE routes (/list/:id, future /detail/...).
             var homePageType = await _context.PageTypes.FirstOrDefaultAsync(pt => pt.Index == "home");
-            var detailPageType = await _context.PageTypes.FirstOrDefaultAsync(pt => pt.Index == "detail");
             var wallPageType = await _context.PageTypes.FirstOrDefaultAsync(pt => pt.Index == "wall");
 
             var defaultPages = new List<Page>();
@@ -506,11 +505,6 @@ public class FacesController : ControllerBase
             if (homePageType != null)
             {
                 defaultPages.Add(new Page { FaceId = face.Id, PageTypeId = homePageType.Id, Name = "Home", Path = "/home", Index = pageIndex++, CreatedAt = DateTime.UtcNow });
-            }
-
-            if (detailPageType != null)
-            {
-                defaultPages.Add(new Page { FaceId = face.Id, PageTypeId = detailPageType.Id, Name = "Detail", Path = "/detail", Index = pageIndex++, CreatedAt = DateTime.UtcNow });
             }
 
             if (!face.IsPublic && wallPageType != null)
