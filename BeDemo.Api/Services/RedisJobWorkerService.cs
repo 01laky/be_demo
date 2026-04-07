@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 
@@ -12,15 +13,18 @@ public sealed class RedisJobWorkerService : BackgroundService
     private readonly IConnectionMultiplexer _redis;
     private readonly ILogger<RedisJobWorkerService> _logger;
     private readonly RedisJobWorkerOptions _options;
+    private readonly IServiceScopeFactory _scopeFactory;
 
     public RedisJobWorkerService(
         IConnectionMultiplexer redis,
         ILogger<RedisJobWorkerService> logger,
-        IOptions<RedisJobWorkerOptions> options)
+        IOptions<RedisJobWorkerOptions> options,
+        IServiceScopeFactory scopeFactory)
     {
         _redis = redis;
         _logger = logger;
         _options = options.Value;
+        _scopeFactory = scopeFactory;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -73,7 +77,7 @@ public sealed class RedisJobWorkerService : BackgroundService
         }
     }
 
-    private Task ProcessJobAsync(string json, CancellationToken ct)
+    private async Task ProcessJobAsync(string json, CancellationToken ct)
     {
         RedisJobEnvelope? env;
         try
@@ -83,11 +87,11 @@ public sealed class RedisJobWorkerService : BackgroundService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Invalid job JSON, dropping");
-            return Task.CompletedTask;
+            return;
         }
 
         if (env == null)
-            return Task.CompletedTask;
+            return;
 
         switch (env.Type)
         {
@@ -97,12 +101,35 @@ public sealed class RedisJobWorkerService : BackgroundService
                     env.Id,
                     env.Payload);
                 break;
+            case "story.publish":
+            case "story.expire":
+                await ProcessStoryJobAsync(env, ct);
+                break;
             default:
                 _logger.LogWarning("Unknown job type {Type} id={Id}", env.Type, env.Id);
                 break;
         }
+    }
 
-        return Task.CompletedTask;
+    private async Task ProcessStoryJobAsync(RedisJobEnvelope env, CancellationToken ct)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(env.Payload);
+            if (!doc.RootElement.TryGetProperty("storyId", out var sidEl))
+                return;
+            var storyId = sidEl.GetInt32();
+            using var scope = _scopeFactory.CreateScope();
+            var lifecycle = scope.ServiceProvider.GetRequiredService<IStoryLifecycleService>();
+            if (env.Type == "story.publish")
+                await lifecycle.ApplyScheduledPublishAsync(storyId, ct);
+            else
+                await lifecycle.ApplyExpireAsync(storyId, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Story job {Type} failed id={Id}", env.Type, env.Id);
+        }
     }
 }
 

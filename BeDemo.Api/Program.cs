@@ -139,6 +139,7 @@ else
 
 // FaceService for RoutingMiddleware (face-based URL routing)
 builder.Services.AddScoped<IFaceService, FaceService>();
+builder.Services.AddScoped<IStoryLifecycleService, StoryLifecycleService>();
 
 // ============================================================================
 // ASP.NET CORE IDENTITY CONFIGURATION
@@ -281,6 +282,7 @@ if (string.IsNullOrEmpty(webRoot))
 try
 {
     Directory.CreateDirectory(Path.Combine(webRoot, "uploads", "avatars"));
+    Directory.CreateDirectory(Path.Combine(webRoot, "uploads", "stories"));
 }
 catch (Exception ex)
 {

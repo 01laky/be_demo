@@ -58,6 +58,9 @@ BeDemo.Api/https/*.pfx
 .env.local
 .env.*.local
 
+# Uploaded media (created at runtime; do not commit)
+BeDemo.Api/wwwroot/uploads/
+
 # Docker
 .docker/
 

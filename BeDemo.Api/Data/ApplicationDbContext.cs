@@ -40,6 +40,12 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<ReelFace> ReelFaces { get; set; } = null!;
     public DbSet<ReelComment> ReelComments { get; set; } = null!;
     public DbSet<ReelLike> ReelLikes { get; set; } = null!;
+    public DbSet<Story> Stories { get; set; } = null!;
+    public DbSet<StoryFace> StoryFaces { get; set; } = null!;
+    public DbSet<StoryImage> StoryImages { get; set; } = null!;
+    public DbSet<StoryLike> StoryLikes { get; set; } = null!;
+    public DbSet<StoryComment> StoryComments { get; set; } = null!;
+    public DbSet<StoryView> StoryViews { get; set; } = null!;
     public DbSet<UserFaceProfileLike> UserFaceProfileLikes { get; set; } = null!;
     public DbSet<UserFaceProfileComment> UserFaceProfileComments { get; set; } = null!;
     public DbSet<UserFaceProfileReview> UserFaceProfileReviews { get; set; } = null!;
@@ -623,6 +629,108 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.HasOne(e => e.User)
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<Story>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CreatorId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.State).IsRequired().HasConversion<int>();
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.HasIndex(e => e.CreatorId);
+            entity.HasIndex(e => new { e.State, e.PublishedAt, e.ExpiresAt });
+
+            entity.HasOne(e => e.Creator)
+                .WithMany()
+                .HasForeignKey(e => e.CreatorId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<StoryFace>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.StoryId, e.FaceId }).IsUnique();
+            entity.Property(e => e.CreatedAt).IsRequired();
+
+            entity.HasOne(e => e.Story)
+                .WithMany(s => s.StoryFaces)
+                .HasForeignKey(e => e.StoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Face)
+                .WithMany()
+                .HasForeignKey(e => e.FaceId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<StoryImage>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ImageUrl).IsRequired().HasMaxLength(1000);
+            entity.Property(e => e.Description).HasMaxLength(2000);
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.HasIndex(e => new { e.StoryId, e.SortOrder }).IsUnique();
+
+            entity.HasOne(e => e.Story)
+                .WithMany(s => s.Images)
+                .HasForeignKey(e => e.StoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<StoryLike>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.StoryId, e.UserId }).IsUnique();
+            entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.CreatedAt).IsRequired();
+
+            entity.HasOne(e => e.Story)
+                .WithMany(s => s.Likes)
+                .HasForeignKey(e => e.StoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<StoryComment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.Content).IsRequired().HasMaxLength(2000);
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.HasIndex(e => e.StoryId);
+
+            entity.HasOne(e => e.Story)
+                .WithMany(s => s.Comments)
+                .HasForeignKey(e => e.StoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<StoryView>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.StoryId, e.ViewerUserId }).IsUnique();
+            entity.Property(e => e.ViewerUserId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.ViewedAt).IsRequired();
+
+            entity.HasOne(e => e.Story)
+                .WithMany(s => s.Views)
+                .HasForeignKey(e => e.StoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Viewer)
+                .WithMany()
+                .HasForeignKey(e => e.ViewerUserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
