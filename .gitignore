@@ -66,3 +66,6 @@ BeDemo.Api/wwwroot/uploads/
 
 # User secrets
 secrets.json
+
+# Node (Husky / commitlint only)
+node_modules/
