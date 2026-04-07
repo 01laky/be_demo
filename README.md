@@ -147,21 +147,22 @@ To perform a clean rebuild of Docker images:
 ### Local Development (Without Docker)
 
 1. **Ensure PostgreSQL is running** (see `db_demo` folder or root `start-all-dev.sh`)
+2. **For job queue**: Redis via submodule `redis_demo` (`./start-redis.sh` or root `start-all-dev.sh`)
 
-2. **Install .NET SDK 10.0**
+3. **Install .NET SDK 10.0**
 
-3. **Restore dependencies**:
+4. **Restore dependencies**:
    ```bash
    cd BeDemo.Api
    dotnet restore
    ```
 
-4. **Update database**:
+5. **Update database**:
    ```bash
    dotnet ef database update
    ```
 
-5. **Run the application**:
+6. **Run the application**:
    ```bash
    dotnet run --launch-profile http
    ```
@@ -380,17 +381,19 @@ dotnet ef migrations remove
 
 1. **Start database**: Ensure PostgreSQL is running (via `db_demo` or root `start-all-dev.sh`)
 
-2. **Start backend**: Run `./start-dev.sh` or use root `start-all-dev.sh` to start all services
+2. **Start Redis** (optional, for job queue): submodule `redis_demo` or `start-all-dev.sh`
 
-3. **Make code changes**: Edit code in `BeDemo.Api/`
+3. **Start backend**: Run `./start-dev.sh` or use root `start-all-dev.sh` to start all services
 
-4. **Test changes**: 
+4. **Make code changes**: Edit code in `BeDemo.Api/`
+
+5. **Test changes**: 
    - API endpoints via Swagger UI
    - Unit tests: `dotnet test` in `BeDemo.Api.Tests/`
 
-5. **View logs**: Check Docker logs or Seq UI
+6. **View logs**: Check Docker logs or Seq UI
 
-6. **Stop services**: Run `./stop-dev.sh` or root `stop-all-dev.sh`
+7. **Stop services**: Run `./stop-dev.sh` or root `stop-all-dev.sh`
 
 ## Testing
 
@@ -413,6 +416,7 @@ Tests cover:
 This backend is part of the `_mfai_demo` monorepo and integrates with:
 
 - **Database**: `db_demo` (PostgreSQL)
+- **Redis**: `redis_demo` (job queue)
 - **Frontend**: `fe_demo` (React + Vite)
 - **Admin**: `admin_demo` (React + Vite admin panel)
 - **AI Demo**: `ai_demo` (Python gRPC server)

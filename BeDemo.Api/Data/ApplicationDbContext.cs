@@ -36,6 +36,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<BlogImage> BlogImages { get; set; } = null!;
     public DbSet<BlogComment> BlogComments { get; set; } = null!;
     public DbSet<BlogLike> BlogLikes { get; set; } = null!;
+    public DbSet<Reel> Reels { get; set; } = null!;
+    public DbSet<ReelFace> ReelFaces { get; set; } = null!;
+    public DbSet<ReelComment> ReelComments { get; set; } = null!;
+    public DbSet<ReelLike> ReelLikes { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -534,6 +538,79 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.HasOne(e => e.Blog)
                 .WithMany(b => b.Likes)
                 .HasForeignKey(e => e.BlogId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure Reel entity
+        builder.Entity<Reel>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CreatorId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Description).HasMaxLength(2000);
+            entity.Property(e => e.VideoUrl).IsRequired().HasMaxLength(1000);
+            entity.Property(e => e.CreatedAt).IsRequired();
+
+            entity.HasIndex(e => e.CreatorId);
+
+            entity.HasOne(e => e.Creator)
+                .WithMany()
+                .HasForeignKey(e => e.CreatorId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<ReelFace>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.ReelId, e.FaceId }).IsUnique();
+            entity.Property(e => e.CreatedAt).IsRequired();
+
+            entity.HasOne(e => e.Reel)
+                .WithMany(r => r.ReelFaces)
+                .HasForeignKey(e => e.ReelId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Face)
+                .WithMany()
+                .HasForeignKey(e => e.FaceId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<ReelComment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.Content).IsRequired().HasMaxLength(2000);
+            entity.Property(e => e.CreatedAt).IsRequired();
+
+            entity.HasIndex(e => e.ReelId);
+
+            entity.HasOne(e => e.Reel)
+                .WithMany(r => r.Comments)
+                .HasForeignKey(e => e.ReelId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<ReelLike>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.ReelId, e.UserId }).IsUnique();
+            entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.CreatedAt).IsRequired();
+
+            entity.HasOne(e => e.Reel)
+                .WithMany(r => r.Likes)
+                .HasForeignKey(e => e.ReelId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(e => e.User)

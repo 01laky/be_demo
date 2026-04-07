@@ -24,6 +24,7 @@ using BeDemo.Api.Hubs;
 using BeDemo.Api.Scripts;
 using Serilog;
 using Grpc.Net.Client;
+using StackExchange.Redis;
 
 // Check for generate-diagram command line argument
 if (args.Length > 0 && args[0] == "generate-diagram")
@@ -240,6 +241,26 @@ builder.Services.AddSignalR();
 
 // Adds OpenAPI support - generates automatic API documentation
 builder.Services.AddOpenApi();
+
+// ============================================================================
+// REDIS JOB QUEUE (BullMQ-style: list + delayed sorted set)
+// ============================================================================
+
+builder.Services.Configure<RedisJobWorkerOptions>(
+    builder.Configuration.GetSection("RedisJobWorker"));
+
+var redisConfiguration = builder.Configuration["Redis:Configuration"];
+if (!string.IsNullOrWhiteSpace(redisConfiguration) && !builder.Environment.IsEnvironment("Testing"))
+{
+    builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
+        ConnectionMultiplexer.Connect(redisConfiguration));
+    builder.Services.AddSingleton<IRedisJobQueue, RedisJobQueue>();
+    builder.Services.AddHostedService<RedisJobWorkerService>();
+}
+else
+{
+    builder.Services.AddSingleton<IRedisJobQueue, NoOpRedisJobQueue>();
+}
 
 // ============================================================================
 // APPLICATION CREATION AND HTTP PIPELINE CONFIGURATION
