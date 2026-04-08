@@ -313,6 +313,8 @@ public static class DatabaseSeeder
         var adminRole = await context.UserRoles.FirstOrDefaultAsync(r => r.Name == UserRole.GlobalRoleNames.Admin);
         var userRole = await context.UserRoles.FirstOrDefaultAsync(r => r.Name == UserRole.GlobalRoleNames.User);
         var faceHostRole = await context.UserRoles.FirstOrDefaultAsync(r => r.Name == UserRole.FaceRoleNames.FaceHost);
+        var faceUserRole = await context.UserRoles.FirstOrDefaultAsync(r => r.Name == UserRole.FaceRoleNames.FaceUser);
+        var regularFaceRole = faceUserRole ?? faceHostRole;
 
         if (adminRole == null || userRole == null)
         {
@@ -451,7 +453,7 @@ public static class DatabaseSeeder
                 context.UserProfiles.Add(profile);
                 await context.SaveChangesAsync();
 
-                // Create UserFaceProfile and UserFaceRole (FACE_HOST) for each face
+                // Create UserFaceProfile and face role (FACE_USER for directory grid; fallback FACE_HOST)
                 foreach (var face in faces)
                 {
                     context.UserFaceProfiles.Add(new UserFaceProfile
@@ -464,13 +466,13 @@ public static class DatabaseSeeder
                         FaceRoleIntroCompleted = false,
                         CreatedAt = DateTime.UtcNow
                     });
-                    if (faceHostRole != null)
+                    if (regularFaceRole != null)
                     {
                         context.UserFaceRoles.Add(new UserFaceRole
                         {
                             UserId = user.Id,
                             FaceId = face.Id,
-                            UserRoleId = faceHostRole.Id,
+                            UserRoleId = regularFaceRole.Id,
                             CreatedAt = DateTime.UtcNow
                         });
                     }
@@ -487,6 +489,246 @@ public static class DatabaseSeeder
             {
                 userManager.PasswordValidators.Add(validator);
             }
+        }
+    }
+
+    private const int GridDemoItemsPerUserPerFace = 5;
+
+    /// <summary>
+    /// Idempotent demo content: for each @demo.com user and each face, ensure N wall tickets, albums, blogs, reels, stories, chat rooms.
+    /// Also migrates seeded user01–user30 from FACE_HOST to FACE_USER so face profile grids are populated.
+    /// </summary>
+    public static async Task SeedFaceGridContentAsync(ApplicationDbContext context)
+    {
+        await NormalizeDemoUserFaceRolesForProfileGridAsync(context);
+
+        var faces = await context.Faces.AsNoTracking().ToListAsync();
+        if (faces.Count == 0)
+            return;
+
+        var demoUserIds = await context.Users
+            .AsNoTracking()
+            .Where(u => u.Email != null && u.Email.EndsWith("@demo.com", StringComparison.OrdinalIgnoreCase))
+            .Select(u => u.Id)
+            .ToListAsync();
+
+        foreach (var userId in demoUserIds)
+        {
+            foreach (var face in faces)
+            {
+                await EnsureWallTicketsForUserFaceAsync(context, userId, face.Id);
+                await EnsureAlbumsForUserFaceAsync(context, userId, face.Id);
+                await EnsureBlogsForUserFaceAsync(context, userId, face.Id);
+                await EnsureReelsForUserFaceAsync(context, userId, face.Id);
+                await EnsureStoriesForUserFaceAsync(context, userId, face.Id);
+                await EnsureChatRoomsForUserFaceAsync(context, userId, face.Id);
+            }
+        }
+
+        await context.SaveChangesAsync();
+        Console.WriteLine("✅ Face grid demo content seeded (idempotent)");
+    }
+
+    private static async Task NormalizeDemoUserFaceRolesForProfileGridAsync(ApplicationDbContext context)
+    {
+        var faceUser = await context.UserRoles.FirstOrDefaultAsync(r => r.Name == UserRole.FaceRoleNames.FaceUser);
+        var faceHost = await context.UserRoles.FirstOrDefaultAsync(r => r.Name == UserRole.FaceRoleNames.FaceHost);
+        if (faceUser == null || faceHost == null)
+            return;
+
+        var targetUserIds = await context.Users
+            .AsNoTracking()
+            .Where(u => u.Email != null &&
+                        u.Email.StartsWith("user", StringComparison.OrdinalIgnoreCase) &&
+                        u.Email.EndsWith("@demo.com", StringComparison.OrdinalIgnoreCase))
+            .Select(u => u.Id)
+            .ToListAsync();
+
+        if (targetUserIds.Count == 0)
+            return;
+
+        var toUpdate = await context.UserFaceRoles
+            .Where(ufr => targetUserIds.Contains(ufr.UserId) && ufr.UserRoleId == faceHost.Id)
+            .ToListAsync();
+
+        foreach (var row in toUpdate)
+            row.UserRoleId = faceUser.Id;
+
+        if (toUpdate.Count > 0)
+            await context.SaveChangesAsync();
+    }
+
+    private static async Task EnsureWallTicketsForUserFaceAsync(ApplicationDbContext context, string userId, int faceId)
+    {
+        var have = await context.FaceWallTickets.CountAsync(t => t.CreatorUserId == userId && t.FaceId == faceId);
+        for (var i = have; i < GridDemoItemsPerUserPerFace; i++)
+        {
+            context.FaceWallTickets.Add(new FaceWallTicket
+            {
+                FaceId = faceId,
+                CreatorUserId = userId,
+                Title = $"Listing {i + 1} (face {faceId})",
+                Description = $"Demo wall ticket from seeded user. Item index {i + 1} for face {faceId}.",
+                Status = FaceWallTicketStatus.Active,
+                CreatedAt = DateTime.UtcNow,
+            });
+        }
+    }
+
+    private static async Task EnsureAlbumsForUserFaceAsync(ApplicationDbContext context, string userId, int faceId)
+    {
+        var have = await context.Albums.CountAsync(a =>
+            a.CreatorId == userId && a.AlbumFaces.Any(af => af.FaceId == faceId));
+        var toAdd = GridDemoItemsPerUserPerFace - have;
+        if (toAdd <= 0)
+            return;
+
+        var albums = new List<Album>();
+        for (var k = 0; k < toAdd; k++)
+        {
+            albums.Add(new Album
+            {
+                CreatorId = userId,
+                Title = $"Album {have + k + 1} · face {faceId}",
+                Description = "Seeded album for grid demo.",
+                AlbumType = AlbumTypeEnum.Public,
+                MediaType = MediaTypeEnum.Image,
+                CreatedAt = DateTime.UtcNow,
+            });
+        }
+
+        context.Albums.AddRange(albums);
+        await context.SaveChangesAsync();
+
+        foreach (var a in albums)
+        {
+            context.AlbumFaces.Add(new AlbumFace
+            {
+                AlbumId = a.Id,
+                FaceId = faceId,
+                CreatedAt = DateTime.UtcNow,
+            });
+        }
+    }
+
+    private static async Task EnsureBlogsForUserFaceAsync(ApplicationDbContext context, string userId, int faceId)
+    {
+        var have = await context.Blogs.CountAsync(b => b.CreatorId == userId && b.FaceId == faceId);
+        for (var i = have; i < GridDemoItemsPerUserPerFace; i++)
+        {
+            var created = DateTime.UtcNow;
+            var blog = new Blog
+            {
+                CreatorId = userId,
+                FaceId = faceId,
+                Title = $"Blog post {i + 1} (face {faceId})",
+                Content = $"Seeded blog body for grid demo. Face {faceId}, index {i + 1}.",
+                CreatedAt = created,
+                Images = new List<BlogImage>
+                {
+                    new BlogImage
+                    {
+                        ImageUrl = $"https://picsum.photos/seed/blog{faceId}{userId.GetHashCode()}{i}/640/400",
+                        SortOrder = 0,
+                        CreatedAt = created,
+                    },
+                },
+            };
+            context.Blogs.Add(blog);
+        }
+
+        await context.SaveChangesAsync();
+    }
+
+    private static async Task EnsureReelsForUserFaceAsync(ApplicationDbContext context, string userId, int faceId)
+    {
+        var have = await context.Reels.CountAsync(r =>
+            r.CreatorId == userId && r.ReelFaces.Any(rf => rf.FaceId == faceId));
+        var toAdd = GridDemoItemsPerUserPerFace - have;
+        if (toAdd <= 0)
+            return;
+
+        const string demoVideo =
+            "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4";
+        var reels = new List<Reel>();
+        for (var k = 0; k < toAdd; k++)
+        {
+            reels.Add(new Reel
+            {
+                CreatorId = userId,
+                Title = $"Reel {have + k + 1} (face {faceId})",
+                Description = "Seeded reel for grid demo.",
+                VideoUrl = demoVideo,
+                CreatedAt = DateTime.UtcNow,
+            });
+        }
+
+        context.Reels.AddRange(reels);
+        await context.SaveChangesAsync();
+
+        foreach (var r in reels)
+        {
+            context.ReelFaces.Add(new ReelFace
+            {
+                ReelId = r.Id,
+                FaceId = faceId,
+                CreatedAt = DateTime.UtcNow,
+            });
+        }
+    }
+
+    private static async Task EnsureStoriesForUserFaceAsync(ApplicationDbContext context, string userId, int faceId)
+    {
+        var have = await context.Stories.CountAsync(s =>
+            s.CreatorId == userId &&
+            s.StoryFaces.Any(sf => sf.FaceId == faceId) &&
+            s.State == StoryState.Published);
+        for (var i = have; i < GridDemoItemsPerUserPerFace; i++)
+        {
+            var now = DateTime.UtcNow;
+            var story = new Story
+            {
+                CreatorId = userId,
+                Title = $"Story {i + 1} (face {faceId})",
+                State = StoryState.Published,
+                PublishedAt = now.AddMinutes(-10),
+                ExpiresAt = now.AddDays(1),
+                CreatedAt = now,
+            };
+            context.Stories.Add(story);
+            await context.SaveChangesAsync();
+            context.StoryFaces.Add(new StoryFace
+            {
+                StoryId = story.Id,
+                FaceId = faceId,
+                CreatedAt = now,
+            });
+            context.StoryImages.Add(new StoryImage
+            {
+                StoryId = story.Id,
+                ImageUrl = $"https://picsum.photos/seed/story{faceId}{userId.GetHashCode()}{i}/400/700",
+                SortOrder = 0,
+                Description = "Cover",
+                CreatedAt = now,
+            });
+        }
+    }
+
+    private static async Task EnsureChatRoomsForUserFaceAsync(ApplicationDbContext context, string userId, int faceId)
+    {
+        var have = await context.FaceChatRooms.CountAsync(r => r.CreatorUserId == userId && r.FaceId == faceId);
+        for (var i = have; i < GridDemoItemsPerUserPerFace; i++)
+        {
+            context.FaceChatRooms.Add(new FaceChatRoom
+            {
+                FaceId = faceId,
+                Title = $"Room {i + 1} (user slice)",
+                Description = $"Seeded chat room for grid demo. Face {faceId}.",
+                IsPublic = true,
+                IsSystemManaged = false,
+                CreatorUserId = userId,
+                CreatedAt = DateTime.UtcNow,
+            });
         }
     }
 }

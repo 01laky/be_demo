@@ -24,15 +24,22 @@ public class AlbumsController : ControllerBase
 
     private string? UserId => User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
-    /// <summary>GET /api/albums - Get all visible albums (public + own private/paid)</summary>
+    /// <summary>GET /api/albums?faceId= - Optional face filter (album must be linked via AlbumFaces).</summary>
     [HttpGet]
-    public async Task<IActionResult> GetAlbums()
+    public async Task<IActionResult> GetAlbums([FromQuery] int? faceId)
     {
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
 
-        var albums = await _context.Albums
-            .Where(a => a.AlbumType == AlbumTypeEnum.Public || a.CreatorId == UserId)
+        var query = _context.Albums
+            .Where(a => a.AlbumType == AlbumTypeEnum.Public || a.CreatorId == UserId);
+
+        if (faceId.HasValue)
+        {
+            query = query.Where(a => a.AlbumFaces.Any(af => af.FaceId == faceId.Value));
+        }
+
+        var albums = await query
             .Include(a => a.Creator)
             .Include(a => a.AlbumFaces).ThenInclude(af => af.Face)
             .Include(a => a.Likes)

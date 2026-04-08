@@ -39,7 +39,7 @@ public class StoriesController : ControllerBase
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
 
-        if (!await StoryViewerRules.ViewerIsActiveNonHostInFaceAsync(_context, UserId, faceId, cancellationToken))
+        if (!await StoryViewerRules.ViewerHasFaceMembershipAsync(_context, UserId, faceId, cancellationToken))
             return Ok(Array.Empty<object>());
 
         var now = DateTime.UtcNow;
@@ -142,7 +142,7 @@ public class StoriesController : ControllerBase
 
         if (!isCreator)
         {
-            if (!await StoryViewerRules.ViewerIsActiveNonHostInFaceAsync(_context, UserId, faceId, cancellationToken))
+            if (!await StoryViewerRules.ViewerHasFaceMembershipAsync(_context, UserId, faceId, cancellationToken))
                 return NotFound(new { error = "Story not found" });
 
             if (!isLive || !StoryVisibility.IsTargetedForFace(story, faceId))

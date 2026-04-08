@@ -106,7 +106,7 @@ public class StoriesControllerTests : IClassFixture<CustomWebApplicationFactory<
     }
 
     [Fact]
-    public async Task ListForFace_ShouldBeEmpty_ForHostOnlyUser()
+    public async Task ListForFace_ShouldReturnWellFormedItems_WhenAuthenticated()
     {
         using var client = _factory.CreateClient();
         var (token, _) = await RegisterAndLoginAsync(client);
@@ -115,7 +115,22 @@ public class StoriesControllerTests : IClassFixture<CustomWebApplicationFactory<
 
         var list = await client.GetFromJsonAsync<JsonElement[]>($"/api/stories?faceId={faceId}");
         list.Should().NotBeNull();
-        list!.Length.Should().Be(0);
+        foreach (var el in list!)
+            el.TryGetProperty("id", out _).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ListForFace_ShouldReturnPublished_ForDefaultHostUser()
+    {
+        using var client = _factory.CreateClient();
+        var (token, _) = await RegisterAndLoginAsync(client);
+        var faceId = await GetAnyFaceIdAsync(client, token);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var storyId = await CreatePublishedStoryWithOneImageAsync(client, token, faceId);
+
+        var list = await client.GetFromJsonAsync<JsonElement[]>($"/api/stories?faceId={faceId}");
+        list.Should().NotBeNull();
+        list!.Select(e => e.GetProperty("id").GetInt32()).Should().Contain(storyId);
     }
 
     [Fact]

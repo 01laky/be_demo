@@ -128,6 +128,40 @@ public class AlbumsControllerTests : IClassFixture<CustomWebApplicationFactory<P
     }
 
     [Fact]
+    public async Task GetAlbums_WithFaceId_ShouldReturnOnlyAlbumsLinkedToFace()
+    {
+        SetAuth(await GetAuthTokenAsync());
+        var faceA = await CreateTestFaceAsync();
+        var faceB = await CreateTestFaceAsync();
+
+        await _client.PostAsJsonAsync("/api/albums", new
+        {
+            title = "Only on A",
+            albumType = 1,
+            mediaType = 1,
+            faceIds = new[] { faceA },
+        });
+        await _client.PostAsJsonAsync("/api/albums", new
+        {
+            title = "Only on B",
+            albumType = 1,
+            mediaType = 1,
+            faceIds = new[] { faceB },
+        });
+
+        var resA = await _client.GetAsync($"/api/albums?faceId={faceA}");
+        resA.StatusCode.Should().Be(HttpStatusCode.OK);
+        var arrA = await resA.Content.ReadFromJsonAsync<JsonElement>();
+        arrA.ValueKind.Should().Be(JsonValueKind.Array);
+        arrA.GetArrayLength().Should().BeGreaterThanOrEqualTo(1);
+        foreach (var el in arrA.EnumerateArray())
+        {
+            var faceIds = el.GetProperty("faces").EnumerateArray().Select(f => f.GetProperty("faceId").GetInt32()).ToList();
+            faceIds.Should().Contain(faceA);
+        }
+    }
+
+    [Fact]
     public async Task CreateAlbum_ShouldReturnCreated_WithValidData()
     {
         SetAuth(await GetAuthTokenAsync());

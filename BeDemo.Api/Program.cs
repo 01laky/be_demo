@@ -345,6 +345,8 @@ if (!app.Environment.IsEnvironment("Testing"))
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
             await DatabaseSeeder.SeedUsersAsync(context, userManager);
             Log.Information("Users seeded successfully");
+            await DatabaseSeeder.SeedFaceGridContentAsync(context);
+            Log.Information("Face grid demo content seeded");
         }
     }
     catch (Exception ex)
