@@ -1,7 +1,7 @@
 /*
  * MessengerHub.cs - SignalR Hub for friend requests and real-time messaging
  *
- * Endpoint: /hubs/messenger?access_token=<JWT_TOKEN>
+ * Endpoint (after RoutingMiddleware): /{face-kebab}/hubs/messenger?access_token=<JWT> — same face-prefix rule as REST (ACL A11).
  *
  * Methods:
  * - SendChatMessage(receiverId, content)
@@ -19,6 +19,8 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using BeDemo.Api.Data;
 using BeDemo.Api.Models;
+using BeDemo.Api.Services;
+using BeDemo.Api.Utils;
 
 namespace BeDemo.Api.Hubs;
 
@@ -27,14 +29,30 @@ public class MessengerHub : Hub
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<MessengerHub> _logger;
+    private readonly IFaceScopeContext _faceScope;
 
-    public MessengerHub(ApplicationDbContext context, ILogger<MessengerHub> logger)
+    public MessengerHub(ApplicationDbContext context, ILogger<MessengerHub> logger, IFaceScopeContext faceScope)
     {
         _context = context;
         _logger = logger;
+        _faceScope = faceScope;
     }
 
     private string? UserId => Context.UserIdentifier ?? Context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+    private bool CanManageAllFaces() =>
+        Context.User != null && PlatformAccessRules.CanManageAllFaces(_faceScope, Context.User);
+
+    private async Task<bool> EnforceTenantSocialPairAsync(string otherUserId)
+    {
+        if (string.IsNullOrEmpty(UserId) || string.IsNullOrEmpty(otherUserId))
+            return false;
+        if (!_faceScope.IsAvailable)
+            return false;
+        if (CanManageAllFaces())
+            return true;
+        return await TenantSocialScopeRules.BothUsersParticipateInFaceAsync(_context, _faceScope.FaceId, UserId, otherUserId);
+    }
 
     public override async Task OnConnectedAsync()
     {
@@ -55,6 +73,9 @@ public class MessengerHub : Hub
     public async Task SendChatMessage(string receiverId, string content)
     {
         if (string.IsNullOrEmpty(UserId) || string.IsNullOrWhiteSpace(content) || string.IsNullOrEmpty(receiverId))
+            return;
+
+        if (!await EnforceTenantSocialPairAsync(receiverId))
             return;
 
         var sender = await _context.Users.FindAsync(UserId);
@@ -110,6 +131,9 @@ public class MessengerHub : Hub
         if (string.IsNullOrEmpty(UserId) || string.IsNullOrEmpty(senderId))
             return;
 
+        if (!await EnforceTenantSocialPairAsync(senderId))
+            return;
+
         var requests = await _context.Messages
             .Where(m => m.SenderId == senderId && m.ReceiverId == UserId && m.IsMessageRequest && m.MessageRequestStatus == MessageRequestStatus.Pending)
             .ToListAsync();
@@ -136,6 +160,9 @@ public class MessengerHub : Hub
     public async Task RejectMessageRequest(string senderId)
     {
         if (string.IsNullOrEmpty(UserId) || string.IsNullOrEmpty(senderId))
+            return;
+
+        if (!await EnforceTenantSocialPairAsync(senderId))
             return;
 
         var requests = await _context.Messages

@@ -13,7 +13,9 @@
 
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.Identity;
@@ -27,6 +29,7 @@ using BeDemo.Api.Middlewares;
 using BeDemo.Api.Services;
 using BeDemo.Api.Hubs;
 using BeDemo.Api.Scripts;
+using BeDemo.Api.Swagger;
 using Serilog;
 using Grpc.Net.Client;
 using StackExchange.Redis;
@@ -112,6 +115,37 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.MapType<IFormFile>(() => new OpenApiSchema { Type = JsonSchemaType.String, Format = "binary" });
+    // ACL A23: Bearer scheme + per-operation security for [Authorize] via BearerAuthOperationFilter; exempt routes stay callable without Authorize in Swagger UI.
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description =
+            "OAuth2 password grant at POST /api/oauth2/token. Most /api/* operations need Authorization: Bearer {access_token}. " +
+            "Use face-prefixed URLs /{face}/api/... in browsers; exempt: /api/oauth2/*, /api/auth/*.",
+    });
+    c.OperationFilter<BearerAuthOperationFilter>();
+});
+
+// ACL A21: slow brute-force on token endpoint (skipped in Testing — integration tests issue many tokens).
+var isTestingEnv = builder.Environment.IsEnvironment("Testing");
+var oauthPermit = isTestingEnv ? 1_000_000 : builder.Configuration.GetValue("OAuth2:TokenRateLimitPermitLimit", 60);
+var oauthWindowSec = builder.Configuration.GetValue("OAuth2:TokenRateLimitWindowSeconds", 60);
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("oauth-token", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? context.Connection.Id,
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = oauthPermit,
+                Window = TimeSpan.FromSeconds(Math.Max(1, oauthWindowSec)),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0,
+            }));
 });
 
 // ============================================================================
@@ -177,6 +211,10 @@ else
 builder.Services.AddScoped<IFaceService, FaceService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IFaceScopeContext, FaceScopeContext>();
+builder.Services.AddScoped<IAccessEvaluator, AccessEvaluator>();
+builder.Services.AddScoped<IAccessCapabilitiesService, AccessCapabilitiesService>();
+builder.Services.AddScoped<IOAuthRefreshTokenStore, OAuthRefreshTokenStore>();
+builder.Services.AddSingleton<IChatHubAiRateLimiter, ChatHubAiRateLimiter>();
 builder.Services.AddScoped<IStoryLifecycleService, StoryLifecycleService>();
 builder.Services.AddScoped<IFaceWallTicketLifecycleService, FaceWallTicketLifecycleService>();
 
@@ -244,7 +282,7 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "BeDemoApi",  // Expected issuer
         ValidateAudience = true,                       // Validates that token audience is correct
         ValidAudience = builder.Configuration["Jwt:Audience"] ?? "BeDemoApi",  // Expected audience
-        ValidateLifetime = false,                     // Disabled: don't validate token expiration (tokens never expire)
+        ValidateLifetime = true,                    // Align with OAuth2 access token Expires (A2)
         ClockSkew = TimeSpan.Zero                     // No tolerance for time skew (precise time validation)
     };
 
@@ -507,6 +545,9 @@ app.UseMiddleware<FaceScopeEnforcementMiddleware>();
 
 // Adds authorization middleware - checks user permissions
 app.UseAuthorization();
+
+// ACL A21 — after routing + authZ so policies see connection metadata
+app.UseRateLimiter();
 
 // ============================================================================
 // ENDPOINT MAPPING

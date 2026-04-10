@@ -2,6 +2,11 @@ using Microsoft.AspNetCore.Identity;
 
 namespace BeDemo.Api.Models;
 
+/// <summary>
+/// Canonical **global** platform identity for OAuth2 JWT authZ (ACL A1): <see cref="UserRoleId"/> / <c>UserRoles.Name</c>
+/// is emitted as <c>ClaimTypes.Role</c> at token issue time. ASP.NET Identity’s <c>AspNetRoles</c> / <c>AspNetUserRoles</c> tables
+/// exist for historical/Identity reasons but are **not** used to populate bearer role claims — do not mix models without an explicit mapping story.
+/// </summary>
 public class ApplicationUser : IdentityUser
 {
     public string? FirstName { get; set; }

@@ -16,22 +16,22 @@ public class PagesController : ControllerBase
     private readonly ApplicationDbContext _context;
     private readonly ILogger<PagesController> _logger;
     private readonly IFaceScopeContext _faceScope;
+    private readonly IAccessEvaluator _access;
 
     public PagesController(
         ApplicationDbContext context,
         ILogger<PagesController> logger,
-        IFaceScopeContext faceScope)
+        IFaceScopeContext faceScope,
+        IAccessEvaluator access)
     {
         _context = context;
         _logger = logger;
         _faceScope = faceScope;
+        _access = access;
     }
 
     /// <summary>Admin SPA (/admin/) with global Admin JWT may see or move pages across faces.</summary>
-    private bool CanManageAllFaces() =>
-        _faceScope.IsAdminFaceScope &&
-        (User.IsInRole(UserRole.GlobalRoleNames.Admin) ||
-         User.IsInRole(UserRole.GlobalRoleNames.SuperAdmin));
+    private bool CanManageAllFaces() => _access.CanManageAllFaces(User);
 
     /// <summary>Returns NotFound when a tenant tries to touch another face's page.</summary>
     private IActionResult? EnsurePageBelongsToScope(Page page)

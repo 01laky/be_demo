@@ -21,51 +21,64 @@ public class RefreshTokenEdgeCaseTests : IClassFixture<CustomWebApplicationFacto
         _client = _factory.CreateClient();
     }
 
-    // [Fact] // Temporarily disabled - database conflict
-    // public async Task Token_ShouldSucceed_WithValidRefreshToken()
-    // {
-    //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
-    //     var tokenRequest = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#" };
-    //     var tokenResponse = await _client.PostAsJsonAsync("/api/oauth2/token", tokenRequest);
-    //     var tokenData = await tokenResponse.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
-    //     
-    //     var refreshRequest = new OAuth2TokenRequest { GrantType = "refresh_token", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", RefreshToken = tokenData!.RefreshToken };
-    //     var refreshResponse = await _client.PostAsJsonAsync("/api/oauth2/token", refreshRequest);
-    //     refreshResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-    // }
+    [Fact]
+    public async Task Token_ShouldSucceed_WithValidRefreshToken()
+    {
+        var email = $"test_{Guid.NewGuid()}@test.com";
+        await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
+        var tokenRequest = new OAuth2TokenRequest
+        {
+            GrantType = "password",
+            ClientId = "be-demo-client",
+            ClientSecret = "be-demo-secret-very-strong-key",
+            Username = email,
+            Password = "Test123!@#",
+        };
+        var tokenResponse = await _client.PostAsJsonAsync("/api/oauth2/token", tokenRequest);
+        tokenResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var tokenData = await tokenResponse.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
+        tokenData!.RefreshToken.Should().NotBeNullOrEmpty();
 
-    // [Fact] // Temporarily disabled - database conflict
-    // public async Task Token_ShouldReturnNewAccessToken_WhenRefreshing()
-    // {
-    //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
-    //     var tokenRequest = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#" };
-    //     var tokenResponse = await _client.PostAsJsonAsync("/api/oauth2/token", tokenRequest);
-    //     var tokenData = await tokenResponse.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
-    //     
-    //     var refreshRequest = new OAuth2TokenRequest { GrantType = "refresh_token", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", RefreshToken = tokenData!.RefreshToken };
-    //     var refreshResponse = await _client.PostAsJsonAsync("/api/oauth2/token", refreshRequest);
-    //     var refreshData = await refreshResponse.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
-    //     
-    //     refreshData!.AccessToken.Should().NotBe(tokenData.AccessToken);
-    // }
+        var refreshRequest = new OAuth2TokenRequest
+        {
+            GrantType = "refresh_token",
+            ClientId = "be-demo-client",
+            ClientSecret = "be-demo-secret-very-strong-key",
+            RefreshToken = tokenData.RefreshToken,
+        };
+        var refreshResponse = await _client.PostAsJsonAsync("/api/oauth2/token", refreshRequest);
+        refreshResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
 
-    // [Fact] // Temporarily disabled - database conflict
-    // public async Task Token_ShouldReturnNewRefreshToken_WhenRefreshing()
-    // {
-    //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
-    //     var tokenRequest = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#" };
-    //     var tokenResponse = await _client.PostAsJsonAsync("/api/oauth2/token", tokenRequest);
-    //     var tokenData = await tokenResponse.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
-    //     
-    //     var refreshRequest = new OAuth2TokenRequest { GrantType = "refresh_token", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", RefreshToken = tokenData!.RefreshToken };
-    //     var refreshResponse = await _client.PostAsJsonAsync("/api/oauth2/token", refreshRequest);
-    //     var refreshData = await refreshResponse.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
-    //     
-    //     refreshData!.RefreshToken.Should().NotBe(tokenData.RefreshToken);
-    // }
+    [Fact]
+    public async Task Token_ShouldReturnNewAccessAndRefresh_WhenRefreshing()
+    {
+        var email = $"test_{Guid.NewGuid()}@test.com";
+        await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
+        var tokenRequest = new OAuth2TokenRequest
+        {
+            GrantType = "password",
+            ClientId = "be-demo-client",
+            ClientSecret = "be-demo-secret-very-strong-key",
+            Username = email,
+            Password = "Test123!@#",
+        };
+        var tokenResponse = await _client.PostAsJsonAsync("/api/oauth2/token", tokenRequest);
+        var tokenData = await tokenResponse.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
+
+        var refreshRequest = new OAuth2TokenRequest
+        {
+            GrantType = "refresh_token",
+            ClientId = "be-demo-client",
+            ClientSecret = "be-demo-secret-very-strong-key",
+            RefreshToken = tokenData!.RefreshToken,
+        };
+        var refreshResponse = await _client.PostAsJsonAsync("/api/oauth2/token", refreshRequest);
+        var refreshData = await refreshResponse.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
+
+        refreshData!.AccessToken.Should().NotBe(tokenData.AccessToken);
+        refreshData.RefreshToken.Should().NotBe(tokenData.RefreshToken);
+    }
 
     [Fact]
     public async Task Token_ShouldFail_WhenRefreshTokenIsEmpty()
@@ -115,26 +128,11 @@ public class RefreshTokenEdgeCaseTests : IClassFixture<CustomWebApplicationFacto
         var tokenData = await tokenResponse.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
 
         var refreshRequest = new OAuth2TokenRequest { GrantType = "refresh_token", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", RefreshToken = tokenData!.RefreshToken };
-        await _client.PostAsJsonAsync("/api/oauth2/token", refreshRequest);
+        var first = await _client.PostAsJsonAsync("/api/oauth2/token", refreshRequest);
+        first.StatusCode.Should().Be(HttpStatusCode.OK);
         var secondRefresh = await _client.PostAsJsonAsync("/api/oauth2/token", refreshRequest);
-        // Note: Current implementation doesn't invalidate refresh tokens, so this might succeed
-        // In production, refresh tokens should be single-use
+        secondRefresh.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
-
-    // [Fact] // Temporarily disabled - database conflict
-    // public async Task Token_ShouldHandleMultipleRefreshRequests()
-    // {
-    //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
-    //     var tokenRequest = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#" };
-    //     var tokenResponse = await _client.PostAsJsonAsync("/api/oauth2/token", tokenRequest);
-    //     var tokenData = await tokenResponse.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
-    //     
-    //     var refreshRequest = new OAuth2TokenRequest { GrantType = "refresh_token", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", RefreshToken = tokenData!.RefreshToken };
-    //     var tasks = Enumerable.Range(0, 5).Select(_ => _client.PostAsJsonAsync("/api/oauth2/token", refreshRequest));
-    //     var responses = await Task.WhenAll(tasks);
-    //     responses.Should().AllSatisfy(r => r.StatusCode.Should().Be(HttpStatusCode.OK));
-    // }
 
     public void Dispose()
     {

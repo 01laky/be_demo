@@ -18,23 +18,24 @@ public class UsersController : ControllerBase
     private readonly ILogger<UsersController> _logger;
     private readonly ApplicationDbContext _context;
     private readonly IFaceScopeContext _faceScope;
+    private readonly IAccessEvaluator _access;
 
     public UsersController(
         UserManager<ApplicationUser> userManager,
         ILogger<UsersController> logger,
         ApplicationDbContext context,
-        IFaceScopeContext faceScope)
+        IFaceScopeContext faceScope,
+        IAccessEvaluator access)
     {
         _userManager = userManager;
         _logger = logger;
         _context = context;
         _faceScope = faceScope;
+        _access = access;
     }
 
-    private bool CanManageAllFaces() =>
-        _faceScope.IsAdminFaceScope &&
-        (User.IsInRole(UserRole.GlobalRoleNames.Admin) ||
-         User.IsInRole(UserRole.GlobalRoleNames.SuperAdmin));
+    /// <summary>Platform operators (admin face + global admin JWT) — see <see cref="IAccessEvaluator"/>.</summary>
+    private bool CanManageAllFaces() => _access.CanManageAllFaces(User);
 
     /// <summary>
     /// GET /api/users
@@ -42,6 +43,10 @@ public class UsersController : ControllerBase
     /// Query params: page (1-based), pageSize (default 10), search (filter by name or email),
     /// forAddFriend (when true, exclude current user, friends, and pending request users).
     /// </summary>
+    /// <remarks>
+    /// ACL A19 (social / directory): mutual <see cref="UserBlock"/> rows hide users both ways; tenant callers without
+    /// <c>CanManageAllFaces</c> only see users who have <see cref="UserFaceProfile"/> for the scoped face — no cross-face directory leakage.
+    /// </remarks>
     [HttpGet]
     public async Task<IActionResult> GetUsers(
         [FromQuery] int page = 1,

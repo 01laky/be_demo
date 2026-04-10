@@ -58,151 +58,129 @@ public interface IOAuth2Service
 /// </summary>
 public class OAuth2Service : IOAuth2Service
 {
-    private readonly IECDSAKeyService _keyService;      // Service for managing ECDSA keys
-    private readonly IConfiguration _configuration;      // Application configuration (appsettings.json)
-    private readonly ILogger<OAuth2Service> _logger;   // Logger for logging events
+    private readonly IECDSAKeyService _keyService;
+    private readonly IConfiguration _configuration;
+    private readonly ILogger<OAuth2Service> _logger;
     private readonly ApplicationDbContext _db;
+    private readonly IOAuthRefreshTokenStore _refreshTokens;
 
     public OAuth2Service(
         IECDSAKeyService keyService,
         IConfiguration configuration,
         ILogger<OAuth2Service> logger,
-        ApplicationDbContext db)
+        ApplicationDbContext db,
+        IOAuthRefreshTokenStore refreshTokens)
     {
         _keyService = keyService;
         _configuration = configuration;
         _logger = logger;
         _db = db;
+        _refreshTokens = refreshTokens;
     }
 
     /// <summary>
-    /// Generates JWT access token and refresh token based on OAuth2 request
-    /// Supports grant types: "password" and "refresh_token"
+    /// Password grant: validate credentials, persist refresh token (hash only), return JWT + opaque refresh.
+    /// Refresh grant: reject valid access JWTs misused as refresh; rotate stored refresh (single-use); return new pair.
     /// </summary>
     public async Task<OAuth2TokenResponse?> GenerateTokenAsync(
         OAuth2TokenRequest request,
         UserManager<ApplicationUser> userManager)
     {
-        ApplicationUser? user = null;
-
-        // Decides which grant type is used and authenticates user accordingly
-        switch (request.GrantType.ToLower())
+        switch (request.GrantType.ToLowerInvariant())
         {
             case "password":
-                // Password grant type - user provides username and password
-                // This is Resource Owner Password Credentials flow
-
-                // Validates that username and password are provided
                 if (string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.Password))
                 {
                     _logger.LogWarning("Password grant type missing username or password");
                     return null;
                 }
 
-                // Try to find user by email first (most common case)
-                user = await userManager.FindByEmailAsync(request.Username);
-
-                // If not found by email, try to find by username (for admin account, etc.)
-                if (user == null)
-                {
-                    user = await userManager.FindByNameAsync(request.Username);
-                }
-
-                // Verifies password - if user doesn't exist or password is incorrect, returns null
-                if (user == null || !await userManager.CheckPasswordAsync(user, request.Password))
+                var userByCreds = await userManager.FindByEmailAsync(request.Username)
+                    ?? await userManager.FindByNameAsync(request.Username);
+                if (userByCreds == null || !await userManager.CheckPasswordAsync(userByCreds, request.Password))
                 {
                     _logger.LogWarning("Invalid username/email or password for user: {Username}", request.Username);
                     return null;
                 }
-                break;
+
+                // Persist refresh before returning plaintext to client (A17).
+                var useRememberMe = request.RememberMe == true;
+                var (accessPw, minutesPw) = await BuildAccessJwtAsync(userByCreds, useRememberMe);
+                var refreshPlain = GenerateRefreshToken();
+                await _refreshTokens.CreateAsync(userByCreds.Id, refreshPlain, useRememberMe);
+                return new OAuth2TokenResponse
+                {
+                    AccessToken = accessPw,
+                    TokenType = "Bearer",
+                    ExpiresIn = minutesPw * 60,
+                    RefreshToken = refreshPlain,
+                    Scope = request.Scope,
+                };
 
             case "refresh_token":
-                // Refresh token grant type - user provides refresh token to get new access token
-                // Refresh token is a long-term token used to refresh access token without needing to enter credentials again
-
-                // Validates that refresh token is provided
                 if (string.IsNullOrEmpty(request.RefreshToken))
                 {
                     _logger.LogWarning("Refresh token grant type missing refresh token");
                     return null;
                 }
 
-                // Validates and decodes refresh token
-                // In real implementation, refresh token would be stored in database and validated there
-                // For this demo implementation, we use Base64 encoded random string as refresh token
-                // Access tokens are JWT tokens, so if someone tries to use access token as refresh token, it will fail
-                var handler = new JwtSecurityTokenHandler();
-
-                // First check if refresh token is a valid JWT (access tokens are JWT)
-                // If it's a valid JWT, it's likely an access token, not a refresh token
-                if (handler.CanReadToken(request.RefreshToken))
+                // Opaque store is authoritative; still block a *currently valid* access JWT from being used here.
+                if (IsValidAccessTokenMisusedAsRefresh(request.RefreshToken))
                 {
-                    // Try to validate as JWT - if it succeeds, it's an access token, not refresh token
-                    var tokenValidationParameters = GetTokenValidationParameters();
-                    try
-                    {
-                        var principal = handler.ValidateToken(request.RefreshToken, tokenValidationParameters, out var validatedToken);
-                        // If validation succeeds, this is an access token, not a refresh token
-                        _logger.LogWarning("Refresh token is actually an access token");
-                        return null;
-                    }
-                    catch
-                    {
-                        // If JWT validation fails, it might be a valid refresh token (Base64 string)
-                        // But since refresh tokens are not JWT, we should reject it
-                        _logger.LogWarning("Refresh token appears to be JWT but validation failed");
-                        return null;
-                    }
+                    _logger.LogWarning("Client sent a valid access JWT as refresh_token; rejected");
+                    return null;
                 }
 
-                // Refresh tokens in this implementation are Base64 encoded random strings
-                // They are not JWT tokens, so we need to validate them differently
-                // For this demo, we cannot validate refresh tokens without storing them in database
-                // So we reject all refresh token requests for now
-                // In production, refresh tokens should be stored in database and validated there
-                _logger.LogWarning("Refresh token validation not implemented - tokens must be stored in database");
-                return null;
+                var redeem = await _refreshTokens.RedeemAndRotateAsync(request.RefreshToken);
+                if (redeem == null)
+                {
+                    _logger.LogWarning("Refresh token redeem failed (unknown, expired, or reused)");
+                    return null;
+                }
+
+                var userFromRefresh = await userManager.FindByIdAsync(redeem.UserId);
+                if (userFromRefresh == null)
+                {
+                    _logger.LogWarning("Refresh token referred to missing user {UserId}", redeem.UserId);
+                    return null;
+                }
+
+                var (accessRf, minutesRf) = await BuildAccessJwtAsync(userFromRefresh, redeem.UseRememberMeAccessLifetime);
+                return new OAuth2TokenResponse
+                {
+                    AccessToken = accessRf,
+                    TokenType = "Bearer",
+                    ExpiresIn = minutesRf * 60,
+                    RefreshToken = redeem.NewPlainRefreshToken,
+                    Scope = request.Scope,
+                };
 
             default:
-                // Unknown or unsupported grant type
                 _logger.LogWarning("Unsupported grant type: {GrantType}", request.GrantType);
                 return null;
         }
+    }
 
-        // If user was not found or authentication failed, returns null
-        if (user == null)
-        {
-            _logger.LogWarning("User not found or authentication failed");
-            return null;
-        }
-
-        // ============================================================================
-        // JWT TOKEN CREATION
-        // ============================================================================
-
-        // Creates list of claims (statements) about the user
-        // Claims are information that are part of JWT token and can be used for authorization
+    /// <summary>
+    /// Builds signed access JWT and picks TTL: session vs remember-me (aligned with A2 / JwtBearer ValidateLifetime).
+    /// Global role claim is loaded from DB so admin promotion applies on refresh without requiring password re-entry.
+    /// </summary>
+    private async Task<(string AccessToken, int ExpiresInMinutes)> BuildAccessJwtAsync(ApplicationUser user, bool useRememberMeAccessLifetime)
+    {
         var claims = new List<Claim>
         {
-            new(ClaimTypes.NameIdentifier, user.Id),                    // Unique user identifier
-            new(ClaimTypes.Name, user.UserName ?? string.Empty),        // Username (email)
-            new(ClaimTypes.Email, user.Email ?? string.Empty),          // Email address
-            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),  // JWT ID - unique identifier for this token
-            new(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)  // Token creation time (Unix timestamp)
+            new(ClaimTypes.NameIdentifier, user.Id),
+            new(ClaimTypes.Name, user.UserName ?? string.Empty),
+            new(ClaimTypes.Email, user.Email ?? string.Empty),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
         };
 
-        // Adds optional claims if they exist
         if (!string.IsNullOrEmpty(user.FirstName))
-        {
             claims.Add(new Claim(ClaimTypes.GivenName, user.FirstName));
-        }
-
         if (!string.IsNullOrEmpty(user.LastName))
-        {
             claims.Add(new Claim(ClaimTypes.Surname, user.LastName));
-        }
 
-        // Global role name (UserRole row) for [Authorize(Roles = ...)] and face-admin checks.
         var globalRoleName = await _db.Users
             .AsNoTracking()
             .Where(u => u.Id == user.Id)
@@ -211,47 +189,44 @@ public class OAuth2Service : IOAuth2Service
         if (!string.IsNullOrEmpty(globalRoleName))
             claims.Add(new Claim(ClaimTypes.Role, globalRoleName));
 
-        // Gets ECDSA signing key and JWT lifetime from configuration.
         var signingKey = _keyService.GetSigningKey();
-        // Short session (browser closed / "normal" login): Jwt:ExpiresInMinutes — used when RememberMe is not true.
-        var sessionMinutes = _configuration.GetValue<int>("Jwt:ExpiresInMinutes", 60);
-        // "Stay signed in" / persistent login: Jwt:ExpiresInMinutesRememberMe — only when client sends rememberMe: true (password grant).
-        var rememberMinutes = _configuration.GetValue<int>("Jwt:ExpiresInMinutesRememberMe", 10080); // default 7 days if unset
-        // Nullable bool: only explicit true selects the long lifetime; null/false → session TTL (matches FE buildPasswordGrantTokenRequest).
-        var expiresInMinutes = request.RememberMe == true ? rememberMinutes : sessionMinutes;
+        var sessionMinutes = _configuration.GetValue("Jwt:ExpiresInMinutes", 60);
+        var rememberMinutes = _configuration.GetValue("Jwt:ExpiresInMinutesRememberMe", 10080);
+        var expiresInMinutes = useRememberMeAccessLifetime ? rememberMinutes : sessionMinutes;
 
-        // Creates SecurityTokenDescriptor - describes how token should be created
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(claims),                       // Claims that will be in token
-            Expires = DateTime.UtcNow.AddMinutes(expiresInMinutes),     // Token expiration time
-            Issuer = _configuration["Jwt:Issuer"] ?? "BeDemoApi",    // Who issued the token
-            Audience = _configuration["Jwt:Audience"] ?? "BeDemoApi", // Who the token is intended for
-            SigningCredentials = new SigningCredentials(signingKey, SecurityAlgorithms.EcdsaSha512),  // ECDSA P-521 with SHA-512 hash
-            Claims = new Dictionary<string, object>
-            {
-                { "key_id", _keyService.GetKeyId() }  // ID of key used for signing (for key rotation)
-            }
+            Subject = new ClaimsIdentity(claims),
+            Expires = DateTime.UtcNow.AddMinutes(expiresInMinutes),
+            Issuer = _configuration["Jwt:Issuer"] ?? "BeDemoApi",
+            Audience = _configuration["Jwt:Audience"] ?? "BeDemoApi",
+            SigningCredentials = new SigningCredentials(signingKey, SecurityAlgorithms.EcdsaSha512),
+            Claims = new Dictionary<string, object> { { "key_id", _keyService.GetKeyId() } },
         };
 
-        // Creates and signs JWT token
         var tokenHandler = new JwtSecurityTokenHandler();
         var token = tokenHandler.CreateToken(tokenDescriptor);
         var accessToken = tokenHandler.WriteToken(token);
+        return (accessToken, expiresInMinutes);
+    }
 
-        // Generates refresh token - random Base64 string
-        // In production, refresh token should be stored in database with expiration
-        var refreshToken = GenerateRefreshToken();
-
-        // Returns OAuth2 token response
-        return new OAuth2TokenResponse
+    /// <summary>
+    /// True when the string is a syntactic JWT that still validates as our current access token — must not be accepted as refresh.
+    /// </summary>
+    private bool IsValidAccessTokenMisusedAsRefresh(string token)
+    {
+        var handler = new JwtSecurityTokenHandler();
+        if (!handler.CanReadToken(token))
+            return false;
+        try
         {
-            AccessToken = accessToken,           // JWT access token
-            TokenType = "Bearer",                // Token type (Bearer is standard for OAuth2)
-            ExpiresIn = expiresInMinutes * 60,    // Expiration time in seconds
-            RefreshToken = refreshToken,         // Refresh token to refresh access token
-            Scope = request.Scope               // Requested scope (optional)
-        };
+            handler.ValidateToken(token, GetTokenValidationParameters(), out _);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     /// <summary>

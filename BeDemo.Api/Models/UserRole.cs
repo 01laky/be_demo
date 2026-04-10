@@ -4,6 +4,8 @@
  * Roles are either Global (one per user, on ApplicationUser) or Face (per user per face, in UserFaceRole).
  * Global: SUPER_ADMIN, ADMIN, USER, HOST
  * Face: FACE_ADMIN, FACE_USER, INZERENT, SUBSCRIBER, FACE_HOST
+ *
+ * ACL A8: global HOST vs face FACE_HOST — different rows, different Scope, different assignment tables; see FaceRoleParticipation.
  */
 
 namespace BeDemo.Api.Models;
@@ -66,6 +68,8 @@ public class UserRole
         public const string SuperAdmin = "SUPER_ADMIN";
         public const string Admin = "ADMIN";
         public const string User = "USER";
+
+        /// <summary>Global platform host — **not** the same as per-face <see cref="FaceRoleNames.FaceHost"/> (A8).</summary>
         public const string Host = "HOST";
     }
 

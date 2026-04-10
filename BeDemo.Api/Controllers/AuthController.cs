@@ -6,6 +6,11 @@ using BeDemo.Api.Data;
 
 namespace BeDemo.Api.Controllers;
 
+/// <summary>
+/// Legacy cookie-oriented Identity endpoints under <c>/api/auth/*</c> (exempt from face routing). **SPAs should prefer OAuth2**
+/// (<see cref="OAuth2Controller"/>) for JWT + consistent ACL (ACL A18). Keeping this controller avoids breaking older clients;
+/// new features should not depend on cookie sessions without an explicit security review.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class AuthController : ControllerBase

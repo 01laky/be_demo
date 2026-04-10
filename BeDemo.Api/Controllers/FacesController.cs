@@ -21,17 +21,20 @@ public class FacesController : ControllerBase
     private readonly ILogger<FacesController> _logger;
     private readonly IFaceScopeContext _faceScope;
     private readonly IMemoryCache _memoryCache;
+    private readonly IAccessEvaluator _access;
 
     public FacesController(
         ApplicationDbContext context,
         ILogger<FacesController> logger,
         IFaceScopeContext faceScope,
-        IMemoryCache memoryCache)
+        IMemoryCache memoryCache,
+        IAccessEvaluator access)
     {
         _context = context;
         _logger = logger;
         _faceScope = faceScope;
         _memoryCache = memoryCache;
+        _access = access;
     }
 
     private void InvalidateFacesRoutingCache()
@@ -39,29 +42,15 @@ public class FacesController : ControllerBase
         _memoryCache.Remove("Faces");
     }
 
-    /// <summary>
-    /// Global Identity role from JWT (OAuth2 puts <see cref="ClaimTypes.Role"/>).
-    /// </summary>
-    private bool IsGlobalAdmin() =>
-        User.IsInRole(UserRole.GlobalRoleNames.Admin) ||
-        User.IsInRole(UserRole.GlobalRoleNames.SuperAdmin);
+    /// <summary>Global Identity role from JWT (OAuth2 puts <see cref="ClaimTypes.Role"/>).</summary>
+    private bool IsGlobalAdmin() => _access.IsGlobalAdmin(User);
 
-    /// <summary>
-    /// Admin UI scope (/admin/...) plus global Admin/SuperAdmin — can manage all faces.
-    /// </summary>
-    private bool CanManageAllFaces() => _faceScope.IsAdminFaceScope && IsGlobalAdmin();
+    /// <summary>Admin UI scope (/admin/...) plus global Admin/SuperAdmin — can manage all faces.</summary>
+    private bool CanManageAllFaces() => _access.CanManageAllFaces(User);
 
-    /// <summary>
-    /// Tenant users may only target their URL-scoped face; returns NotFound to avoid leaking ids.
-    /// </summary>
-    private IActionResult? GateTenantFaceOrNotFound(int targetFaceId)
-    {
-        if (CanManageAllFaces())
-            return null;
-        if (targetFaceId != _faceScope.FaceId)
-            return NotFound(new { error = "Face not found" });
-        return null;
-    }
+    /// <summary>Tenant users may only target their URL-scoped face; returns NotFound to avoid leaking ids.</summary>
+    private IActionResult? GateTenantFaceOrNotFound(int targetFaceId) =>
+        TenantFaceAccessGate.TryBlockTenantCrossFace(_faceScope, CanManageAllFaces(), targetFaceId);
 
     /// <summary>
     /// GET /api/faces
@@ -286,8 +275,18 @@ public class FacesController : ControllerBase
     {
         try
         {
-            var roles = await _context.UserRoles
-                .Where(r => r.Scope == RoleScope.Face)
+            var q = _context.UserRoles
+                .AsNoTracking()
+                .Where(r => r.Scope == RoleScope.Face);
+            // G10: do not expose privileged face roles to anonymous / tenant users (A16).
+            if (!CanManageAllFaces())
+                q = q.Where(r =>
+                    r.Name == UserRole.FaceRoleNames.FaceUser ||
+                    r.Name == UserRole.FaceRoleNames.Inzerent ||
+                    r.Name == UserRole.FaceRoleNames.Subscriber ||
+                    r.Name == UserRole.FaceRoleNames.FaceHost);
+
+            var roles = await q
                 .OrderBy(r => r.Name)
                 .Select(r => new { id = r.Id, name = r.Name })
                 .ToListAsync();
@@ -336,11 +335,22 @@ public class FacesController : ControllerBase
                 return BadRequest(new { error = "Invalid face role" });
             }
 
+            if (!CanManageAllFaces() && !FaceRoleSelfServiceRules.IsSelfAssignableFaceRoleName(role.Name))
+            {
+                _logger.LogWarning("User {UserId} attempted self-assign to non-whitelisted face role {RoleName}", userId, role.Name);
+                return Forbid();
+            }
+
             var existing = await _context.UserFaceRoles
                 .FirstOrDefaultAsync(ufr => ufr.UserId == userId && ufr.FaceId == id);
 
+            string? previousRoleName = null;
             if (existing != null)
             {
+                previousRoleName = await _context.UserRoles.AsNoTracking()
+                    .Where(r => r.Id == existing.UserRoleId)
+                    .Select(r => r.Name)
+                    .FirstOrDefaultAsync();
                 existing.UserRoleId = model.UserRoleId;
                 _context.UserFaceRoles.Update(existing);
             }
@@ -382,6 +392,7 @@ public class FacesController : ControllerBase
 
             await _context.SaveChangesAsync();
             _logger.LogInformation("User {UserId} set face role to {RoleName} for face {FaceId}", userId, role.Name, id);
+            SecurityAuditLog.FaceRoleChanged(_logger, userId, id, previousRoleName, role.Name, HttpContext.TraceIdentifier);
             return Ok(new { userRoleId = model.UserRoleId, userRoleName = role.Name });
         }
         catch (Exception ex)

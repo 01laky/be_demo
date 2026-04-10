@@ -15,23 +15,23 @@ public class AlbumsController : ControllerBase
     private readonly ApplicationDbContext _context;
     private readonly ILogger<AlbumsController> _logger;
     private readonly IFaceScopeContext _faceScope;
+    private readonly IAccessEvaluator _access;
 
     public AlbumsController(
         ApplicationDbContext context,
         ILogger<AlbumsController> logger,
-        IFaceScopeContext faceScope)
+        IFaceScopeContext faceScope,
+        IAccessEvaluator access)
     {
         _context = context;
         _logger = logger;
         _faceScope = faceScope;
+        _access = access;
     }
 
     private string? UserId => User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
-    private bool CanManageAllFaces() =>
-        _faceScope.IsAdminFaceScope &&
-        (User.IsInRole(UserRole.GlobalRoleNames.Admin) ||
-         User.IsInRole(UserRole.GlobalRoleNames.SuperAdmin));
+    private bool CanManageAllFaces() => _access.CanManageAllFaces(User);
 
     /// <summary>GET /api/albums?faceId= - Optional face filter (album must be linked via AlbumFaces).</summary>
     [HttpGet]

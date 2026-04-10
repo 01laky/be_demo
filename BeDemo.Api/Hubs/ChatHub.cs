@@ -4,7 +4,7 @@
  * This hub provides WebSocket endpoint for real-time communication.
  * All methods require authentication ([Authorize] attribute).
  * 
- * Endpoint: wss://localhost:8001/hubs/chat?access_token=<JWT_TOKEN>
+ * Endpoint (must run after <c>RoutingMiddleware</c>): <c>wss://host/{face-kebab}/hubs/chat?access_token=&lt;JWT&gt;</c> — same face-prefix rule as REST (ACL A11).
  * 
  * Methods:
  * - SendMessage: Sends message to all connected clients
@@ -23,8 +23,10 @@
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using BeDemo.Api.Data;
 using BeDemo.Api.Models.DTOs;
 using BeDemo.Api.Services;
+using BeDemo.Api.Utils;
 
 namespace BeDemo.Api.Hubs;
 
@@ -37,18 +39,41 @@ public class ChatHub : Hub
 {
     private readonly ILogger<ChatHub> _logger;
     private readonly IAiGrpcService _aiGrpcService;
+    private readonly IChatHubAiRateLimiter _aiRateLimiter;
+    private readonly ApplicationDbContext _context;
+    private readonly IFaceScopeContext _faceScope;
 
-    public ChatHub(ILogger<ChatHub> logger, IAiGrpcService aiGrpcService)
+    public ChatHub(
+        ILogger<ChatHub> logger,
+        IAiGrpcService aiGrpcService,
+        IChatHubAiRateLimiter aiRateLimiter,
+        ApplicationDbContext context,
+        IFaceScopeContext faceScope)
     {
         _logger = logger;
         _aiGrpcService = aiGrpcService;
+        _aiRateLimiter = aiRateLimiter;
+        _context = context;
+        _faceScope = faceScope;
     }
+
+    private static string FaceChatBroadcastGroup(int faceId) => $"hubchat_face_{faceId}";
+
+    private bool CanManageAllFaces() =>
+        Context.User != null && PlatformAccessRules.CanManageAllFaces(_faceScope, Context.User);
 
     /// <summary>
     /// Invoked automatically when client connects to the hub
     /// </summary>
     public override async Task OnConnectedAsync()
     {
+        if (!_faceScope.IsAvailable)
+        {
+            _logger.LogWarning("ChatHub connection rejected: no face scope (use /{{face}}/hubs/chat)");
+            Context.Abort();
+            return;
+        }
+
         // Gets User ID from JWT token
         // Context.UserIdentifier contains value from ClaimTypes.NameIdentifier claim in JWT token
         // If UserIdentifier is not available, tries to get it directly from claims
@@ -61,6 +86,7 @@ public class ChatHub : Hub
         if (!string.IsNullOrEmpty(userId))
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, $"user_{userId}");
+            await Groups.AddToGroupAsync(Context.ConnectionId, FaceChatBroadcastGroup(_faceScope.FaceId));
         }
 
         // Calls base implementation
@@ -90,6 +116,8 @@ public class ChatHub : Hub
         if (!string.IsNullOrEmpty(userId))
         {
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"user_{userId}");
+            if (_faceScope.IsAvailable)
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId, FaceChatBroadcastGroup(_faceScope.FaceId));
         }
 
         // Calls base implementation
@@ -106,15 +134,16 @@ public class ChatHub : Hub
     /// <param name="message">Message text</param>
     public async Task SendMessage(string user, string message)
     {
+        if (!_faceScope.IsAvailable)
+            return;
+
         // Gets sender User ID
         var userId = Context.User?.Identity?.Name ?? Context.UserIdentifier;
 
         _logger.LogInformation("User {UserId} sent message: {Message}", userId, message);
 
-        // Sends message to all connected clients
-        // Clients can listen on "ReceiveMessage" callback:
-        // connection.On("ReceiveMessage", (string user, string message) => { ... });
-        await Clients.All.SendAsync("ReceiveMessage", user, message);
+        // Tenant-scoped broadcast (ACL G14): never fan out across URL face prefixes.
+        await Clients.Group(FaceChatBroadcastGroup(_faceScope.FaceId)).SendAsync("ReceiveMessage", user, message);
     }
 
     /// <summary>
@@ -127,16 +156,24 @@ public class ChatHub : Hub
     /// <param name="message">Message text</param>
     public async Task SendPrivateMessage(string targetUserId, string message)
     {
-        // Gets sender User ID
-        var userId = Context.User?.Identity?.Name ?? Context.UserIdentifier;
+        if (!_faceScope.IsAvailable)
+            return;
 
-        _logger.LogInformation("User {UserId} sent private message to {TargetUserId}", userId, targetUserId);
+        var senderId = Context.UserIdentifier ?? Context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(senderId) || string.IsNullOrEmpty(targetUserId))
+            return;
+
+        if (!CanManageAllFaces() &&
+            !await TenantSocialScopeRules.BothUsersParticipateInFaceAsync(_context, _faceScope.FaceId, senderId, targetUserId))
+            return;
+
+        _logger.LogInformation("User {UserId} sent private message to {TargetUserId}", senderId, targetUserId);
 
         // Sends message only to specific user
         // Clients.User() finds all connections of given user and sends message to all of them
         // Client can listen on "ReceivePrivateMessage" callback:
         // connection.On("ReceivePrivateMessage", (string sender, string message) => { ... });
-        await Clients.User(targetUserId).SendAsync("ReceivePrivateMessage", userId, message);
+        await Clients.User(targetUserId).SendAsync("ReceivePrivateMessage", senderId, message);
     }
 
     /// <summary>
@@ -151,6 +188,16 @@ public class ChatHub : Hub
     {
         var userId = Context.UserIdentifier ?? Context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         _logger.LogInformation("User {UserId} sent message to AI: {Message}", userId, message);
+
+        // ACL A20: bound gRPC cost per user; authenticated hub only — still need abuse limits for shared AI backend.
+        if (!_aiRateLimiter.TryAllow(userId))
+        {
+            await Clients.Caller.SendAsync(
+                "ReceiveAiMessage",
+                message ?? string.Empty,
+                "You are sending too many AI requests. Please wait a moment and try again.");
+            return;
+        }
 
         string aiResponse;
         try

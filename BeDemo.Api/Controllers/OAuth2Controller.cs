@@ -10,6 +10,7 @@
 
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using BeDemo.Api.Data;
@@ -57,7 +58,9 @@ public class OAuth2Controller : ControllerBase
     /// 
     /// Returns OAuth2TokenResponse with access token, refresh token and expiration
     /// </summary>
+    /// <summary>ACL A21: fixed-window rate limit per client IP (relaxed in <c>Testing</c> environment).</summary>
     [HttpPost("token")]
+    [EnableRateLimiting("oauth-token")]
     public async Task<IActionResult> Token([FromBody] OAuth2TokenRequest request)
     {
         // Validates ModelState - checks if request satisfies data annotations (e.g., [Required])

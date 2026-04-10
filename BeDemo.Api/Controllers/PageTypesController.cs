@@ -1,9 +1,12 @@
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BeDemo.Api.Data;
 using BeDemo.Api.Models;
+using BeDemo.Api.Services;
+using BeDemo.Api.Utils;
 
 namespace BeDemo.Api.Controllers;
 
@@ -14,14 +17,22 @@ public class PageTypesController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<PageTypesController> _logger;
+    private readonly IFaceScopeContext _faceScope;
+    private readonly IAccessEvaluator _access;
 
     public PageTypesController(
         ApplicationDbContext context,
-        ILogger<PageTypesController> logger)
+        ILogger<PageTypesController> logger,
+        IFaceScopeContext faceScope,
+        IAccessEvaluator access)
     {
         _context = context;
         _logger = logger;
+        _faceScope = faceScope;
+        _access = access;
     }
+
+    private bool CanMutateGlobalPageTypes() => _access.CanMutateGlobalPageTypes(User);
 
     /// <summary>
     /// GET /api/pagetypes
@@ -101,6 +112,9 @@ public class PageTypesController : ControllerBase
             return BadRequest(ModelState);
         }
 
+        if (!CanMutateGlobalPageTypes())
+            return Forbid();
+
         try
         {
             var pageType = new PageType
@@ -121,6 +135,8 @@ public class PageTypesController : ControllerBase
             };
 
             _logger.LogInformation("PageType created: {PageTypeId}", pageType.Id);
+            var actor = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown";
+            SecurityAuditLog.GlobalPageTypeMutation(_logger, actor, "create", pageType.Id, HttpContext.TraceIdentifier);
             return CreatedAtAction(nameof(GetPageType), new { id = pageType.Id }, pageTypeDto);
         }
         catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("UNIQUE constraint") == true)
@@ -146,6 +162,9 @@ public class PageTypesController : ControllerBase
         {
             return BadRequest(ModelState);
         }
+
+        if (!CanMutateGlobalPageTypes())
+            return Forbid();
 
         try
         {
@@ -175,6 +194,8 @@ public class PageTypesController : ControllerBase
             };
 
             _logger.LogInformation("PageType updated: {PageTypeId}", id);
+            var actorPut = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown";
+            SecurityAuditLog.GlobalPageTypeMutation(_logger, actorPut, "update", id, HttpContext.TraceIdentifier);
             return Ok(pageTypeDto);
         }
         catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("UNIQUE constraint") == true)
@@ -196,6 +217,9 @@ public class PageTypesController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeletePageType(int id)
     {
+        if (!CanMutateGlobalPageTypes())
+            return Forbid();
+
         try
         {
             var pageType = await _context.PageTypes.FindAsync(id);
@@ -217,6 +241,8 @@ public class PageTypesController : ControllerBase
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("PageType deleted: {PageTypeId}", id);
+            var actorDel = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown";
+            SecurityAuditLog.GlobalPageTypeMutation(_logger, actorDel, "delete", id, HttpContext.TraceIdentifier);
             return NoContent();
         }
         catch (Exception ex)

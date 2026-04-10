@@ -16,6 +16,7 @@ public class OAuth2ServiceTests
 {
     private readonly Mock<IECDSAKeyService> _mockKeyService;
     private readonly Mock<ILogger<OAuth2Service>> _mockLogger;
+    private readonly Mock<IOAuthRefreshTokenStore> _mockRefreshStore;
     private readonly IConfiguration _configuration;
     private readonly ApplicationDbContext _db;
 
@@ -23,6 +24,10 @@ public class OAuth2ServiceTests
     {
         _mockKeyService = new Mock<IECDSAKeyService>();
         _mockLogger = new Mock<ILogger<OAuth2Service>>();
+        _mockRefreshStore = new Mock<IOAuthRefreshTokenStore>();
+        _mockRefreshStore
+            .Setup(x => x.CreateAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
 
         // Setup configuration
         var configBuilder = new ConfigurationBuilder();
@@ -50,7 +55,7 @@ public class OAuth2ServiceTests
     }
 
     private OAuth2Service CreateService() =>
-        new OAuth2Service(_mockKeyService.Object, _configuration, _mockLogger.Object, _db);
+        new OAuth2Service(_mockKeyService.Object, _configuration, _mockLogger.Object, _db, _mockRefreshStore.Object);
 
     [Fact]
     public async Task ValidateClientAsync_ShouldReturnTrue_WhenCredentialsAreValid()

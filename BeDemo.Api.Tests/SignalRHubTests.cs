@@ -24,7 +24,7 @@ public class SignalRHubTests : IClassFixture<CustomWebApplicationFactory<Program
     {
         // Arrange
         var hubConnection = new HubConnectionBuilder()
-            .WithUrl(new Uri(_client.BaseAddress!, "/hubs/chat"), options =>
+            .WithUrl(new Uri(_client.BaseAddress!, "/public/hubs/chat"), options =>
             {
                 options.HttpMessageHandlerFactory = _ => _factory.Server.CreateHandler();
                 options.Transports = Microsoft.AspNetCore.Http.Connections.HttpTransportType.LongPolling;

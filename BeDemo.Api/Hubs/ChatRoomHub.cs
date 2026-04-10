@@ -16,14 +16,18 @@ public class ChatRoomHub : Hub
     private readonly IChatRoomLifecycleService _lifecycle;
     private readonly ILogger<ChatRoomHub> _logger;
 
+    private readonly IFaceScopeContext _faceScope;
+
     public ChatRoomHub(
         ApplicationDbContext context,
         IChatRoomLifecycleService lifecycle,
-        ILogger<ChatRoomHub> logger)
+        ILogger<ChatRoomHub> logger,
+        IFaceScopeContext faceScope)
     {
         _context = context;
         _lifecycle = lifecycle;
         _logger = logger;
+        _faceScope = faceScope;
     }
 
     private string? UserId =>
@@ -38,6 +42,9 @@ public class ChatRoomHub : Hub
 
         var room = await _context.FaceChatRooms.AsNoTracking().FirstOrDefaultAsync(r => r.Id == faceChatRoomId);
         if (room == null)
+            return;
+
+        if (_faceScope.IsAvailable && !_faceScope.IsAdminFaceScope && room.FaceId != _faceScope.FaceId)
             return;
 
         if (await FaceChatRoomAuth.IsHostInFaceAsync(_context, UserId, room.FaceId))
@@ -63,6 +70,9 @@ public class ChatRoomHub : Hub
 
         var room = await _context.FaceChatRooms.FirstOrDefaultAsync(r => r.Id == faceChatRoomId);
         if (room == null)
+            return;
+
+        if (_faceScope.IsAvailable && !_faceScope.IsAdminFaceScope && room.FaceId != _faceScope.FaceId)
             return;
 
         if (await FaceChatRoomAuth.IsHostInFaceAsync(_context, UserId, room.FaceId))

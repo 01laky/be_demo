@@ -10,6 +10,7 @@
  */
 
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
@@ -26,12 +27,16 @@ public class PagesControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
 {
     private readonly CustomWebApplicationFactory<Program> _factory;
     private readonly HttpClient _client;
+    private readonly HttpClient _oauth;
+    private readonly HttpClient _adminFace;
     private string? _authToken;
 
     public PagesControllerTests(CustomWebApplicationFactory<Program> factory)
     {
         _factory = factory;
         _client = _factory.CreateClient();
+        _oauth = AclTestClients.CreateOAuthClient(factory);
+        _adminFace = AclTestClients.CreateAdminFaceClient(factory);
     }
 
     /// <summary>
@@ -94,10 +99,10 @@ public class PagesControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
     /// </summary>
     private async Task<int> CreateTestPageTypeAsync()
     {
-        var token = await GetAuthTokenAsync();
-        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        var adminToken = await AclTestClients.GetPlatformAdminTokenAsync(_oauth);
+        _adminFace.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
 
-        var pageTypeResponse = await _client.PostAsJsonAsync("/api/pagetypes", new
+        var pageTypeResponse = await _adminFace.PostAsJsonAsync("/api/pagetypes", new
         {
             index = $"test_{Guid.NewGuid()}"
         });
@@ -291,5 +296,7 @@ public class PagesControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
     public void Dispose()
     {
         _client?.Dispose();
+        _oauth?.Dispose();
+        _adminFace?.Dispose();
     }
 }

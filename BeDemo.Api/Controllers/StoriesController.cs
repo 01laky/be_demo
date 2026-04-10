@@ -19,27 +19,27 @@ public class StoriesController : ControllerBase
     private readonly IWebHostEnvironment _env;
     private readonly ILogger<StoriesController> _logger;
     private readonly IFaceScopeContext _faceScope;
+    private readonly IAccessEvaluator _access;
 
     public StoriesController(
         ApplicationDbContext context,
         IStoryLifecycleService lifecycle,
         IWebHostEnvironment env,
         ILogger<StoriesController> logger,
-        IFaceScopeContext faceScope)
+        IFaceScopeContext faceScope,
+        IAccessEvaluator access)
     {
         _context = context;
         _lifecycle = lifecycle;
         _env = env;
         _logger = logger;
         _faceScope = faceScope;
+        _access = access;
     }
 
     private string? UserId => User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
-    private bool CanManageAllFaces() =>
-        _faceScope.IsAdminFaceScope &&
-        (User.IsInRole(UserRole.GlobalRoleNames.Admin) ||
-         User.IsInRole(UserRole.GlobalRoleNames.SuperAdmin));
+    private bool CanManageAllFaces() => _access.CanManageAllFaces(User);
 
     /// <summary>
     /// Tenants may only mutate stories that are untargeted (draft) or targeted at their face.

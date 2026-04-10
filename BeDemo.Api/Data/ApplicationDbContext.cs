@@ -57,6 +57,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<UserFaceProfileComment> UserFaceProfileComments { get; set; } = null!;
     public DbSet<UserFaceProfileReview> UserFaceProfileReviews { get; set; } = null!;
 
+    /// <summary>OAuth2 refresh token persistence (rotation, revocation) — see <see cref="IOAuthRefreshTokenStore"/>.</summary>
+    public DbSet<OAuthRefreshToken> OAuthRefreshTokens { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -925,6 +928,20 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<OAuthRefreshToken>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.TokenHash).IsRequired().HasMaxLength(64);
+            entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.ReplacedByTokenHash).HasMaxLength(64);
+            entity.HasIndex(e => e.TokenHash);
+            entity.HasIndex(e => e.UserId);
+            entity.HasOne<ApplicationUser>()
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);

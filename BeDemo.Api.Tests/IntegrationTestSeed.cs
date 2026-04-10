@@ -14,6 +14,7 @@ namespace BeDemo.Api.Tests;
 public static class IntegrationTestSeed
 {
     public const string Email = "integration-admin@test.com";
+    public const string SuperAdminEmail = "integration-superadmin@test.com";
     public const string Password = "Test123!@#";
 
     public static async Task EnsureAsync(IServiceProvider services, CancellationToken cancellationToken = default)
@@ -86,6 +87,77 @@ public static class IntegrationTestSeed
         await context.SaveChangesAsync(cancellationToken);
     }
 
+    /// <summary>Global SUPER_ADMIN for capabilities / platform:super tests (A7).</summary>
+    public static async Task EnsureSuperAdminAsync(IServiceProvider services, CancellationToken cancellationToken = default)
+    {
+        using var scope = services.CreateScope();
+        var sp = scope.ServiceProvider;
+        var context = sp.GetRequiredService<ApplicationDbContext>();
+        var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
+
+        var superRole = await context.UserRoles.AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Name == UserRole.GlobalRoleNames.SuperAdmin, cancellationToken);
+        if (superRole == null)
+            throw new InvalidOperationException("SUPER_ADMIN role missing.");
+
+        if (await userManager.FindByEmailAsync(SuperAdminEmail) != null)
+            return;
+
+        var user = new ApplicationUser
+        {
+            UserName = SuperAdminEmail,
+            Email = SuperAdminEmail,
+            EmailConfirmed = true,
+            FirstName = "Integration",
+            LastName = "SuperAdmin",
+            UserRoleId = superRole.Id,
+        };
+
+        var result = await userManager.CreateAsync(user, Password);
+        if (!result.Succeeded)
+        {
+            throw new InvalidOperationException(
+                "Failed to seed integration super-admin: " + string.Join("; ", result.Errors.Select(e => e.Description)));
+        }
+
+        var profile = new UserProfile
+        {
+            UserId = user.Id,
+            Nickname = "integration.superadmin",
+            CreatedAt = DateTime.UtcNow,
+        };
+        context.UserProfiles.Add(profile);
+        await context.SaveChangesAsync(cancellationToken);
+
+        var faces = await context.Faces.AsNoTracking().Select(f => f.Id).ToListAsync(cancellationToken);
+        var hostRole = await context.UserRoles.AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Name == UserRole.FaceRoleNames.FaceHost, cancellationToken);
+        if (hostRole == null)
+            throw new InvalidOperationException("FaceHost role missing.");
+
+        foreach (var faceId in faces)
+        {
+            context.UserFaceProfiles.Add(new UserFaceProfile
+            {
+                UserProfileId = profile.Id,
+                FaceId = faceId,
+                Visited = false,
+                FaceRoleIntroCompleted = false,
+                CreatedAt = DateTime.UtcNow,
+            });
+
+            context.UserFaceRoles.Add(new UserFaceRole
+            {
+                UserId = user.Id,
+                FaceId = faceId,
+                UserRoleId = hostRole.Id,
+                CreatedAt = DateTime.UtcNow,
+            });
+        }
+
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
     public static async Task<string> GetAdminAccessTokenAsync(HttpClient oauthClient, CancellationToken cancellationToken = default)
     {
         var tokenRequest = new OAuth2TokenRequest
@@ -94,6 +166,25 @@ public static class IntegrationTestSeed
             ClientId = "be-demo-client",
             ClientSecret = "be-demo-secret-very-strong-key",
             Username = Email,
+            Password = Password,
+        };
+
+        using var response = await oauthClient.PostAsJsonAsync("/api/oauth2/token", tokenRequest, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        var body = await response.Content.ReadFromJsonAsync<OAuth2TokenResponse>(cancellationToken: cancellationToken);
+        if (string.IsNullOrEmpty(body?.AccessToken))
+            throw new InvalidOperationException("Token response missing access_token.");
+        return body.AccessToken;
+    }
+
+    public static async Task<string> GetSuperAdminAccessTokenAsync(HttpClient oauthClient, CancellationToken cancellationToken = default)
+    {
+        var tokenRequest = new OAuth2TokenRequest
+        {
+            GrantType = "password",
+            ClientId = "be-demo-client",
+            ClientSecret = "be-demo-secret-very-strong-key",
+            Username = SuperAdminEmail,
             Password = Password,
         };
 
