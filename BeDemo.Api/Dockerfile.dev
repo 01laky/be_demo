@@ -16,5 +16,5 @@ RUN dotnet restore
 # Copy everything else
 COPY . .
 
-# Run migrations and start the app (HTTP only for development)
-ENTRYPOINT ["dotnet", "watch", "run", "--urls", "http://0.0.0.0:8000"]
+# Ports 8000 (HTTP) + 8001 (HTTPS) when ASPNETCORE_DEV_HTTPS_PFX is set (see root docker-compose.dev.yml).
+ENTRYPOINT ["dotnet", "watch", "run"]

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BeDemo.Api.Data;
 using BeDemo.Api.Models;
+using BeDemo.Api.Models.DTOs;
 using BeDemo.Api.Services;
 using BeDemo.Api.Utils;
 
@@ -375,9 +376,7 @@ public class StoriesController : ControllerBase
     [RequestSizeLimit(52_428_800)]
     public async Task<IActionResult> UploadImage(
         int id,
-        [FromForm] IFormFile file,
-        [FromForm] string? description,
-        [FromForm] int sortOrder,
+        [FromForm] StoryImageUploadForm form,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(UserId))
@@ -400,12 +399,14 @@ public class StoriesController : ControllerBase
                 return BadRequest(new { error = "Cannot add images to a live story" });
         }
 
+        var file = form.File;
         if (file == null || file.Length == 0)
             return BadRequest(new { error = "File is required" });
 
         if (!file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
             return BadRequest(new { error = "Only image uploads are allowed" });
 
+        var sortOrder = form.SortOrder;
         if (sortOrder < 0 || sortOrder > 9)
             return BadRequest(new { error = "sortOrder must be 0–9" });
 
@@ -436,7 +437,7 @@ public class StoriesController : ControllerBase
         {
             StoryId = id,
             ImageUrl = url,
-            Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim(),
+            Description = string.IsNullOrWhiteSpace(form.Description) ? null : form.Description.Trim(),
             SortOrder = sortOrder,
         };
         _context.StoryImages.Add(img);

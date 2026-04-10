@@ -11,12 +11,16 @@
  * - Swagger/OpenAPI documentation
  */
 
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 using BeDemo.Api.Data;
 using BeDemo.Api.Models;
 using BeDemo.Api.Middlewares;
@@ -43,6 +47,31 @@ if (args.Length > 0 && args[0] == "generate-diagram")
 
 // Creates WebApplicationBuilder, which is used to configure the application
 var builder = WebApplication.CreateBuilder(args);
+
+// Development HTTPS: shared cert from dev/generate-https-certs.sh (repo dev/certs/localhost.pfx) or ASPNETCORE_DEV_HTTPS_PFX (e.g. Docker /https-certs/localhost.pfx).
+if (builder.Environment.IsDevelopment() && !builder.Environment.IsEnvironment("Testing"))
+{
+    var envPfx = Environment.GetEnvironmentVariable("ASPNETCORE_DEV_HTTPS_PFX");
+    var repoPfx = Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", "..", "dev", "certs", "localhost.pfx"));
+    var pfxPath = !string.IsNullOrWhiteSpace(envPfx) ? envPfx.Trim() : repoPfx;
+    if (File.Exists(pfxPath))
+    {
+        // Avoid double-binding the same ports from launchSettings / ASPNETCORE_URLS.
+        builder.WebHost.UseSetting(WebHostDefaults.ServerUrlsKey, string.Empty);
+        builder.WebHost.ConfigureKestrel(options =>
+        {
+            options.ListenAnyIP(8000, listen => listen.Protocols = HttpProtocols.Http1);
+            options.ListenAnyIP(8001, listen =>
+            {
+                listen.Protocols = HttpProtocols.Http1AndHttp2;
+                listen.UseHttps(X509CertificateLoader.LoadPkcs12FromFile(
+                    pfxPath,
+                    string.Empty,
+                    X509KeyStorageFlags.EphemeralKeySet));
+            });
+        });
+    }
+}
 
 builder.Services.AddScoped<IChatRoomLifecycleService, ChatRoomLifecycleService>();
 
@@ -80,7 +109,10 @@ builder.Services.AddControllers()
 
 // Adds support for OpenAPI/Swagger - automatic API documentation
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.MapType<IFormFile>(() => new OpenApiSchema { Type = JsonSchemaType.String, Format = "binary" });
+});
 
 // ============================================================================
 // MEMORY CACHE CONFIGURATION
@@ -105,9 +137,11 @@ builder.Services.AddCors(options =>
                 "http://localhost:8081",
                 "http://localhost:8082",
                 "http://localhost:8080",
+                "http://localhost:9081",
                 "https://localhost:8081",
                 "https://localhost:8082",
-                "https://localhost:8080"
+                "https://localhost:8080",
+                "https://localhost:9081"
             )
             .AllowAnyMethod()
             .AllowAnyHeader()
