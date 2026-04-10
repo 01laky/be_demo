@@ -34,15 +34,15 @@ This document describes the behaviour implemented in the API for per-face user p
 
 ## HTTP API (summary)
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| `POST` | `/api/faces/{id}/visit` | Auth: set `Visited = true` for current user on that face. |
-| `POST` | `/api/faces/{id}/exit-face` | Auth: only if current role is **not** `FACE_HOST`. Deletes face-scoped likes/comments/reviews involving the user in that face, clears face profile fields, sets role to `FACE_HOST`, `IsActive = false`, keeps `Visited` / `FaceRoleIntroCompleted` as updated server-side. |
-| `GET` | `/api/faces/{faceId}/profiles` | List directory (non-host only). |
-| `GET` | `/api/faces/{faceId}/profiles/{userId}` | Profile detail (avatar/display rules in controller). |
-| `POST` / `DELETE` | `.../profiles/{userId}/like` | Like / unlike (auth). |
-| `GET` / `POST` | `.../profiles/{userId}/comments` | List / add comments. |
-| `GET` / `POST` | `.../profiles/{userId}/reviews` | List (empty if recensions off) / upsert review. |
+| Method            | Path                                    | Purpose                                                                                                                                                                                                                                                                     |
+| ----------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST`            | `/api/faces/{id}/visit`                 | Auth: set `Visited = true` for current user on that face.                                                                                                                                                                                                                   |
+| `POST`            | `/api/faces/{id}/exit-face`             | Auth: only if current role is **not** `FACE_HOST`. Deletes face-scoped likes/comments/reviews involving the user in that face, clears face profile fields, sets role to `FACE_HOST`, `IsActive = false`, keeps `Visited` / `FaceRoleIntroCompleted` as updated server-side. |
+| `GET`             | `/api/faces/{faceId}/profiles`          | List directory (non-host only).                                                                                                                                                                                                                                             |
+| `GET`             | `/api/faces/{faceId}/profiles/{userId}` | Profile detail (avatar/display rules in controller).                                                                                                                                                                                                                        |
+| `POST` / `DELETE` | `.../profiles/{userId}/like`            | Like / unlike (auth).                                                                                                                                                                                                                                                       |
+| `GET` / `POST`    | `.../profiles/{userId}/comments`        | List / add comments.                                                                                                                                                                                                                                                        |
+| `GET` / `POST`    | `.../profiles/{userId}/reviews`         | List (empty if recensions off) / upsert review.                                                                                                                                                                                                                             |
 
 Face configuration for the current user (`myVisited`, `myFaceRoleIntroCompleted`, `visibility`, `allowRecensions`, etc.) is included in **`GET /api/faces/config`** (see `FacesController`).
 

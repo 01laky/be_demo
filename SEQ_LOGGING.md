@@ -13,6 +13,7 @@ This project uses **Serilog** with **Seq** for structured logging. Seq provides 
 ## What is Seq?
 
 Seq is a structured logging server that:
+
 - Provides a web-based UI for viewing logs
 - Supports real-time log streaming
 - Allows filtering and searching logs with SQL-like queries
@@ -46,10 +47,12 @@ Seq is a structured logging server that:
 ## Configuration
 
 Seq configuration is in `docker-compose.dev.yml`:
+
 - Port 5341: Web UI
 - Port 5342: Log ingestion (for external services)
 
 Serilog configuration is in:
+
 - `appsettings.json` - Base configuration
 - `Program.cs` - Additional setup with Seq sink
 

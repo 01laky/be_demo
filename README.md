@@ -95,6 +95,7 @@ The easiest way to run the backend API in development:
 ```
 
 This script will:
+
 1. Stop any existing containers
 2. Create HTTPS certificate if needed
 3. Build Docker images
@@ -103,6 +104,7 @@ This script will:
 6. Wait for services to be ready
 
 The API will be available at:
+
 - **HTTP**: `http://localhost:8000`
 - **HTTPS**: `https://localhost:8001`
 - **Swagger UI**: `http://localhost:8000/swagger`
@@ -121,6 +123,7 @@ docker-compose -f docker-compose.dev.yml up --build
 ```
 
 Or manually:
+
 ```bash
 docker-compose -f docker-compose.dev.yml down
 ```
@@ -151,27 +154,31 @@ To perform a clean rebuild of Docker images:
 3. **Install .NET SDK 10.0**
 
 4. **Restore dependencies**:
+
    ```bash
    cd BeDemo.Api
    dotnet restore
    ```
 
 5. **Update database**:
+
    ```bash
    dotnet ef database update
    ```
 
 6. **Run the application**:
+
    ```bash
    dotnet run --launch-profile http
    ```
 
    Or with HTTPS:
+
    ```bash
    dotnet run --launch-profile https
    ```
 
-6. **Access Swagger UI**: `http://localhost:8000/swagger`
+7. **Access Swagger UI**: `http://localhost:8000/swagger`
 
 ## API Endpoints
 
@@ -307,6 +314,7 @@ app.UseMiddleware<RoutingMiddleware>();
 ### Testing
 
 Face routing is tested in the test suite. The middleware:
+
 - Correctly identifies face prefixes in URLs
 - Rewrites URLs with face ID
 - Returns 403 for invalid face prefixes
@@ -326,6 +334,7 @@ The API uses the following environment variables (configured in `docker-compose.
 ### Database Connection
 
 The default connection string format:
+
 ```
 Host=host.docker.internal;Port=54320;Database=bedemo;Username=bedemo_user;Password=bedemo_password
 ```
@@ -339,10 +348,12 @@ Host=host.docker.internal;Port=54320;Database=bedemo;Username=bedemo_user;Passwo
 ### Logging
 
 Logs are sent to:
+
 1. **Console** (stdout) - Visible in Docker logs
 2. **Seq** - Structured logging server at `http://seq:5341` (internal) or `http://localhost:5341` (host)
 
 View logs:
+
 ```bash
 # Docker logs
 docker-compose -f docker-compose.dev.yml logs -f be-demo-api
@@ -388,7 +399,7 @@ dotnet ef migrations remove
 
 4. **Make code changes**: Edit code in `BeDemo.Api/`
 
-5. **Test changes**: 
+5. **Test changes**:
    - API endpoints via Swagger UI
    - Unit tests: `dotnet test` in `BeDemo.Api.Tests/`
 
@@ -406,6 +417,7 @@ yarn test
 ```
 
 Tests cover:
+
 - Authentication and authorization
 - OAuth2 flows
 - Edge cases and security scenarios
@@ -424,6 +436,7 @@ This backend is part of the `_mfai_demo` monorepo and integrates with:
 - **Logger Demo**: `logger_demo` (Dozzle log viewer)
 
 Use root-level scripts to manage all services:
+
 - `start-all-dev.sh` - Start all services
 - `stop-all-dev.sh` - Stop all services
 - `clear-all-dev.sh` - Clear all containers and volumes
@@ -689,7 +702,6 @@ erDiagram
     AspNetUsers ||--o{ UserFaceRoles : "has"
     AspNetUsers ||--o{ UserProfiles : "has"
 ```
-
 
 <!-- END AUTO-GENERATED DATABASE DIAGRAM -->
 

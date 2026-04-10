@@ -8,18 +8,18 @@ Stories are **draft → scheduled (optional) → published (24h) → expired**. 
 
 ## Endpoints
 
-| Method | Path | Notes |
-|--------|------|--------|
-| `GET` | `/api/stories?faceId=` | Live published stories for this face (non-host only). |
-| `GET` | `/api/stories/me` | Creator’s stories; optional `faceId` filter. |
-| `GET` | `/api/stories/{id}?faceId=` | Detail; creator sees `viewers`, others see `viewCount` only. |
-| `POST` | `/api/stories` | Body: `{ "title", "faceIds": [] optional }`. |
-| `POST` | `/api/stories/{id}/images` | Multipart: `file`, `sortOrder` 0–9, optional `description`. |
-| `POST` | `/api/stories/{id}/publish` | Body: `{ "scheduledPublishAt": null or ISO UTC }`. |
-| `DELETE` | `/api/stories/{id}` | Creator only. |
-| `POST` | `/api/stories/{id}/view?faceId=` | Idempotent view record. |
-| `GET/POST/DELETE` | `/api/stories/{id}/likes?faceId=` | Like / unlike (live story, non-host). |
-| `GET/POST` | `/api/stories/{id}/comments?faceId=` | Body: `{ "content" }`. |
+| Method            | Path                                 | Notes                                                        |
+| ----------------- | ------------------------------------ | ------------------------------------------------------------ |
+| `GET`             | `/api/stories?faceId=`               | Live published stories for this face (non-host only).        |
+| `GET`             | `/api/stories/me`                    | Creator’s stories; optional `faceId` filter.                 |
+| `GET`             | `/api/stories/{id}?faceId=`          | Detail; creator sees `viewers`, others see `viewCount` only. |
+| `POST`            | `/api/stories`                       | Body: `{ "title", "faceIds": [] optional }`.                 |
+| `POST`            | `/api/stories/{id}/images`           | Multipart: `file`, `sortOrder` 0–9, optional `description`.  |
+| `POST`            | `/api/stories/{id}/publish`          | Body: `{ "scheduledPublishAt": null or ISO UTC }`.           |
+| `DELETE`          | `/api/stories/{id}`                  | Creator only.                                                |
+| `POST`            | `/api/stories/{id}/view?faceId=`     | Idempotent view record.                                      |
+| `GET/POST/DELETE` | `/api/stories/{id}/likes?faceId=`    | Like / unlike (live story, non-host).                        |
+| `GET/POST`        | `/api/stories/{id}/comments?faceId=` | Body: `{ "content" }`.                                       |
 
 Redis jobs: `story.publish` (scheduled), `story.expire` (24h after publish).
 

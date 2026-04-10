@@ -11,6 +11,7 @@ mkcert -install
 ```
 
 This command will:
+
 - Create a local CA (Certificate Authority) certificate
 - Add it to macOS keychain as a trusted root certificate
 - Allow all certificates created using `mkcert` to be automatically trusted
@@ -24,8 +25,9 @@ This command will:
 ## Verification
 
 After installing mkcert CA, all certificates created using `mkcert` will be automatically trusted in:
+
 - ✅ Chrome
-- ✅ Safari  
+- ✅ Safari
 - ✅ Firefox
 - ✅ Edge
 - ✅ All other browsers
