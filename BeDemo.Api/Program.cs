@@ -11,20 +11,23 @@
  * - Swagger/OpenAPI documentation
  */
 
+using System.Linq;
+using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using BeDemo.Api.Data;
 using BeDemo.Api.Models;
+using BeDemo.Api.Security;
 using BeDemo.Api.Middlewares;
 using BeDemo.Api.Services;
 using BeDemo.Api.Hubs;
@@ -67,10 +70,14 @@ if (builder.Environment.IsDevelopment() && !builder.Environment.IsEnvironment("T
             options.ListenAnyIP(8001, listen =>
             {
                 listen.Protocols = HttpProtocols.Http1AndHttp2;
+                // macOS does not support EphemeralKeySet for PKCS#12 load (PlatformNotSupportedException).
+                var keyFlags = OperatingSystem.IsMacOS()
+                    ? X509KeyStorageFlags.DefaultKeySet
+                    : X509KeyStorageFlags.EphemeralKeySet;
                 listen.UseHttps(X509CertificateLoader.LoadPkcs12FromFile(
                     pfxPath,
                     string.Empty,
-                    X509KeyStorageFlags.EphemeralKeySet));
+                    keyFlags));
             });
         });
     }
@@ -129,13 +136,29 @@ builder.Services.AddSwaggerGen(c =>
     c.OperationFilter<BearerAuthOperationFilter>();
 });
 
-// ACL A21: slow brute-force on token endpoint (skipped in Testing — integration tests issue many tokens).
+// ACL A21: fixed-window rate limits on token + register. In Testing, limits are bypassed unless OAuth2:BypassRateLimitInTesting=false (for 429 tests).
 var isTestingEnv = builder.Environment.IsEnvironment("Testing");
-var oauthPermit = isTestingEnv ? 1_000_000 : builder.Configuration.GetValue("OAuth2:TokenRateLimitPermitLimit", 60);
+var bypassRateLimitInTesting = builder.Configuration.GetValue("OAuth2:BypassRateLimitInTesting", true);
+var oauthPermit = isTestingEnv && bypassRateLimitInTesting
+    ? 1_000_000
+    : builder.Configuration.GetValue("OAuth2:TokenRateLimitPermitLimit", 60);
 var oauthWindowSec = builder.Configuration.GetValue("OAuth2:TokenRateLimitWindowSeconds", 60);
+var registerPermit = isTestingEnv && bypassRateLimitInTesting
+    ? 1_000_000
+    : builder.Configuration.GetValue("OAuth2:RegisterRateLimitPermitLimit", 30);
+var registerWindowSec = builder.Configuration.GetValue("OAuth2:RegisterRateLimitWindowSeconds", 60);
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (ctx, ct) =>
+    {
+        ctx.HttpContext.Response.ContentType = "application/json; charset=utf-8";
+        if (ctx.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+            ctx.HttpContext.Response.Headers.RetryAfter = ((int)retryAfter.TotalSeconds).ToString();
+        await ctx.HttpContext.Response.WriteAsync(
+            "{\"error\":\"rate_limit\",\"error_description\":\"Too many requests. See Retry-After.\"}",
+            ct);
+    };
     options.AddPolicy("oauth-token", context =>
         RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? context.Connection.Id,
@@ -143,6 +166,16 @@ builder.Services.AddRateLimiter(options =>
             {
                 PermitLimit = oauthPermit,
                 Window = TimeSpan.FromSeconds(Math.Max(1, oauthWindowSec)),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0,
+            }));
+    options.AddPolicy("oauth-register", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? context.Connection.Id,
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = registerPermit,
+                Window = TimeSpan.FromSeconds(Math.Max(1, registerWindowSec)),
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 QueueLimit = 0,
             }));
@@ -161,22 +194,21 @@ builder.Services.AddMemoryCache();
 // CORS CONFIGURATION
 // ============================================================================
 
-// Configure CORS to allow frontend to access API
+// CORS: default dev origins + optional Cors:Origins[] from configuration (production).
+var defaultCorsOrigins = new[]
+{
+    "http://localhost:8081", "http://localhost:8082", "http://localhost:8080", "http://localhost:9081",
+    "https://localhost:8081", "https://localhost:8082", "https://localhost:8080", "https://localhost:9081",
+};
+var extraOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? Array.Empty<string>();
+var corsOrigins = defaultCorsOrigins.Concat(extraOrigins).Where(o => !string.IsNullOrWhiteSpace(o)).Distinct().ToArray();
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
         policy
-            .WithOrigins(
-                "http://localhost:8081",
-                "http://localhost:8082",
-                "http://localhost:8080",
-                "http://localhost:9081",
-                "https://localhost:8081",
-                "https://localhost:8082",
-                "https://localhost:8080",
-                "https://localhost:9081"
-            )
+            .WithOrigins(corsOrigins)
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials()
@@ -248,11 +280,11 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 // OAUTH2 AND JWT AUTHENTICATION CONFIGURATION
 // ============================================================================
 
-// Creates singleton instance of ECDSAKeyService - service for generating and managing ECDSA keys
-// Singleton means only one instance is created for the entire application
-// ECDSA (Elliptic Curve Digital Signature Algorithm) uses P-521 curve (521-bit key) - very strong encryption
-var ecdsaKeyService = new ECDSAKeyService();
+// Singleton ECDSA key for JWT (ES512). Optional Jwt:SigningPemPath for stable keys; see ECDSAKeyService.
+var ecdsaKeyService = new ECDSAKeyService(builder.Configuration, builder.Environment);
 builder.Services.AddSingleton<IECDSAKeyService>(ecdsaKeyService);
+
+builder.Services.AddScoped<IPasswordHasher<OAuthClient>, PasswordHasher<OAuthClient>>();
 
 // Adds OAuth2Service as scoped service - new instance for each HTTP request
 // Scoped means the service lives during the HTTP request lifetime
@@ -276,34 +308,47 @@ builder.Services.AddAuthentication(options =>
     // JWT token validation configuration
     options.TokenValidationParameters = new TokenValidationParameters
     {
-        ValidateIssuerSigningKey = true,                // Validates that token was signed with correct key
-        IssuerSigningKey = signingKey,                 // Key used to validate signature
-        ValidateIssuer = true,                         // Validates that token issuer is correct
-        ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "BeDemoApi",  // Expected issuer
-        ValidateAudience = true,                       // Validates that token audience is correct
-        ValidAudience = builder.Configuration["Jwt:Audience"] ?? "BeDemoApi",  // Expected audience
-        ValidateLifetime = true,                    // Align with OAuth2 access token Expires (A2)
-        ClockSkew = TimeSpan.Zero                     // No tolerance for time skew (precise time validation)
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKeys = ecdsaKeyService.GetIssuerSigningKeys().ToList(),
+        ValidateIssuer = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "BeDemoApi",
+        ValidateAudience = true,
+        ValidAudience = builder.Configuration["Jwt:Audience"] ?? "BeDemoApi",
+        ValidateLifetime = true,
+        // Zero skew: rely on NTP in production; document in docs/guides/authentication-and-sessions.md (J2).
+        ClockSkew = TimeSpan.Zero,
+        ValidAlgorithms = new[] { SecurityAlgorithms.EcdsaSha512 },
     };
 
-    // Special configuration for SignalR WebSocket connections
-    // SignalR uses WebSocket protocol which doesn't support HTTP headers, so token is sent via query parameter
-    options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+    // SignalR: Bearer in query (WSS). J6: after signature validation, require atv == user.AccessTokenVersion.
+    options.Events = new JwtBearerEvents
     {
         OnMessageReceived = context =>
         {
-            // Gets access_token from query string (e.g., /hubs/chat?access_token=xxx)
             var accessToken = context.Request.Query["access_token"];
             var path = context.HttpContext.Request.Path;
-
-            // If request is to SignalR hub endpoint and contains access_token, use it for authentication
             if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
-            {
                 context.Token = accessToken;
+            return Task.CompletedTask;
+        },
+        OnTokenValidated = async context =>
+        {
+            var userId = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return;
+            var versionClaim = context.Principal?.FindFirstValue(BeDemoClaimTypes.AccessTokenVersion);
+            var claimed = int.TryParse(versionClaim, out var v) ? v : 0;
+            var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
+            var user = await userManager.FindByIdAsync(userId).ConfigureAwait(false);
+            if (user == null)
+            {
+                context.Fail("User no longer exists.");
+                return;
             }
 
-            return Task.CompletedTask;
-        }
+            if (user.AccessTokenVersion != claimed)
+                context.Fail("Access token revoked (session version mismatch).");
+        },
     };
 });
 
@@ -505,12 +550,16 @@ else
 // Enable CORS - must be before UseHttpsRedirection and authentication
 app.UseCors();
 
-// In development environment displays OpenAPI/Swagger documentation
-if (app.Environment.IsDevelopment())
+app.UseMiddleware<SecurityHeadersMiddleware>();
+
+// Swagger / OpenAPI UI: Development by default; Production only if Swagger:EnableInProduction=true (discouraged).
+var swaggerUiEnabled = app.Environment.IsDevelopment()
+    || app.Configuration.GetValue("Swagger:EnableInProduction", false);
+if (swaggerUiEnabled)
 {
-    app.MapOpenApi();      // Maps OpenAPI endpoint
-    app.UseSwagger();      // Adds Swagger middleware
-    app.UseSwaggerUI();    // Adds Swagger UI (web interface for testing API)
+    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 // Redirects all HTTP requests to HTTPS (if available)

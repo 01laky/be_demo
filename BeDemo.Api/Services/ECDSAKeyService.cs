@@ -1,88 +1,128 @@
 /*
- * ECDSAKeyService.cs - Service for generating and managing ECDSA keys
- * 
- * This service generates ECDSA (Elliptic Curve Digital Signature Algorithm) keys
- * used for signing and validating JWT tokens.
- * 
- * Uses P-521 curve (NIST P-521), which provides 521-bit security.
- * This is equivalent to approximately 256-bit symmetric security,
- * which is considered very strong encryption.
- * 
- * ES512 algorithm = ECDSA with P-521 curve and SHA-512 hash function
+ * ECDSAKeyService.cs - JWT signing keys (ES512 / P-521).
+ *
+ * JWT signing (digital signature) is separate from TLS: see docs/guides/security-crypto-sockets.md.
+ * Development: ephemeral in-process key unless Jwt:SigningPemPath points to a PEM file with an EC private key.
+ * Production: set Jwt:SigningPemPath (or mount PEM) so tokens survive restarts and JWKS stays stable until rotation.
+ *
+ * K4 rotation overlap: optional Jwt:PreviousSigningPemPath + Jwt:PreviousKeyId loads a second private key.
+ * New access JWTs are signed only with the current key; validators accept signatures from current OR previous
+ * until tokens signed with the old key expire.
  */
 
+using System.Collections.ObjectModel;
 using System.Security.Cryptography;
 using Microsoft.IdentityModel.Tokens;
 
 namespace BeDemo.Api.Services;
 
 /// <summary>
-/// Interface for ECDSA key service
+/// JWT signing and validation using ECDSA P-521 (ES512), with optional previous key for rotation overlap (K4).
 /// </summary>
 public interface IECDSAKeyService
 {
-    /// <summary>
-    /// Gets signing key - used for signing JWT tokens
-    /// </summary>
+    /// <summary>Private key used to sign new access JWTs (always the current rotation key).</summary>
     ECDsaSecurityKey GetSigningKey();
 
-    /// <summary>
-    /// Gets validation key - used for validating JWT token signatures
-    /// </summary>
+    /// <summary>Primary public verification key (same as signing key material for EC).</summary>
     ECDsaSecurityKey GetValidationKey();
 
-    /// <summary>
-    /// Gets unique key identifier (for key rotation)
-    /// </summary>
+    /// <summary>All keys that may verify an access JWT (current + optional previous). Used by JwtBearer and refresh-token misuse checks.</summary>
+    IReadOnlyList<SecurityKey> GetIssuerSigningKeys();
+
+    /// <summary><c>kid</c> for the current signing key (JWT header).</summary>
     string GetKeyId();
 }
 
 /// <summary>
-/// ECDSA key service implementation
+/// Loads ECDSA key from <c>Jwt:SigningPemPath</c> when the file exists; otherwise generates an ephemeral key (dev default).
+/// Optional <c>Jwt:PreviousSigningPemPath</c> adds a second verification-only key for rotation (K4).
 /// </summary>
 public class ECDSAKeyService : IECDSAKeyService
 {
-    private readonly ECDsaSecurityKey _signingKey;  // ECDSA security key for signing
-    private readonly string _keyId;                 // Unique key identifier
+    private readonly ECDsaSecurityKey _signingKey;
+    private readonly ECDsaSecurityKey? _previousSigningKey;
+    private readonly ReadOnlyCollection<SecurityKey> _issuerSigningKeys;
+    private readonly string _keyId;
 
     /// <summary>
-    /// Constructor - generates new ECDSA key when service is created
+    /// Prefer <paramref name="configuration"/> <c>Jwt:SigningPemPath</c> for non-ephemeral keys. Optional <c>Jwt:KeyId</c> stabilizes <c>kid</c>.
     /// </summary>
-    public ECDSAKeyService()
+    public ECDSAKeyService(IConfiguration configuration, IHostEnvironment environment)
     {
-        // Creates new ECDSA object with P-521 curve
-        // P-521 (NIST P-521) is one of the strongest curves available
-        // 521 bits = very high security
-        var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP521);
+        var pemPath = configuration["Jwt:SigningPemPath"];
+        ECDsa ecdsa;
+        string keyId;
 
-        // Creates ECDsaSecurityKey from ECDSA object
-        // This key is used in Microsoft.IdentityModel.Tokens for JWT tokens
-        _signingKey = new ECDsaSecurityKey(ecdsa)
+        if (!string.IsNullOrWhiteSpace(pemPath))
         {
-            // Sets unique key identifier (GUID)
-            // This is useful for key rotation - you can have multiple keys and know which one was used
-            KeyId = Guid.NewGuid().ToString()
-        };
+            var fullPath = Path.IsPathRooted(pemPath)
+                ? pemPath
+                : Path.GetFullPath(Path.Combine(environment.ContentRootPath, pemPath.Trim()));
+            if (File.Exists(fullPath))
+            {
+                var pem = File.ReadAllText(fullPath);
+                ecdsa = ECDsa.Create();
+                ecdsa.ImportFromPem(pem);
+                keyId = configuration["Jwt:KeyId"] ?? "bedemo-ecdsa-1";
+            }
+            else
+            {
+                ecdsa = CreateEphemeralP521();
+                keyId = Guid.NewGuid().ToString();
+            }
+        }
+        else
+        {
+            ecdsa = CreateEphemeralP521();
+            keyId = configuration["Jwt:KeyId"] ?? Guid.NewGuid().ToString();
+        }
 
-        // Saves KeyId for easy access
-        _keyId = _signingKey.KeyId;
+        _signingKey = new ECDsaSecurityKey(ecdsa) { KeyId = keyId };
+        _keyId = _signingKey.KeyId!;
+
+        _previousSigningKey = TryLoadPreviousKey(configuration, environment);
+        if (_previousSigningKey != null)
+        {
+            var list = new List<SecurityKey> { _signingKey, _previousSigningKey };
+            _issuerSigningKeys = new ReadOnlyCollection<SecurityKey>(list);
+        }
+        else
+        {
+            _issuerSigningKeys = new ReadOnlyCollection<SecurityKey>(new[] { (SecurityKey)_signingKey });
+        }
     }
 
-    /// <summary>
-    /// Returns signing key - used for signing JWT tokens
-    /// </summary>
+    private static ECDsaSecurityKey? TryLoadPreviousKey(IConfiguration configuration, IHostEnvironment environment)
+    {
+        var prevPath = configuration["Jwt:PreviousSigningPemPath"];
+        if (string.IsNullOrWhiteSpace(prevPath))
+            return null;
+
+        var fullPath = Path.IsPathRooted(prevPath)
+            ? prevPath
+            : Path.GetFullPath(Path.Combine(environment.ContentRootPath, prevPath.Trim()));
+        if (!File.Exists(fullPath))
+            return null;
+
+        var pem = File.ReadAllText(fullPath);
+        var ecdsa = ECDsa.Create();
+        ecdsa.ImportFromPem(pem);
+        var kid = configuration["Jwt:PreviousKeyId"] ?? "bedemo-ecdsa-prev";
+        return new ECDsaSecurityKey(ecdsa) { KeyId = kid };
+    }
+
+    private static ECDsa CreateEphemeralP521() => ECDsa.Create(ECCurve.NamedCurves.nistP521);
+
+    /// <inheritdoc />
     public ECDsaSecurityKey GetSigningKey() => _signingKey;
 
-    /// <summary>
-    /// Returns validation key - used for validating JWT token signatures
-    /// 
-    /// In this implementation it's the same key as signing key.
-    /// In production, different keys could be used (e.g., for key rotation).
-    /// </summary>
+    /// <inheritdoc />
     public ECDsaSecurityKey GetValidationKey() => _signingKey;
 
-    /// <summary>
-    /// Returns unique key identifier
-    /// </summary>
+    /// <inheritdoc />
+    public IReadOnlyList<SecurityKey> GetIssuerSigningKeys() => _issuerSigningKeys;
+
+    /// <inheritdoc />
     public string GetKeyId() => _keyId;
 }

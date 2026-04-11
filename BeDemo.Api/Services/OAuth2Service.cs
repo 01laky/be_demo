@@ -6,7 +6,7 @@
  * - Refresh token grant type
  * - ECDSA signed JWT tokens (ES512 algorithm)
  * - Client credentials validation
- * - Request signature validation using ECDSA
+ * - Optional body signatures on the token endpoint are **rejected** (O4); use TLS + client credentials.
  * 
  * JWT tokens contain claims (statements) about the user:
  * - NameIdentifier (User ID)
@@ -18,6 +18,7 @@
  * - Iat (Issued At - token creation time)
  */
 
+using System.Linq;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -29,6 +30,7 @@ using Microsoft.IdentityModel.Tokens;
 using BeDemo.Api.Data;
 using BeDemo.Api.Models;
 using BeDemo.Api.Models.DTOs;
+using BeDemo.Api.Security;
 
 namespace BeDemo.Api.Services;
 
@@ -63,19 +65,22 @@ public class OAuth2Service : IOAuth2Service
     private readonly ILogger<OAuth2Service> _logger;
     private readonly ApplicationDbContext _db;
     private readonly IOAuthRefreshTokenStore _refreshTokens;
+    private readonly IPasswordHasher<OAuthClient> _oauthClientHasher;
 
     public OAuth2Service(
         IECDSAKeyService keyService,
         IConfiguration configuration,
         ILogger<OAuth2Service> logger,
         ApplicationDbContext db,
-        IOAuthRefreshTokenStore refreshTokens)
+        IOAuthRefreshTokenStore refreshTokens,
+        IPasswordHasher<OAuthClient> oauthClientHasher)
     {
         _keyService = keyService;
         _configuration = configuration;
         _logger = logger;
         _db = db;
         _refreshTokens = refreshTokens;
+        _oauthClientHasher = oauthClientHasher;
     }
 
     /// <summary>
@@ -189,6 +194,13 @@ public class OAuth2Service : IOAuth2Service
         if (!string.IsNullOrEmpty(globalRoleName))
             claims.Add(new Claim(ClaimTypes.Role, globalRoleName));
 
+        var accessTokenVersion = await _db.Users
+            .AsNoTracking()
+            .Where(u => u.Id == user.Id)
+            .Select(u => u.AccessTokenVersion)
+            .FirstAsync();
+        claims.Add(new Claim(BeDemoClaimTypes.AccessTokenVersion, accessTokenVersion.ToString(), ClaimValueTypes.Integer32));
+
         var signingKey = _keyService.GetSigningKey();
         var sessionMinutes = _configuration.GetValue("Jwt:ExpiresInMinutes", 60);
         var rememberMinutes = _configuration.GetValue("Jwt:ExpiresInMinutesRememberMe", 10080);
@@ -279,20 +291,19 @@ public class OAuth2Service : IOAuth2Service
     /// Validates client credentials (client_id and client_secret)
     /// In production, these should be stored in database or other secure storage
     /// </summary>
-    public Task<bool> ValidateClientAsync(string? clientId, string? clientSecret)
+    public async Task<bool> ValidateClientAsync(string? clientId, string? clientSecret)
     {
-        // Loads valid client credentials from configuration
-        // In production, they should be stored in database or use OAuth2 Client Store
-        var validClientId = _configuration["OAuth2:ClientId"] ?? "be-demo-client";
-        var validClientSecret = _configuration["OAuth2:ClientSecret"] ?? "be-demo-secret-very-strong-key";
+        if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret))
+            return false;
 
-        // Validates that client_id and client_secret are provided and match valid credentials
-        var isValid = !string.IsNullOrEmpty(clientId) &&
-                     !string.IsNullOrEmpty(clientSecret) &&
-                     clientId == validClientId &&
-                     clientSecret == validClientSecret;
+        var row = await _db.OAuthClients.AsNoTracking()
+            .FirstOrDefaultAsync(c => c.ClientId == clientId && c.IsActive)
+            .ConfigureAwait(false);
+        if (row == null)
+            return false;
 
-        return Task.FromResult(isValid);
+        var r = _oauthClientHasher.VerifyHashedPassword(row, row.SecretHash, clientSecret);
+        return r is PasswordVerificationResult.Success or PasswordVerificationResult.SuccessRehashNeeded;
     }
 
     /// <summary>
@@ -339,14 +350,15 @@ public class OAuth2Service : IOAuth2Service
     {
         return new TokenValidationParameters
         {
-            ValidateIssuerSigningKey = true,                    // Validates signing key
-            IssuerSigningKey = _keyService.GetValidationKey(),   // Key for validation
-            ValidateIssuer = true,                              // Validates issuer
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKeys = _keyService.GetIssuerSigningKeys().ToList(),
+            ValidateIssuer = true,
             ValidIssuer = _configuration["Jwt:Issuer"] ?? "BeDemoApi",
-            ValidateAudience = true,                            // Validates audience
+            ValidateAudience = true,
             ValidAudience = _configuration["Jwt:Audience"] ?? "BeDemoApi",
-            ValidateLifetime = true,                            // Validates expiration
-            ClockSkew = TimeSpan.Zero                           // No tolerance for time skew
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero,
+            ValidAlgorithms = new[] { SecurityAlgorithms.EcdsaSha512 },
         };
     }
 }

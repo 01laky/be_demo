@@ -4,7 +4,7 @@ using BeDemo.Api.Models;
 
 namespace BeDemo.Api.Data;
 
-public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
+public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
@@ -59,6 +59,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     /// <summary>OAuth2 refresh token persistence (rotation, revocation) — see <see cref="IOAuthRefreshTokenStore"/>.</summary>
     public DbSet<OAuthRefreshToken> OAuthRefreshTokens { get; set; } = null!;
+
+    /// <summary>OAuth2 confidential clients with hashed secrets (O1).</summary>
+    public DbSet<OAuthClient> OAuthClients { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -945,6 +948,14 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<OAuthClient>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ClientId).IsRequired().HasMaxLength(128);
+            entity.Property(e => e.SecretHash).IsRequired().HasMaxLength(500);
+            entity.HasIndex(e => e.ClientId).IsUnique();
         });
     }
 }

@@ -27,4 +27,9 @@ public class ApplicationUser : IdentityUser
     /// Navigation property to UserProfile - one-to-one relationship
     /// </summary>
     public UserProfile? UserProfile { get; set; }
+
+    /// <summary>
+    /// Incremented when sessions must be invalidated (password change, privilege change). Issued JWTs carry claim <c>atv</c> matching this value (J6).
+    /// </summary>
+    public int AccessTokenVersion { get; set; }
 }

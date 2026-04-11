@@ -4,7 +4,16 @@ ASP.NET Core WebAPI project with Identity framework and PostgreSQL database.
 
 ## Overview
 
-The Backend API (be_demo) provides a RESTful API for user authentication, authorization, and management. It uses ASP.NET Core Identity for user management, Entity Framework Core for database access, and PostgreSQL as the database backend.
+The Backend API (be_demo) provides a RESTful API for user authentication, authorization, and management. It uses ASP.NET Core Identity for user management, Entity Framework Core for access to PostgreSQL, and OAuth2-issued JWTs for bearer APIs.
+
+## Security (operations)
+
+- **JWKS:** `GET /api/oauth2/jwks` — public key for ES512 JWT validation.
+- **Stable signing key:** set `Jwt:SigningPemPath` (path to EC private key PEM, P-521) and `Jwt:KeyId` in configuration; leave empty for ephemeral dev keys.
+- **Session invalidation (J6):** access tokens carry claim `atv` (matches `AspNetUsers.AccessTokenVersion`). Admin **password reset** via `PUT /api/users/{id}` increments the version and revokes refresh tokens for that user.
+- **Swagger in production:** disabled unless `Swagger:EnableInProduction` is `true`.
+- **Emergency:** bump `AccessTokenVersion` in the database and revoke `OAuthRefreshTokens` rows for a user to invalidate all sessions.
+- **Gap list vs. hardening prompt:** see repository root `SECURITY_GAP_ANALYSIS.md`.
 
 ## Features
 
@@ -487,6 +496,40 @@ The database schema diagram is automatically generated after each migration and 
 ```mermaid
 erDiagram
 
+    AlbumComments {
+        integer Id PK NOT NULL
+        integer AlbumId NOT NULL
+        varchar UserId NOT NULL
+        varchar Content NOT NULL
+        timestamp CreatedAt NOT NULL
+        timestamp UpdatedAt
+    }
+
+    AlbumFaces {
+        integer Id PK NOT NULL
+        integer AlbumId NOT NULL
+        integer FaceId NOT NULL
+        timestamp CreatedAt NOT NULL
+    }
+
+    AlbumLikes {
+        integer Id PK NOT NULL
+        integer AlbumId NOT NULL
+        varchar UserId NOT NULL
+        timestamp CreatedAt NOT NULL
+    }
+
+    Albums {
+        integer Id PK NOT NULL
+        varchar CreatorId NOT NULL
+        varchar Title NOT NULL
+        varchar Description
+        integer AlbumType NOT NULL
+        integer MediaType NOT NULL
+        timestamp CreatedAt NOT NULL
+        timestamp UpdatedAt
+    }
+
     AspNetRoleClaims {
         integer Id PK NOT NULL
         text RoleId NOT NULL
@@ -550,6 +593,120 @@ erDiagram
         boolean LockoutEnabled NOT NULL
         integer AccessFailedCount NOT NULL
         integer UserRoleId NOT NULL
+        integer AccessTokenVersion NOT NULL
+    }
+
+    BlogComments {
+        integer Id PK NOT NULL
+        integer BlogId NOT NULL
+        varchar UserId NOT NULL
+        varchar Content NOT NULL
+        timestamp CreatedAt NOT NULL
+        timestamp UpdatedAt
+    }
+
+    BlogImages {
+        integer Id PK NOT NULL
+        integer BlogId NOT NULL
+        varchar ImageUrl NOT NULL
+        integer SortOrder NOT NULL
+        timestamp CreatedAt NOT NULL
+    }
+
+    BlogLikes {
+        integer Id PK NOT NULL
+        integer BlogId NOT NULL
+        varchar UserId NOT NULL
+        timestamp CreatedAt NOT NULL
+    }
+
+    Blogs {
+        integer Id PK NOT NULL
+        varchar CreatorId NOT NULL
+        integer FaceId NOT NULL
+        varchar Title NOT NULL
+        text Content NOT NULL
+        timestamp CreatedAt NOT NULL
+        timestamp UpdatedAt
+    }
+
+    ComponentTypes {
+        integer Id PK NOT NULL
+        varchar Index NOT NULL
+        varchar Name NOT NULL
+        timestamp CreatedAt NOT NULL
+        timestamp UpdatedAt
+    }
+
+    DisplayModes {
+        integer Id PK NOT NULL
+        varchar Index NOT NULL
+        varchar Name NOT NULL
+        timestamp CreatedAt NOT NULL
+        timestamp UpdatedAt
+    }
+
+    FaceChatRoomJoinRequests {
+        integer Id PK NOT NULL
+        integer FaceChatRoomId NOT NULL
+        varchar UserId NOT NULL
+        integer Status NOT NULL
+        timestamp CreatedAt NOT NULL
+        timestamp ResolvedAt
+    }
+
+    FaceChatRoomMembers {
+        integer Id PK NOT NULL
+        integer FaceChatRoomId NOT NULL
+        varchar UserId NOT NULL
+        timestamp JoinedAt NOT NULL
+    }
+
+    FaceChatRoomMessages {
+        integer Id PK NOT NULL
+        integer FaceChatRoomId NOT NULL
+        varchar SenderUserId NOT NULL
+        varchar Content NOT NULL
+        timestamp SentAt NOT NULL
+    }
+
+    FaceChatRooms {
+        integer Id PK NOT NULL
+        integer FaceId NOT NULL
+        varchar Title NOT NULL
+        varchar Description
+        boolean IsPublic NOT NULL
+        boolean IsSystemManaged NOT NULL
+        text CreatorUserId
+        timestamp CreatedAt NOT NULL
+        timestamp UpdatedAt
+        timestamp LastMessageAt
+    }
+
+    FaceWallTicketComments {
+        integer Id PK NOT NULL
+        integer FaceWallTicketId NOT NULL
+        varchar UserId NOT NULL
+        varchar Content NOT NULL
+        timestamp CreatedAt NOT NULL
+    }
+
+    FaceWallTicketLikes {
+        integer Id PK NOT NULL
+        integer FaceWallTicketId NOT NULL
+        varchar UserId NOT NULL
+        timestamp CreatedAt NOT NULL
+    }
+
+    FaceWallTickets {
+        integer Id PK NOT NULL
+        integer FaceId NOT NULL
+        varchar CreatorUserId NOT NULL
+        varchar Title NOT NULL
+        text Description NOT NULL
+        integer Status NOT NULL
+        timestamp CreatedAt NOT NULL
+        timestamp UpdatedAt
     }
 
     Faces {
@@ -557,11 +714,13 @@ erDiagram
         varchar Index NOT NULL
         varchar Title NOT NULL
         varchar Description
-        varchar Color
         timestamp CreatedAt NOT NULL
         timestamp UpdatedAt
         boolean IsPublic NOT NULL
         text GradientSettings
+        boolean AllowRecensions NOT NULL
+        integer Visibility NOT NULL
+        boolean ChatRoomsCreate NOT NULL
     }
 
     FriendRequests {
@@ -600,6 +759,44 @@ erDiagram
         timestamp CreatedAt NOT NULL
     }
 
+    OAuthClients {
+        integer Id PK NOT NULL
+        varchar ClientId NOT NULL
+        varchar SecretHash NOT NULL
+        boolean IsActive NOT NULL
+        timestamp CreatedAtUtc NOT NULL
+    }
+
+    OAuthRefreshTokens {
+        integer Id PK NOT NULL
+        varchar TokenHash NOT NULL
+        varchar UserId NOT NULL
+        timestamp ExpiresAtUtc NOT NULL
+        timestamp CreatedAtUtc NOT NULL
+        boolean UseRememberMeAccessLifetime NOT NULL
+        timestamp RevokedAtUtc
+        varchar ReplacedByTokenHash
+    }
+
+    PageComponents {
+        integer Id PK NOT NULL
+        integer PageId NOT NULL
+        integer ComponentTypeId NOT NULL
+        integer DisplayModeId NOT NULL
+        varchar GridKey NOT NULL
+        integer X NOT NULL
+        integer Y NOT NULL
+        integer W NOT NULL
+        integer H NOT NULL
+        integer MinW NOT NULL
+        integer MinH NOT NULL
+        varchar Label
+        varchar Title
+        varchar Icon
+        timestamp CreatedAt NOT NULL
+        timestamp UpdatedAt
+    }
+
     PageRouteTranslations {
         integer Id PK NOT NULL
         integer PageId NOT NULL
@@ -629,10 +826,119 @@ erDiagram
         text GridSchema
     }
 
+    ReelComments {
+        integer Id PK NOT NULL
+        integer ReelId NOT NULL
+        varchar UserId NOT NULL
+        varchar Content NOT NULL
+        timestamp CreatedAt NOT NULL
+        timestamp UpdatedAt
+    }
+
+    ReelFaces {
+        integer Id PK NOT NULL
+        integer ReelId NOT NULL
+        integer FaceId NOT NULL
+        timestamp CreatedAt NOT NULL
+    }
+
+    ReelLikes {
+        integer Id PK NOT NULL
+        integer ReelId NOT NULL
+        varchar UserId NOT NULL
+        timestamp CreatedAt NOT NULL
+    }
+
+    Reels {
+        integer Id PK NOT NULL
+        varchar CreatorId NOT NULL
+        varchar Title NOT NULL
+        varchar Description
+        varchar VideoUrl NOT NULL
+        timestamp CreatedAt NOT NULL
+        timestamp UpdatedAt
+    }
+
+    Stories {
+        integer Id PK NOT NULL
+        varchar CreatorId NOT NULL
+        varchar Title NOT NULL
+        integer State NOT NULL
+        timestamp PublishedAt
+        timestamp ExpiresAt
+        timestamp ScheduledPublishAt
+        timestamp CreatedAt NOT NULL
+        timestamp UpdatedAt
+    }
+
+    StoryComments {
+        integer Id PK NOT NULL
+        integer StoryId NOT NULL
+        varchar UserId NOT NULL
+        varchar Content NOT NULL
+        timestamp CreatedAt NOT NULL
+        timestamp UpdatedAt
+    }
+
+    StoryFaces {
+        integer Id PK NOT NULL
+        integer StoryId NOT NULL
+        integer FaceId NOT NULL
+        timestamp CreatedAt NOT NULL
+    }
+
+    StoryImages {
+        integer Id PK NOT NULL
+        integer StoryId NOT NULL
+        varchar ImageUrl NOT NULL
+        varchar Description
+        integer SortOrder NOT NULL
+        timestamp CreatedAt NOT NULL
+    }
+
+    StoryLikes {
+        integer Id PK NOT NULL
+        integer StoryId NOT NULL
+        varchar UserId NOT NULL
+        timestamp CreatedAt NOT NULL
+    }
+
+    StoryViews {
+        integer Id PK NOT NULL
+        integer StoryId NOT NULL
+        varchar ViewerUserId NOT NULL
+        timestamp ViewedAt NOT NULL
+    }
+
     UserBlocks {
         integer Id PK NOT NULL
         varchar BlockerId NOT NULL
         varchar BlockedId NOT NULL
+        timestamp CreatedAt NOT NULL
+    }
+
+    UserFaceProfileComments {
+        integer Id PK NOT NULL
+        integer UserFaceProfileId NOT NULL
+        varchar UserId NOT NULL
+        varchar Body NOT NULL
+        timestamp CreatedAt NOT NULL
+    }
+
+    UserFaceProfileLikes {
+        integer Id PK NOT NULL
+        integer UserFaceProfileId NOT NULL
+        varchar UserId NOT NULL
+        timestamp CreatedAt NOT NULL
+    }
+
+    UserFaceProfileReviews {
+        integer Id PK NOT NULL
+        integer UserFaceProfileId NOT NULL
+        varchar AuthorUserId NOT NULL
+        varchar Title NOT NULL
+        varchar Text NOT NULL
+        smallint Stars NOT NULL
         timestamp CreatedAt NOT NULL
     }
 
@@ -646,6 +952,8 @@ erDiagram
         boolean IsActive NOT NULL
         timestamp CreatedAt NOT NULL
         timestamp UpdatedAt
+        boolean FaceRoleIntroCompleted NOT NULL
+        boolean Visited NOT NULL
     }
 
     UserFaceRoles {
@@ -654,6 +962,13 @@ erDiagram
         integer FaceId NOT NULL
         integer FaceId PK NOT NULL
         integer UserRoleId NOT NULL
+        timestamp CreatedAt NOT NULL
+    }
+
+    UserFollows {
+        integer Id PK NOT NULL
+        varchar FollowerId NOT NULL
+        varchar FollowedId NOT NULL
         timestamp CreatedAt NOT NULL
     }
 
@@ -676,6 +991,13 @@ erDiagram
         integer Scope NOT NULL
     }
 
+    Albums ||--o{ AlbumComments : "has"
+    AspNetUsers ||--o{ AlbumComments : "has"
+    Albums ||--o{ AlbumFaces : "has"
+    Faces ||--o{ AlbumFaces : "has"
+    Albums ||--o{ AlbumLikes : "has"
+    AspNetUsers ||--o{ AlbumLikes : "has"
+    AspNetUsers ||--o{ Albums : "has"
     AspNetRoles ||--o{ AspNetRoleClaims : "has"
     AspNetUsers ||--o{ AspNetUserClaims : "has"
     AspNetUsers ||--o{ AspNetUserLogins : "has"
@@ -683,6 +1005,27 @@ erDiagram
     AspNetUsers ||--o{ AspNetUserRoles : "has"
     AspNetUsers ||--o{ AspNetUserTokens : "has"
     UserRoles ||--o{ AspNetUsers : "has"
+    AspNetUsers ||--o{ BlogComments : "has"
+    Blogs ||--o{ BlogComments : "has"
+    Blogs ||--o{ BlogImages : "has"
+    AspNetUsers ||--o{ BlogLikes : "has"
+    Blogs ||--o{ BlogLikes : "has"
+    AspNetUsers ||--o{ Blogs : "has"
+    Faces ||--o{ Blogs : "has"
+    AspNetUsers ||--o{ FaceChatRoomJoinRequests : "has"
+    FaceChatRooms ||--o{ FaceChatRoomJoinRequests : "has"
+    AspNetUsers ||--o{ FaceChatRoomMembers : "has"
+    FaceChatRooms ||--o{ FaceChatRoomMembers : "has"
+    AspNetUsers ||--o{ FaceChatRoomMessages : "has"
+    FaceChatRooms ||--o{ FaceChatRoomMessages : "has"
+    AspNetUsers ||--o{ FaceChatRooms : "has"
+    Faces ||--o{ FaceChatRooms : "has"
+    AspNetUsers ||--o{ FaceWallTicketComments : "has"
+    FaceWallTickets ||--o{ FaceWallTicketComments : "has"
+    AspNetUsers ||--o{ FaceWallTicketLikes : "has"
+    FaceWallTickets ||--o{ FaceWallTicketLikes : "has"
+    AspNetUsers ||--o{ FaceWallTickets : "has"
+    Faces ||--o{ FaceWallTickets : "has"
     AspNetUsers ||--o{ FriendRequests : "has"
     AspNetUsers ||--o{ FriendRequests : "has"
     AspNetUsers ||--o{ Friendships : "has"
@@ -690,18 +1033,48 @@ erDiagram
     AspNetUsers ||--o{ Messages : "has"
     AspNetUsers ||--o{ Messages : "has"
     AspNetUsers ||--o{ Notifications : "has"
+    AspNetUsers ||--o{ OAuthRefreshTokens : "has"
+    ComponentTypes ||--o{ PageComponents : "has"
+    DisplayModes ||--o{ PageComponents : "has"
+    Pages ||--o{ PageComponents : "has"
     Pages ||--o{ PageRouteTranslations : "has"
     Faces ||--o{ Pages : "has"
     PageTypes ||--o{ Pages : "has"
+    AspNetUsers ||--o{ ReelComments : "has"
+    Reels ||--o{ ReelComments : "has"
+    Faces ||--o{ ReelFaces : "has"
+    Reels ||--o{ ReelFaces : "has"
+    AspNetUsers ||--o{ ReelLikes : "has"
+    Reels ||--o{ ReelLikes : "has"
+    AspNetUsers ||--o{ Reels : "has"
+    AspNetUsers ||--o{ Stories : "has"
+    AspNetUsers ||--o{ StoryComments : "has"
+    Stories ||--o{ StoryComments : "has"
+    Faces ||--o{ StoryFaces : "has"
+    Stories ||--o{ StoryFaces : "has"
+    Stories ||--o{ StoryImages : "has"
+    AspNetUsers ||--o{ StoryLikes : "has"
+    Stories ||--o{ StoryLikes : "has"
+    AspNetUsers ||--o{ StoryViews : "has"
+    Stories ||--o{ StoryViews : "has"
     AspNetUsers ||--o{ UserBlocks : "has"
     AspNetUsers ||--o{ UserBlocks : "has"
+    AspNetUsers ||--o{ UserFaceProfileComments : "has"
+    UserFaceProfiles ||--o{ UserFaceProfileComments : "has"
+    AspNetUsers ||--o{ UserFaceProfileLikes : "has"
+    UserFaceProfiles ||--o{ UserFaceProfileLikes : "has"
+    AspNetUsers ||--o{ UserFaceProfileReviews : "has"
+    UserFaceProfiles ||--o{ UserFaceProfileReviews : "has"
     Faces ||--o{ UserFaceProfiles : "has"
     UserProfiles ||--o{ UserFaceProfiles : "has"
     Faces ||--o{ UserFaceRoles : "has"
     UserRoles ||--o{ UserFaceRoles : "has"
     AspNetUsers ||--o{ UserFaceRoles : "has"
+    AspNetUsers ||--o{ UserFollows : "has"
+    AspNetUsers ||--o{ UserFollows : "has"
     AspNetUsers ||--o{ UserProfiles : "has"
 ```
+
 
 <!-- END AUTO-GENERATED DATABASE DIAGRAM -->
 

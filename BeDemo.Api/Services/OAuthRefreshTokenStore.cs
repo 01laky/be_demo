@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Threading;
 using Microsoft.EntityFrameworkCore;
 using BeDemo.Api.Data;
 using BeDemo.Api.Models;
@@ -9,6 +10,12 @@ namespace BeDemo.Api.Services;
 /// <inheritdoc />
 public sealed class OAuthRefreshTokenStore : IOAuthRefreshTokenStore
 {
+    /// <summary>
+    /// In-memory EF has no SERIALIZABLE isolation; serialize refresh redemption so integration tests can assert
+    /// single-use rotation under concurrent HTTP (matches PostgreSQL behavior for the same plaintext).
+    /// </summary>
+    private static readonly SemaphoreSlim InMemoryRefreshRedeemGate = new(1, 1);
+
     private readonly ApplicationDbContext _db;
     private readonly IConfiguration _configuration;
     private readonly ILogger<OAuthRefreshTokenStore> _logger;
@@ -95,7 +102,17 @@ public sealed class OAuthRefreshTokenStore : IOAuthRefreshTokenStore
         }
 
         if (isInMemory)
-            return await RedeemBodyAsync();
+        {
+            await InMemoryRefreshRedeemGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                return await RedeemBodyAsync().ConfigureAwait(false);
+            }
+            finally
+            {
+                InMemoryRefreshRedeemGate.Release();
+            }
+        }
 
         // PostgreSQL: Serializable reduces double-spend of the same refresh string under concurrency.
         await using var tx = await _db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable, cancellationToken);
@@ -115,6 +132,22 @@ public sealed class OAuthRefreshTokenStore : IOAuthRefreshTokenStore
         {
             await tx.RollbackAsync(cancellationToken);
             throw;
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task RevokeAllActiveForUserAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        var now = DateTime.UtcNow;
+        var rows = await _db.OAuthRefreshTokens
+            .Where(t => t.UserId == userId && t.RevokedAtUtc == null)
+            .ToListAsync(cancellationToken);
+        foreach (var row in rows)
+            row.RevokedAtUtc = now;
+        if (rows.Count > 0)
+        {
+            await _db.SaveChangesAsync(cancellationToken);
+            _logger.LogInformation("Revoked {Count} refresh token(s) for user {UserId}", rows.Count, userId);
         }
     }
 

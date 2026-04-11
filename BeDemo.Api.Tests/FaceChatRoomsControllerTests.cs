@@ -18,22 +18,14 @@ namespace BeDemo.Api.Tests;
 /// </summary>
 public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
 {
+    private const string ChatRoomsTestPassword = "Test123!@#";
+
     private readonly CustomWebApplicationFactory<Program> _factory;
 
     public FaceChatRoomsControllerTests(CustomWebApplicationFactory<Program> factory) => _factory = factory;
 
-    private static async Task<(string Token, string UserId)> RegisterAndLoginAsync(HttpClient client)
+    private static async Task<(string Token, string UserId)> LoginWithPasswordAsync(HttpClient client, string email, string password)
     {
-        var email = $"cr_{Guid.NewGuid():N}@test.com";
-        const string password = "Test123!@#";
-        await client.PostAsJsonAsync("/api/oauth2/register", new
-        {
-            email,
-            password,
-            firstName = "Chat",
-            lastName = "Tester",
-        });
-
         var tokenRequest = new OAuth2TokenRequest
         {
             GrantType = "password",
@@ -64,16 +56,41 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
         return (token, userId!);
     }
 
-    /// <summary>Test DB seed does not include demo admins — promote user so global admin checks pass (they read the database, not JWT claims).</summary>
-    private static async Task PromoteUserToGlobalAdminAsync(CustomWebApplicationFactory<Program> factory, string userId)
+    private static async Task<(string Token, string UserId, string Email)> RegisterAndLoginAsync(HttpClient client)
+    {
+        var email = $"cr_{Guid.NewGuid():N}@test.com";
+        await client.PostAsJsonAsync("/api/oauth2/register", new
+        {
+            email,
+            password = ChatRoomsTestPassword,
+            firstName = "Chat",
+            lastName = "Tester",
+        });
+
+        var (token, userId) = await LoginWithPasswordAsync(client, email, ChatRoomsTestPassword);
+        return (token, userId, email);
+    }
+
+    /// <summary>
+    /// Promotes user to global Admin in DB (API checks DB for system-room actions). J6: changing <see cref="ApplicationUser.UserRoleId"/> bumps
+    /// <see cref="ApplicationUser.AccessTokenVersion"/> — returns a new access JWT for the same email/password.
+    /// </summary>
+    private static async Task<string> PromoteUserToGlobalAdminAsync(
+        CustomWebApplicationFactory<Program> factory,
+        HttpClient client,
+        string userId,
+        string userEmail)
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var adminRole = await db.UserRoles.AsNoTracking()
             .FirstAsync(r => r.Name == UserRole.GlobalRoleNames.Admin);
         var user = await db.Users.FirstAsync(u => u.Id == userId);
-        user.UserRoleId = adminRole.Id; // FaceChatRoomsController uses DB role for POST system
+        user.UserRoleId = adminRole.Id;
         await db.SaveChangesAsync();
+
+        var (token, _) = await LoginWithPasswordAsync(client, userEmail, ChatRoomsTestPassword);
+        return token;
     }
 
     private static async Task<int> GetAnyFaceIdAsync(HttpClient client, string token)
@@ -131,7 +148,7 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
     public async Task List_ShouldReturn404_WhenFaceDoesNotExist()
     {
         using var client = _factory.CreateClient();
-        var (token, _) = await RegisterAndLoginAsync(client);
+        var (token, _, _) = await RegisterAndLoginAsync(client);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var res = await client.GetAsync("/api/faces/999999/chat-rooms");
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -141,7 +158,7 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
     public async Task List_ShouldReturn200_AndMarkHostFlags_ForDefaultHostUser()
     {
         using var client = _factory.CreateClient();
-        var (token, _) = await RegisterAndLoginAsync(client);
+        var (token, _, _) = await RegisterAndLoginAsync(client);
         var faceId = await GetAnyFaceIdAsync(client, token);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var res = await client.GetAsync($"/api/faces/{faceId}/chat-rooms");
@@ -154,7 +171,7 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
     public async Task CreateUserRoom_Should403_WhenChatRoomsCreateDisabled()
     {
         using var client = _factory.CreateClient();
-        var (token, _) = await RegisterAndLoginAsync(client);
+        var (token, _, _) = await RegisterAndLoginAsync(client);
         var faceId = await GetAnyFaceIdAsync(client, token);
         await SetFaceUserRoleAsync(client, token, faceId);
         await EnableChatRoomsCreateAsync(_factory, faceId, false);
@@ -171,7 +188,7 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
     public async Task CreateUserRoom_Should403_WhenUserIsFaceHost()
     {
         using var client = _factory.CreateClient();
-        var (token, _) = await RegisterAndLoginAsync(client);
+        var (token, _, _) = await RegisterAndLoginAsync(client);
         var faceId = await GetAnyFaceIdAsync(client, token);
         await EnableChatRoomsCreateAsync(_factory, faceId, true);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -187,7 +204,7 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
     public async Task CreateUserRoom_Should400_WhenTitleWhitespace()
     {
         using var client = _factory.CreateClient();
-        var (token, _) = await RegisterAndLoginAsync(client);
+        var (token, _, _) = await RegisterAndLoginAsync(client);
         var faceId = await GetAnyFaceIdAsync(client, token);
         await SetFaceUserRoleAsync(client, token, faceId);
         await EnableChatRoomsCreateAsync(_factory, faceId, true);
@@ -204,7 +221,7 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
     public async Task CreateUserRoom_Should201_AndCreatorIsMember()
     {
         using var client = _factory.CreateClient();
-        var (token, userId) = await RegisterAndLoginAsync(client);
+        var (token, userId, _) = await RegisterAndLoginAsync(client);
         var faceId = await GetAnyFaceIdAsync(client, token);
         await SetFaceUserRoleAsync(client, token, faceId);
         await EnableChatRoomsCreateAsync(_factory, faceId, true);
@@ -228,7 +245,7 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
     public async Task Get_Should404_WhenRoomOnDifferentFace()
     {
         using var client = _factory.CreateClient();
-        var (token, _) = await RegisterAndLoginAsync(client);
+        var (token, _, _) = await RegisterAndLoginAsync(client);
         var faceId = await GetAnyFaceIdAsync(client, token);
         await SetFaceUserRoleAsync(client, token, faceId);
         await EnableChatRoomsCreateAsync(_factory, faceId, true);
@@ -248,10 +265,10 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
     public async Task JoinPublic_Should403_ForHost()
     {
         using var client = _factory.CreateClient();
-        var (token, _) = await RegisterAndLoginAsync(client);
+        var (token, _, _) = await RegisterAndLoginAsync(client);
         var faceId = await GetAnyFaceIdAsync(client, token);
-        var (adminToken, adminUserId) = await RegisterAndLoginAsync(client);
-        await PromoteUserToGlobalAdminAsync(_factory, adminUserId);
+        var (adminToken, adminUserId, adminEmail) = await RegisterAndLoginAsync(client);
+        adminToken = await PromoteUserToGlobalAdminAsync(_factory, client, adminUserId, adminEmail);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
         var sys = await client.PostAsJsonAsync($"/api/faces/{faceId}/chat-rooms/system", new { title = $"Sys {Guid.NewGuid():N}" });
         sys.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -266,15 +283,15 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
     public async Task JoinPublic_Should200_WhenFaceUserNotMember()
     {
         using var client = _factory.CreateClient();
-        var (aToken, _) = await RegisterAndLoginAsync(client);
+        var (aToken, _, _) = await RegisterAndLoginAsync(client);
         var faceId = await GetAnyFaceIdAsync(client, aToken);
-        var (adminToken, adminUserId) = await RegisterAndLoginAsync(client);
-        await PromoteUserToGlobalAdminAsync(_factory, adminUserId);
+        var (adminToken, adminUserId, adminEmail) = await RegisterAndLoginAsync(client);
+        adminToken = await PromoteUserToGlobalAdminAsync(_factory, client, adminUserId, adminEmail);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
         var sys = await client.PostAsJsonAsync($"/api/faces/{faceId}/chat-rooms/system", new { title = $"Sys {Guid.NewGuid():N}" });
         var roomId = (await sys.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetInt32();
 
-        var (bToken, _) = await RegisterAndLoginAsync(client);
+        var (bToken, _, _) = await RegisterAndLoginAsync(client);
         await SetFaceUserRoleAsync(client, bToken, faceId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bToken);
         var join = await client.PostAsync($"/api/faces/{faceId}/chat-rooms/{roomId}/join", null);
@@ -285,9 +302,9 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
     public async Task JoinPublic_ShouldReturnAlreadyMember_WhenDuplicate()
     {
         using var client = _factory.CreateClient();
-        var (adminToken, adminUserId) = await RegisterAndLoginAsync(client);
-        await PromoteUserToGlobalAdminAsync(_factory, adminUserId);
-        var (userToken, _) = await RegisterAndLoginAsync(client);
+        var (adminToken, adminUserId, adminEmail) = await RegisterAndLoginAsync(client);
+        adminToken = await PromoteUserToGlobalAdminAsync(_factory, client, adminUserId, adminEmail);
+        var (userToken, _, _) = await RegisterAndLoginAsync(client);
         var faceId = await GetAnyFaceIdAsync(client, userToken);
         await SetFaceUserRoleAsync(client, userToken, faceId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
@@ -306,7 +323,7 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
     public async Task JoinRequest_Should400_OnPublicRoom()
     {
         using var client = _factory.CreateClient();
-        var (token, _) = await RegisterAndLoginAsync(client);
+        var (token, _, _) = await RegisterAndLoginAsync(client);
         var faceId = await GetAnyFaceIdAsync(client, token);
         await SetFaceUserRoleAsync(client, token, faceId);
         await EnableChatRoomsCreateAsync(_factory, faceId, true);
@@ -321,7 +338,7 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
     public async Task JoinRequest_Should200_AndCreateNotification_ForPrivateRoom()
     {
         using var client = _factory.CreateClient();
-        var (creatorToken, _) = await RegisterAndLoginAsync(client);
+        var (creatorToken, _, _) = await RegisterAndLoginAsync(client);
         var faceId = await GetAnyFaceIdAsync(client, creatorToken);
         await SetFaceUserRoleAsync(client, creatorToken, faceId);
         await EnableChatRoomsCreateAsync(_factory, faceId, true);
@@ -329,7 +346,7 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
         var create = await client.PostAsJsonAsync($"/api/faces/{faceId}/chat-rooms", new { title = "Priv", isPublic = false });
         var roomId = (await create.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetInt32();
 
-        var (joinerToken, _) = await RegisterAndLoginAsync(client);
+        var (joinerToken, _, _) = await RegisterAndLoginAsync(client);
         await SetFaceUserRoleAsync(client, joinerToken, faceId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", joinerToken);
         var req = await client.PostAsync($"/api/faces/{faceId}/chat-rooms/{roomId}/join-requests", null);
@@ -340,7 +357,7 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
     public async Task Messages_Should403_WhenNotMemberNorHost()
     {
         using var client = _factory.CreateClient();
-        var (aToken, _) = await RegisterAndLoginAsync(client);
+        var (aToken, _, _) = await RegisterAndLoginAsync(client);
         var faceId = await GetAnyFaceIdAsync(client, aToken);
         await SetFaceUserRoleAsync(client, aToken, faceId);
         await EnableChatRoomsCreateAsync(_factory, faceId, true);
@@ -348,7 +365,7 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
         var create = await client.PostAsJsonAsync($"/api/faces/{faceId}/chat-rooms", new { title = "M1", isPublic = true });
         var roomId = (await create.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetInt32();
 
-        var (bToken, _) = await RegisterAndLoginAsync(client);
+        var (bToken, _, _) = await RegisterAndLoginAsync(client);
         await SetFaceUserRoleAsync(client, bToken, faceId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bToken);
         var msg = await client.GetAsync($"/api/faces/{faceId}/chat-rooms/{roomId}/messages");
@@ -359,10 +376,10 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
     public async Task Messages_Should200_ForHost_WithoutMembership()
     {
         using var client = _factory.CreateClient();
-        var (hostToken, _) = await RegisterAndLoginAsync(client);
+        var (hostToken, _, _) = await RegisterAndLoginAsync(client);
         var faceId = await GetAnyFaceIdAsync(client, hostToken);
-        var (adminToken, adminUserId) = await RegisterAndLoginAsync(client);
-        await PromoteUserToGlobalAdminAsync(_factory, adminUserId);
+        var (adminToken, adminUserId, adminEmail) = await RegisterAndLoginAsync(client);
+        adminToken = await PromoteUserToGlobalAdminAsync(_factory, client, adminUserId, adminEmail);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
         var sys = await client.PostAsJsonAsync($"/api/faces/{faceId}/chat-rooms/system", new { title = $"Sys {Guid.NewGuid():N}" });
         var roomId = (await sys.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetInt32();
@@ -376,7 +393,7 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
     public async Task CreateSystem_Should403_ForRegularUser()
     {
         using var client = _factory.CreateClient();
-        var (token, _) = await RegisterAndLoginAsync(client);
+        var (token, _, _) = await RegisterAndLoginAsync(client);
         var faceId = await GetAnyFaceIdAsync(client, token);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var res = await client.PostAsJsonAsync($"/api/faces/{faceId}/chat-rooms/system", new { title = "Hack" });
@@ -387,9 +404,9 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
     public async Task CreateSystem_Should201_ForGlobalAdmin()
     {
         using var client = _factory.CreateClient();
-        var (adminToken, adminUserId) = await RegisterAndLoginAsync(client);
-        await PromoteUserToGlobalAdminAsync(_factory, adminUserId);
-        var (userToken, _) = await RegisterAndLoginAsync(client);
+        var (adminToken, adminUserId, adminEmail) = await RegisterAndLoginAsync(client);
+        adminToken = await PromoteUserToGlobalAdminAsync(_factory, client, adminUserId, adminEmail);
+        var (userToken, _, _) = await RegisterAndLoginAsync(client);
         var faceId = await GetAnyFaceIdAsync(client, userToken);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
         var res = await client.PostAsJsonAsync($"/api/faces/{faceId}/chat-rooms/system", new { title = $"Adm {Guid.NewGuid():N}" });
@@ -400,7 +417,7 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
     public async Task Delete_Should403_WhenNotCreatorNorAdmin_ForUserRoom()
     {
         using var client = _factory.CreateClient();
-        var (aToken, _) = await RegisterAndLoginAsync(client);
+        var (aToken, _, _) = await RegisterAndLoginAsync(client);
         var faceId = await GetAnyFaceIdAsync(client, aToken);
         await SetFaceUserRoleAsync(client, aToken, faceId);
         await EnableChatRoomsCreateAsync(_factory, faceId, true);
@@ -408,7 +425,7 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
         var create = await client.PostAsJsonAsync($"/api/faces/{faceId}/chat-rooms", new { title = "Own", isPublic = true });
         var roomId = (await create.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetInt32();
 
-        var (bToken, _) = await RegisterAndLoginAsync(client);
+        var (bToken, _, _) = await RegisterAndLoginAsync(client);
         await SetFaceUserRoleAsync(client, bToken, faceId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bToken);
         var del = await client.DeleteAsync($"/api/faces/{faceId}/chat-rooms/{roomId}");
@@ -419,7 +436,7 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
     public async Task Delete_Should204_WhenCreatorDeletesOwnRoom()
     {
         using var client = _factory.CreateClient();
-        var (token, _) = await RegisterAndLoginAsync(client);
+        var (token, _, _) = await RegisterAndLoginAsync(client);
         var faceId = await GetAnyFaceIdAsync(client, token);
         await SetFaceUserRoleAsync(client, token, faceId);
         await EnableChatRoomsCreateAsync(_factory, faceId, true);
@@ -436,7 +453,7 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
     public async Task ApproveRequest_Should200_WhenCreatorApproves()
     {
         using var client = _factory.CreateClient();
-        var (creatorToken, _) = await RegisterAndLoginAsync(client);
+        var (creatorToken, _, _) = await RegisterAndLoginAsync(client);
         var faceId = await GetAnyFaceIdAsync(client, creatorToken);
         await SetFaceUserRoleAsync(client, creatorToken, faceId);
         await EnableChatRoomsCreateAsync(_factory, faceId, true);
@@ -444,7 +461,7 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
         var create = await client.PostAsJsonAsync($"/api/faces/{faceId}/chat-rooms", new { title = "Apr", isPublic = false });
         var roomId = (await create.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetInt32();
 
-        var (joinerToken, _) = await RegisterAndLoginAsync(client);
+        var (joinerToken, _, _) = await RegisterAndLoginAsync(client);
         await SetFaceUserRoleAsync(client, joinerToken, faceId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", joinerToken);
         var req = await client.PostAsync($"/api/faces/{faceId}/chat-rooms/{roomId}/join-requests", null);
@@ -463,7 +480,7 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
     public async Task DenyRequest_Should200_WhenCreatorDenies()
     {
         using var client = _factory.CreateClient();
-        var (creatorToken, _) = await RegisterAndLoginAsync(client);
+        var (creatorToken, _, _) = await RegisterAndLoginAsync(client);
         var faceId = await GetAnyFaceIdAsync(client, creatorToken);
         await SetFaceUserRoleAsync(client, creatorToken, faceId);
         await EnableChatRoomsCreateAsync(_factory, faceId, true);
@@ -471,7 +488,7 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
         var create = await client.PostAsJsonAsync($"/api/faces/{faceId}/chat-rooms", new { title = "Deny", isPublic = false });
         var roomId = (await create.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetInt32();
 
-        var (joinerToken, _) = await RegisterAndLoginAsync(client);
+        var (joinerToken, _, _) = await RegisterAndLoginAsync(client);
         await SetFaceUserRoleAsync(client, joinerToken, faceId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", joinerToken);
         var req = await client.PostAsync($"/api/faces/{faceId}/chat-rooms/{roomId}/join-requests", null);
@@ -490,7 +507,7 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
     public async Task ApproveRequest_Should403_WhenCallerIsNotCreator()
     {
         using var client = _factory.CreateClient();
-        var (creatorToken, _) = await RegisterAndLoginAsync(client);
+        var (creatorToken, _, _) = await RegisterAndLoginAsync(client);
         var faceId = await GetAnyFaceIdAsync(client, creatorToken);
         await SetFaceUserRoleAsync(client, creatorToken, faceId);
         await EnableChatRoomsCreateAsync(_factory, faceId, true);
@@ -498,14 +515,14 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
         var create = await client.PostAsJsonAsync($"/api/faces/{faceId}/chat-rooms", new { title = "P", isPublic = false });
         var roomId = (await create.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetInt32();
 
-        var (joinerToken, _) = await RegisterAndLoginAsync(client);
+        var (joinerToken, _, _) = await RegisterAndLoginAsync(client);
         await SetFaceUserRoleAsync(client, joinerToken, faceId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", joinerToken);
         var req = await client.PostAsync($"/api/faces/{faceId}/chat-rooms/{roomId}/join-requests", null);
         var reqBody = await req.Content.ReadFromJsonAsync<JsonElement>();
         var requestId = reqBody.GetProperty("requestId").GetInt32();
 
-        var (otherToken, _) = await RegisterAndLoginAsync(client);
+        var (otherToken, _, _) = await RegisterAndLoginAsync(client);
         await SetFaceUserRoleAsync(client, otherToken, faceId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", otherToken);
         var approve = await client.PostAsync($"/api/faces/{faceId}/chat-rooms/requests/{requestId}/approve", null);
@@ -516,7 +533,7 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
     public async Task Messages_ShouldRespectBeforeId_Pagination()
     {
         using var client = _factory.CreateClient();
-        var (token, userId) = await RegisterAndLoginAsync(client);
+        var (token, userId, _) = await RegisterAndLoginAsync(client);
         var faceId = await GetAnyFaceIdAsync(client, token);
         await SetFaceUserRoleAsync(client, token, faceId);
         await EnableChatRoomsCreateAsync(_factory, faceId, true);

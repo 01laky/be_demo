@@ -16,22 +16,14 @@ namespace BeDemo.Api.Tests;
 
 public class FaceWallTicketsControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
 {
+    private const string WallTicketsTestPassword = "Test123!@#";
+
     private readonly CustomWebApplicationFactory<Program> _factory;
 
     public FaceWallTicketsControllerTests(CustomWebApplicationFactory<Program> factory) => _factory = factory;
 
-    private static async Task<(string Token, string UserId)> RegisterAndLoginAsync(HttpClient client)
+    private static async Task<(string Token, string UserId)> LoginWithPasswordAsync(HttpClient client, string email, string password)
     {
-        var email = $"wt_{Guid.NewGuid():N}@test.com";
-        const string password = "Test123!@#";
-        await client.PostAsJsonAsync("/api/oauth2/register", new
-        {
-            email,
-            password,
-            firstName = "Wall",
-            lastName = "Tester",
-        });
-
         var tokenRequest = new OAuth2TokenRequest
         {
             GrantType = "password",
@@ -62,6 +54,21 @@ public class FaceWallTicketsControllerTests : IClassFixture<CustomWebApplication
         return (token, userId!);
     }
 
+    private static async Task<(string Token, string UserId, string Email)> RegisterAndLoginAsync(HttpClient client)
+    {
+        var email = $"wt_{Guid.NewGuid():N}@test.com";
+        await client.PostAsJsonAsync("/api/oauth2/register", new
+        {
+            email,
+            password = WallTicketsTestPassword,
+            firstName = "Wall",
+            lastName = "Tester",
+        });
+
+        var (token, userId) = await LoginWithPasswordAsync(client, email, WallTicketsTestPassword);
+        return (token, userId, email);
+    }
+
     private static async Task<int> GetAnyFaceIdAsync(HttpClient client, string token)
     {
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -85,7 +92,11 @@ public class FaceWallTicketsControllerTests : IClassFixture<CustomWebApplication
         throw new InvalidOperationException($"Role {exactName} not found");
     }
 
-    private static async Task PromoteUserToGlobalAdminAsync(CustomWebApplicationFactory<Program> factory, string userId)
+    private static async Task<string> PromoteUserToGlobalAdminAsync(
+        CustomWebApplicationFactory<Program> factory,
+        HttpClient client,
+        string userId,
+        string userEmail)
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -94,13 +105,16 @@ public class FaceWallTicketsControllerTests : IClassFixture<CustomWebApplication
         var user = await db.Users.FirstAsync(u => u.Id == userId);
         user.UserRoleId = adminRole.Id;
         await db.SaveChangesAsync();
+
+        var (token, _) = await LoginWithPasswordAsync(client, userEmail, WallTicketsTestPassword);
+        return token;
     }
 
     [Fact]
     public async Task Create_ShouldFail_WhenHostRole()
     {
         using var client = _factory.CreateClient();
-        var (token, _) = await RegisterAndLoginAsync(client);
+        var (token, _, _) = await RegisterAndLoginAsync(client);
         var faceId = await GetAnyFaceIdAsync(client, token);
         var hostRoleId = await GetFaceRoleIdAsync(client, token, "FACE_HOST");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -118,9 +132,9 @@ public class FaceWallTicketsControllerTests : IClassFixture<CustomWebApplication
         using var clientA = _factory.CreateClient();
         using var clientB = _factory.CreateClient();
         using var clientAdmin = _factory.CreateClient();
-        var (tokenA, _) = await RegisterAndLoginAsync(clientA);
-        var (tokenB, _) = await RegisterAndLoginAsync(clientB);
-        var (tokenAdmin, userIdAdmin) = await RegisterAndLoginAsync(clientAdmin);
+        var (tokenA, _, _) = await RegisterAndLoginAsync(clientA);
+        var (tokenB, _, _) = await RegisterAndLoginAsync(clientB);
+        var (tokenAdmin, userIdAdmin, adminEmail) = await RegisterAndLoginAsync(clientAdmin);
         var faceId = await GetAnyFaceIdAsync(clientA, tokenA);
         var roleId = await GetFaceRoleIdAsync(clientA, tokenA, "FACE_USER");
 
@@ -143,7 +157,7 @@ public class FaceWallTicketsControllerTests : IClassFixture<CustomWebApplication
             new { content = "hello" });
         comment.StatusCode.Should().Be(HttpStatusCode.Created);
 
-        await PromoteUserToGlobalAdminAsync(_factory, userIdAdmin);
+        tokenAdmin = await PromoteUserToGlobalAdminAsync(_factory, clientAdmin, userIdAdmin, adminEmail);
         clientAdmin.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenAdmin);
         var approve = await clientAdmin.PostAsync($"/api/admin/faces/{faceId}/wall-tickets/{ticketId}/approve", null);
         approve.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -161,8 +175,8 @@ public class FaceWallTicketsControllerTests : IClassFixture<CustomWebApplication
     {
         using var clientAuthor = _factory.CreateClient();
         using var clientAdmin = _factory.CreateClient();
-        var (tokenA, _) = await RegisterAndLoginAsync(clientAuthor);
-        var (tokenAdmin, userIdAdmin) = await RegisterAndLoginAsync(clientAdmin);
+        var (tokenA, _, _) = await RegisterAndLoginAsync(clientAuthor);
+        var (tokenAdmin, userIdAdmin, adminEmail) = await RegisterAndLoginAsync(clientAdmin);
         var faceId = await GetAnyFaceIdAsync(clientAuthor, tokenA);
         var roleId = await GetFaceRoleIdAsync(clientAuthor, tokenA, "FACE_USER");
         clientAuthor.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenA);
@@ -173,7 +187,7 @@ public class FaceWallTicketsControllerTests : IClassFixture<CustomWebApplication
             new { title = "X", description = "Y" });
         var ticketId = (await create.Content.ReadFromJsonAsync<JsonElement>())!.GetProperty("id").GetInt32();
 
-        await PromoteUserToGlobalAdminAsync(_factory, userIdAdmin);
+        tokenAdmin = await PromoteUserToGlobalAdminAsync(_factory, clientAdmin, userIdAdmin, adminEmail);
         clientAdmin.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenAdmin);
         var deny = await clientAdmin.PostAsync($"/api/admin/faces/{faceId}/wall-tickets/{ticketId}/deny", null);
         deny.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -196,8 +210,8 @@ public class FaceWallTicketsControllerTests : IClassFixture<CustomWebApplication
     {
         using var clientA = _factory.CreateClient();
         using var clientB = _factory.CreateClient();
-        var (tokenA, userA) = await RegisterAndLoginAsync(clientA);
-        var (tokenB, _) = await RegisterAndLoginAsync(clientB);
+        var (tokenA, userA, emailA) = await RegisterAndLoginAsync(clientA);
+        var (tokenB, _, _) = await RegisterAndLoginAsync(clientB);
         var faceId = await GetAnyFaceIdAsync(clientA, tokenA);
         var roleId = await GetFaceRoleIdAsync(clientA, tokenA, "FACE_USER");
 
@@ -217,7 +231,7 @@ public class FaceWallTicketsControllerTests : IClassFixture<CustomWebApplication
         var commentId = (await comment.Content.ReadFromJsonAsync<JsonElement>())!.GetProperty("id").GetInt32();
 
         // No user endpoint for author to delete comment — only admin API
-        await PromoteUserToGlobalAdminAsync(_factory, userA);
+        tokenA = await PromoteUserToGlobalAdminAsync(_factory, clientA, userA, emailA);
         clientA.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenA);
         var del = await clientA.DeleteAsync($"/api/admin/faces/{faceId}/wall-tickets/{ticketId}/comments/{commentId}");
         del.StatusCode.Should().Be(HttpStatusCode.NoContent);
@@ -227,7 +241,7 @@ public class FaceWallTicketsControllerTests : IClassFixture<CustomWebApplication
     public async Task Max20Tickets_Enforced()
     {
         using var client = _factory.CreateClient();
-        var (token, _) = await RegisterAndLoginAsync(client);
+        var (token, _, _) = await RegisterAndLoginAsync(client);
         var faceId = await GetAnyFaceIdAsync(client, token);
         var roleId = await GetFaceRoleIdAsync(client, token, "FACE_USER");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -251,7 +265,7 @@ public class FaceWallTicketsControllerTests : IClassFixture<CustomWebApplication
     public async Task NonAdmin_CannotAccessAdminList()
     {
         using var client = _factory.CreateClient();
-        var (token, _) = await RegisterAndLoginAsync(client);
+        var (token, _, _) = await RegisterAndLoginAsync(client);
         var faceId = await GetAnyFaceIdAsync(client, token);
         var roleId = await GetFaceRoleIdAsync(client, token, "FACE_USER");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -266,8 +280,8 @@ public class FaceWallTicketsControllerTests : IClassFixture<CustomWebApplication
     {
         using var clientAuthor = _factory.CreateClient();
         using var clientAdmin = _factory.CreateClient();
-        var (tokenA, _) = await RegisterAndLoginAsync(clientAuthor);
-        var (tokenAdmin, userIdAdmin) = await RegisterAndLoginAsync(clientAdmin);
+        var (tokenA, _, _) = await RegisterAndLoginAsync(clientAuthor);
+        var (tokenAdmin, userIdAdmin, adminEmail) = await RegisterAndLoginAsync(clientAdmin);
         var faceId = await GetAnyFaceIdAsync(clientAuthor, tokenA);
         var roleId = await GetFaceRoleIdAsync(clientAuthor, tokenA, "FACE_USER");
 
@@ -284,7 +298,7 @@ public class FaceWallTicketsControllerTests : IClassFixture<CustomWebApplication
             new { title = "T2", description = "D2" });
         putOk.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        await PromoteUserToGlobalAdminAsync(_factory, userIdAdmin);
+        tokenAdmin = await PromoteUserToGlobalAdminAsync(_factory, clientAdmin, userIdAdmin, adminEmail);
         clientAdmin.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenAdmin);
         (await clientAdmin.PostAsync($"/api/admin/faces/{faceId}/wall-tickets/{ticketId}/approve", null)).EnsureSuccessStatusCode();
 
@@ -305,7 +319,7 @@ public class FaceWallTicketsControllerTests : IClassFixture<CustomWebApplication
     public async Task Comment_TooLong_Returns400()
     {
         using var client = _factory.CreateClient();
-        var (token, _) = await RegisterAndLoginAsync(client);
+        var (token, _, _) = await RegisterAndLoginAsync(client);
         var faceId = await GetAnyFaceIdAsync(client, token);
         var roleId = await GetFaceRoleIdAsync(client, token, "FACE_USER");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -327,7 +341,7 @@ public class FaceWallTicketsControllerTests : IClassFixture<CustomWebApplication
     public async Task List_Returns404_WhenFaceNotFound()
     {
         using var client = _factory.CreateClient();
-        var (token, _) = await RegisterAndLoginAsync(client);
+        var (token, _, _) = await RegisterAndLoginAsync(client);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var res = await client.GetAsync("/api/faces/999999999/wall-tickets");
         res.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -338,8 +352,8 @@ public class FaceWallTicketsControllerTests : IClassFixture<CustomWebApplication
     {
         using var clientAuthor = _factory.CreateClient();
         using var clientAdmin = _factory.CreateClient();
-        var (tokenA, _) = await RegisterAndLoginAsync(clientAuthor);
-        var (tokenAdmin, userIdAdmin) = await RegisterAndLoginAsync(clientAdmin);
+        var (tokenA, _, _) = await RegisterAndLoginAsync(clientAuthor);
+        var (tokenAdmin, userIdAdmin, adminEmail) = await RegisterAndLoginAsync(clientAdmin);
         var faceId = await GetAnyFaceIdAsync(clientAuthor, tokenA);
         var roleId = await GetFaceRoleIdAsync(clientAuthor, tokenA, "FACE_USER");
         clientAuthor.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenA);
@@ -350,7 +364,7 @@ public class FaceWallTicketsControllerTests : IClassFixture<CustomWebApplication
                 new { title = "T", description = "D" }))
             .Content.ReadFromJsonAsync<JsonElement>())!.GetProperty("id").GetInt32();
 
-        await PromoteUserToGlobalAdminAsync(_factory, userIdAdmin);
+        tokenAdmin = await PromoteUserToGlobalAdminAsync(_factory, clientAdmin, userIdAdmin, adminEmail);
         clientAdmin.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenAdmin);
         (await clientAdmin.PostAsync($"/api/admin/faces/{faceId}/wall-tickets/{ticketId}/deny", null)).EnsureSuccessStatusCode();
 
@@ -363,8 +377,8 @@ public class FaceWallTicketsControllerTests : IClassFixture<CustomWebApplication
     {
         using var clientA = _factory.CreateClient();
         using var clientAdmin = _factory.CreateClient();
-        var (tokenA, _) = await RegisterAndLoginAsync(clientA);
-        var (tokenAdmin, userIdAdmin) = await RegisterAndLoginAsync(clientAdmin);
+        var (tokenA, _, _) = await RegisterAndLoginAsync(clientA);
+        var (tokenAdmin, userIdAdmin, adminEmail) = await RegisterAndLoginAsync(clientAdmin);
         var faceId = await GetAnyFaceIdAsync(clientA, tokenA);
         var roleId = await GetFaceRoleIdAsync(clientA, tokenA, "FACE_USER");
         clientA.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenA);
@@ -374,7 +388,7 @@ public class FaceWallTicketsControllerTests : IClassFixture<CustomWebApplication
                 new { title = "T", description = "D" }))
             .Content.ReadFromJsonAsync<JsonElement>())!.GetProperty("id").GetInt32();
 
-        await PromoteUserToGlobalAdminAsync(_factory, userIdAdmin);
+        tokenAdmin = await PromoteUserToGlobalAdminAsync(_factory, clientAdmin, userIdAdmin, adminEmail);
         clientAdmin.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenAdmin);
         (await clientAdmin.PostAsync($"/api/admin/faces/{faceId}/wall-tickets/{ticketId}/approve", null)).EnsureSuccessStatusCode();
         var again = await clientAdmin.PostAsync($"/api/admin/faces/{faceId}/wall-tickets/{ticketId}/approve", null);

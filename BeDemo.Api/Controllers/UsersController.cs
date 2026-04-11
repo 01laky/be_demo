@@ -19,7 +19,6 @@ public class UsersController : ControllerBase
     private readonly ApplicationDbContext _context;
     private readonly IFaceScopeContext _faceScope;
     private readonly IAccessEvaluator _access;
-
     public UsersController(
         UserManager<ApplicationUser> userManager,
         ILogger<UsersController> logger,
@@ -315,6 +314,8 @@ public class UsersController : ControllerBase
                     _logger.LogWarning("Password update failed for user: {UserId}, Errors: {Errors}", id, string.Join(", ", result.Errors.Select(e => e.Description)));
                     return BadRequest(result.Errors);
                 }
+
+                // J6: AccessTokenVersion + refresh revocation run in ApplicationDbContext.SaveChanges (ResetPasswordAsync saves).
             }
 
             result = await _userManager.UpdateAsync(user);

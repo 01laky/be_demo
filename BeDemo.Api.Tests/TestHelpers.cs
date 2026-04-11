@@ -63,3 +63,22 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
     /// <summary>Test server client without face prefix (for asserting legacy bare <c>/api/...</c> behavior).</summary>
     public HttpClient CreateUnscopedClient() => base.CreateClient();
 }
+
+/// <summary>
+/// Same host as <see cref="CustomWebApplicationFactory{TProgram}"/> but disables the Testing rate-limit bypass so
+/// <c>POST /api/oauth2/token</c> and <c>register</c> return <strong>429</strong> after the configured permit count (see Program.cs ACL A21).
+/// </summary>
+public sealed class RateLimitedOAuthWebApplicationFactory : CustomWebApplicationFactory<Program>
+{
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        // UseSetting merges into host configuration before Program reads rate-limit options (ConfigureAppConfiguration alone was too late for WebApplicationFactory).
+        builder.UseSetting("OAuth2:BypassRateLimitInTesting", "false");
+        builder.UseSetting("OAuth2:TokenRateLimitPermitLimit", "2");
+        // Short windows so register + token 429 phases can run in one test (sleep between phases).
+        builder.UseSetting("OAuth2:TokenRateLimitWindowSeconds", "3");
+        builder.UseSetting("OAuth2:RegisterRateLimitPermitLimit", "2");
+        builder.UseSetting("OAuth2:RegisterRateLimitWindowSeconds", "3");
+        base.ConfigureWebHost(builder);
+    }
+}

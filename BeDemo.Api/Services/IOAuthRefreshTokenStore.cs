@@ -13,6 +13,11 @@ public interface IOAuthRefreshTokenStore
     /// Returns null if invalid, expired, already used, or wrong shape.
     /// </summary>
     Task<RefreshTokenRedeemResult?> RedeemAndRotateAsync(string plainRefreshToken, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Revokes all non-revoked refresh tokens for the user (password change / forced logout, J6).
+    /// </summary>
+    Task RevokeAllActiveForUserAsync(string userId, CancellationToken cancellationToken = default);
 }
 
 /// <param name="UserId">AspNetUsers Id for the token owner.</param>

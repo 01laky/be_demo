@@ -49,6 +49,8 @@ public static class DatabaseSeeder
         // Seed Faces and Pages
         await SeedFacesAndPagesAsync(context);
 
+        await SeedOAuthClientsAsync(context);
+
         await context.SaveChangesAsync();
     }
 
@@ -63,7 +65,29 @@ public static class DatabaseSeeder
         await SeedComponentTypesAsync(context);
         await SeedDisplayModesAsync(context);
         await SeedFacesAndPagesAsync(context);
+
+        await SeedOAuthClientsAsync(context);
+
         await context.SaveChangesAsync();
+    }
+
+    /// <summary>Default confidential client for demos; secret must match <c>OAuth2:ClientSecret</c> in appsettings (O1).</summary>
+    public static async Task SeedOAuthClientsAsync(ApplicationDbContext context)
+    {
+        const string demoClientId = "be-demo-client";
+        if (await context.OAuthClients.AnyAsync(c => c.ClientId == demoClientId))
+            return;
+
+        const string demoSecret = "be-demo-secret-very-strong-key";
+        var hasher = new PasswordHasher<OAuthClient>();
+        var entity = new OAuthClient
+        {
+            ClientId = demoClientId,
+            IsActive = true,
+            CreatedAtUtc = DateTime.UtcNow,
+        };
+        entity.SecretHash = hasher.HashPassword(entity, demoSecret);
+        context.OAuthClients.Add(entity);
     }
 
     public static async Task SeedUserRolesAsync(ApplicationDbContext context)

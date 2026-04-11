@@ -176,7 +176,9 @@ public class OAuth2Controller : ControllerBase
     /// 
     /// Returns 200 OK with userId if registration passed, otherwise 400 Bad Request with errors
     /// </summary>
+    /// <summary>ACL A21: fixed-window rate limit per client IP (same bypass flag as token in Testing).</summary>
     [HttpPost("register")]
+    [EnableRateLimiting("oauth-register")]
     public async Task<IActionResult> Register([FromBody] OAuth2RegisterModel model)
     {
         // Validates ModelState - checks data annotations

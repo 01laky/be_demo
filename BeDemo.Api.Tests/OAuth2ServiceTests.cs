@@ -5,8 +5,10 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Identity;
 using Moq;
 using Xunit;
+using BeDemo.Api.Models;
 using BeDemo.Api.Models.DTOs;
 using BeDemo.Api.Services;
 
@@ -19,6 +21,7 @@ public class OAuth2ServiceTests
     private readonly Mock<IOAuthRefreshTokenStore> _mockRefreshStore;
     private readonly IConfiguration _configuration;
     private readonly ApplicationDbContext _db;
+    private readonly IPasswordHasher<OAuthClient> _oauthClientHasher = new PasswordHasher<OAuthClient>();
 
     public OAuth2ServiceTests()
     {
@@ -46,16 +49,27 @@ public class OAuth2ServiceTests
             .Options;
         _db = new ApplicationDbContext(dbOptions);
 
+        var oauth = new OAuthClient
+        {
+            ClientId = "test-client",
+            IsActive = true,
+            CreatedAtUtc = DateTime.UtcNow,
+        };
+        oauth.SecretHash = _oauthClientHasher.HashPassword(oauth, "test-secret");
+        _db.OAuthClients.Add(oauth);
+        _db.SaveChanges();
+
         // Setup mock key service
         _mockKeyService.Setup(x => x.GetKeyId()).Returns("test-key-id");
         var ecdsa = System.Security.Cryptography.ECDsa.Create();
         var securityKey = new Microsoft.IdentityModel.Tokens.ECDsaSecurityKey(ecdsa);
         _mockKeyService.Setup(x => x.GetSigningKey()).Returns(securityKey);
         _mockKeyService.Setup(x => x.GetValidationKey()).Returns(securityKey);
+        _mockKeyService.Setup(x => x.GetIssuerSigningKeys()).Returns(new List<Microsoft.IdentityModel.Tokens.SecurityKey> { securityKey }.AsReadOnly());
     }
 
     private OAuth2Service CreateService() =>
-        new OAuth2Service(_mockKeyService.Object, _configuration, _mockLogger.Object, _db, _mockRefreshStore.Object);
+        new OAuth2Service(_mockKeyService.Object, _configuration, _mockLogger.Object, _db, _mockRefreshStore.Object, _oauthClientHasher);
 
     [Fact]
     public async Task ValidateClientAsync_ShouldReturnTrue_WhenCredentialsAreValid()

@@ -93,38 +93,21 @@ public class OAuth2Middleware
                     }
 
                     // ============================================================
-                    // REQUEST SIGNATURE VALIDATION (optional)
+                    // Request body ECDSA signatures (O4) — not supported
                     // ============================================================
-                    // If request contains signature, validates it using ECDSA
-                    // Signature ensures request integrity - prevents data tampering
-                    // Only validate signature if it's explicitly provided (not null and not empty)
-                    if (!string.IsNullOrEmpty(request.Signature))
+                    // Previous builds verified against the *server* signing key, which is not a client-PKI model.
+                    // Reject any non-empty signature so clients do not rely on a misleading feature; use TLS + client_secret (+ rate limits).
+                    if (!string.IsNullOrWhiteSpace(request.Signature) ||
+                        !string.IsNullOrWhiteSpace(request.SignatureAlgorithm))
                     {
-                        var isValidSignature = oauth2Service.ValidateRequestSignature(request);
-                        if (!isValidSignature)
-                        {
-                            _logger.LogWarning("Invalid request signature");
-                            context.Response.StatusCode = 401;
-                            await context.Response.WriteAsync(JsonSerializer.Serialize(new OAuth2ErrorResponse
-                            {
-                                Error = "invalid_signature",                              // OAuth2 error code
-                                ErrorDescription = "Request signature validation failed"  // Error description
-                            }));
-                            return;  // Terminates pipeline
-                        }
-                    }
-                    // If signature algorithm is provided but signature is empty string, it's invalid
-                    else if (request.Signature == string.Empty && !string.IsNullOrEmpty(request.SignatureAlgorithm))
-                    {
-                        // This handles the case where Signature is explicitly set to empty string with algorithm
-                        _logger.LogWarning("Signature algorithm provided but signature is explicitly empty");
-                        context.Response.StatusCode = 401;
+                        _logger.LogWarning("OAuth2 token request included body signature fields; feature removed (use TLS + client credentials)");
+                        context.Response.StatusCode = 400;
                         await context.Response.WriteAsync(JsonSerializer.Serialize(new OAuth2ErrorResponse
                         {
-                            Error = "invalid_signature",                              // OAuth2 error code
-                            ErrorDescription = "Request signature validation failed"  // Error description
+                            Error = "invalid_request",
+                            ErrorDescription = "Request body JWT/ECDSA signatures are not supported; use HTTPS and client_id/client_secret.",
                         }));
-                        return;  // Terminates pipeline
+                        return;
                     }
                 }
             }

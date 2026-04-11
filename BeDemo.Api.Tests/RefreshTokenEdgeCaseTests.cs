@@ -8,7 +8,7 @@ using BeDemo.Api.Models.DTOs;
 namespace BeDemo.Api.Tests;
 
 /// <summary>
-/// Edge case testy pre refresh token flow
+/// Refresh token grant edge cases (empty refresh, reuse after rotation, access JWT misused as refresh).
 /// </summary>
 public class RefreshTokenEdgeCaseTests : IClassFixture<CustomWebApplicationFactory<Program>>, IDisposable
 {

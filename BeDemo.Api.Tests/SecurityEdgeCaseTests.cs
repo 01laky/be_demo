@@ -8,7 +8,7 @@ using BeDemo.Api.Models.DTOs;
 namespace BeDemo.Api.Tests;
 
 /// <summary>
-/// Security edge case testy
+/// Security-related edge cases for OAuth2 token/register inputs (injection-ish payloads, O4 signature rejection).
 /// </summary>
 public class SecurityEdgeCaseTests : IClassFixture<CustomWebApplicationFactory<Program>>, IDisposable
 {
@@ -222,7 +222,8 @@ public class SecurityEdgeCaseTests : IClassFixture<CustomWebApplicationFactory<P
         await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
         var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#", Signature = "test", SignatureAlgorithm = "INVALID" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        // O4: body signatures are rejected with 400 invalid_request (not verified against server key).
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -232,7 +233,7 @@ public class SecurityEdgeCaseTests : IClassFixture<CustomWebApplicationFactory<P
         await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
         var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#", Signature = "not-valid-base64!!!", SignatureAlgorithm = "ES512" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -242,7 +243,7 @@ public class SecurityEdgeCaseTests : IClassFixture<CustomWebApplicationFactory<P
         await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
         var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#", Signature = "", SignatureAlgorithm = "ES512" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     // [Fact] // Temporarily disabled - database conflict
