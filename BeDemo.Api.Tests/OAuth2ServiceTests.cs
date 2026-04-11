@@ -79,7 +79,8 @@ public class OAuth2ServiceTests
         var clientValidator = new OAuthClientValidator(_db, _oauthClientHasher, NullLogger<OAuthClientValidator>.Instance);
         var signatureVerifier = new OAuthTokenRequestSignatureVerifier(
             _mockKeyService.Object,
-            NullLogger<OAuthTokenRequestSignatureVerifier>.Instance);
+            NullLogger<OAuthTokenRequestSignatureVerifier>.Instance,
+            new SystemUtcClock());
         return new OAuth2Service(
             accessFactory,
             clientValidator,

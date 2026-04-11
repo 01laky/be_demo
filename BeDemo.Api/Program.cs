@@ -286,6 +286,7 @@ builder.Services.AddSingleton<IECDSAKeyService>(ecdsaKeyService);
 
 builder.Services.AddScoped<IPasswordHasher<OAuthClient>, PasswordHasher<OAuthClient>>();
 
+builder.Services.AddSingleton<IClock, SystemUtcClock>();
 builder.Services.AddScoped<IOAuthClientValidator, OAuthClientValidator>();
 builder.Services.AddScoped<IOAuthTokenRequestSignatureVerifier, OAuthTokenRequestSignatureVerifier>();
 builder.Services.AddScoped<IOAuthAccessTokenFactory, OAuthAccessTokenFactory>();

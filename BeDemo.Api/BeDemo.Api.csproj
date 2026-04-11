@@ -37,4 +37,8 @@
     <Protobuf Include="Protos\health.proto" GrpcServices="Client" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="BeDemo.Api.Tests" />
+  </ItemGroup>
+
 </Project>

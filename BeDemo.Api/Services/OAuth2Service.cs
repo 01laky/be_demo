@@ -1,7 +1,11 @@
 /*
- * OAuth2Service.cs - Orchestrates OAuth2 token grants (password, refresh_token).
+ * OAuth2Service.cs — token endpoint orchestration for password and refresh_token grants.
  *
- * Client validation, access JWT creation, and body-signature verification are delegated to focused services.
+ * Split responsibilities (see docs):
+ *   <see cref="IOAuthClientValidator"/> — client_id / client_secret vs OAuthClients.
+ *   <see cref="IOAuthAccessTokenFactory"/> — ES512 access JWT + “access JWT as refresh” guard.
+ *   <see cref="IOAuthTokenRequestSignatureVerifier"/> — legacy body signature verification (middleware rejects new usage).
+ *   <see cref="IOAuthRefreshTokenStore"/> — opaque refresh persistence and rotation (A17).
  */
 
 using System.Security.Cryptography;
@@ -12,29 +16,21 @@ using BeDemo.Api.Models.DTOs;
 namespace BeDemo.Api.Services;
 
 /// <summary>
-/// Interface for OAuth2 service - defines contract for OAuth2 operations
+/// Facade for the OAuth2 token endpoint: issues tokens and exposes validation helpers used by <c>OAuth2Middleware</c>.
 /// </summary>
 public interface IOAuth2Service
 {
-    /// <summary>
-    /// Generates JWT access token and refresh token for user
-    /// </summary>
+    /// <summary>Runs password or refresh_token grant; returns <c>null</c> on credential / grant errors (controller maps to 401).</summary>
     Task<OAuth2TokenResponse?> GenerateTokenAsync(OAuth2TokenRequest request, UserManager<ApplicationUser> userManager);
 
-    /// <summary>
-    /// Validates ECDSA request signature (legacy; middleware rejects signed bodies for token requests).
-    /// </summary>
+    /// <summary>Delegates to <see cref="IOAuthTokenRequestSignatureVerifier"/> (legacy path).</summary>
     bool ValidateRequestSignature(OAuth2TokenRequest request);
 
-    /// <summary>
-    /// Validates client credentials (client_id and client_secret)
-    /// </summary>
+    /// <summary>Delegates to <see cref="IOAuthClientValidator"/>.</summary>
     Task<bool> ValidateClientAsync(string? clientId, string? clientSecret);
 }
 
-/// <summary>
-/// OAuth2 token endpoint orchestration: password and refresh_token grants.
-/// </summary>
+/// <inheritdoc cref="IOAuth2Service" />
 public sealed class OAuth2Service : IOAuth2Service
 {
     private readonly IOAuthAccessTokenFactory _accessTokens;
@@ -43,6 +39,7 @@ public sealed class OAuth2Service : IOAuth2Service
     private readonly IOAuthRefreshTokenStore _refreshTokens;
     private readonly ILogger<OAuth2Service> _logger;
 
+    /// <summary>Creates the orchestrator (scoped per HTTP request).</summary>
     public OAuth2Service(
         IOAuthAccessTokenFactory accessTokens,
         IOAuthClientValidator clientValidator,
@@ -145,6 +142,7 @@ public sealed class OAuth2Service : IOAuth2Service
         }
     }
 
+    /// <summary>64 bytes from a CSPRNG, Base64-encoded — opaque refresh string returned to the client (stored hashed server-side).</summary>
     private static string GenerateOpaqueRefreshToken()
     {
         var randomBytes = new byte[64];

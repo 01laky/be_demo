@@ -10,15 +10,29 @@ using BeDemo.Api.Security;
 
 namespace BeDemo.Api.Services;
 
-/// <summary>Builds signed ES512 access JWTs and detects access JWTs misused as refresh tokens.</summary>
+/// <summary>
+/// Issues ES512 access JWTs for the OAuth2 token endpoint and detects when a client mistakenly sends a valid access JWT
+/// as <c>refresh_token</c> (must be rejected before hitting the opaque refresh store).
+/// </summary>
+/// <remarks>
+/// Global role name and <see cref="ApplicationUser.AccessTokenVersion"/> are read from the database at issue time so
+/// admin promotion and J6 invalidation apply on refresh without requiring a password grant.
+/// </remarks>
 public interface IOAuthAccessTokenFactory
 {
+    /// <summary>Creates a signed access JWT and returns its configured lifetime in minutes.</summary>
+    /// <param name="user">Identity user; <see cref="ApplicationUser.Id"/> must exist in <c>AspNetUsers</c>.</param>
+    /// <param name="useRememberMeAccessLifetime">When <c>true</c>, uses <c>Jwt:ExpiresInMinutesRememberMe</c>; otherwise session TTL.</param>
     Task<(string AccessToken, int ExpiresInMinutes)> CreateAsync(ApplicationUser user, bool useRememberMeAccessLifetime);
 
-    /// <summary>True when the string validates as a current access JWT — must not be accepted as <c>refresh_token</c>.</summary>
+    /// <summary>
+    /// <c>true</c> when <paramref name="token"/> parses and validates as a currently acceptable access JWT for this API —
+    /// in that case the refresh grant must fail (client sent access token instead of opaque refresh).
+    /// </summary>
     bool IsValidAccessTokenMisusedAsRefresh(string token);
 }
 
+/// <inheritdoc cref="IOAuthAccessTokenFactory" />
 public sealed class OAuthAccessTokenFactory : IOAuthAccessTokenFactory
 {
     private readonly IECDSAKeyService _keyService;
@@ -26,6 +40,7 @@ public sealed class OAuthAccessTokenFactory : IOAuthAccessTokenFactory
     private readonly ApplicationDbContext _db;
     private readonly ILogger<OAuthAccessTokenFactory> _logger;
 
+    /// <summary>Creates the factory.</summary>
     public OAuthAccessTokenFactory(
         IECDSAKeyService keyService,
         IConfiguration configuration,
@@ -43,6 +58,7 @@ public sealed class OAuthAccessTokenFactory : IOAuthAccessTokenFactory
         ApplicationUser user,
         bool useRememberMeAccessLifetime)
     {
+        // Standard OIDC-style identity claims; role and atv come from authoritative DB state.
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id),
@@ -106,6 +122,7 @@ public sealed class OAuthAccessTokenFactory : IOAuthAccessTokenFactory
         }
     }
 
+    /// <summary>Parameters aligned with JwtBearer + <see cref="IECDSAKeyService"/> for misuse detection only.</summary>
     private TokenValidationParameters GetTokenValidationParameters()
     {
         return new TokenValidationParameters

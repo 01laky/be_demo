@@ -5,7 +5,7 @@
  * - POST /api/oauth2/token - get JWT access token and refresh token
  * - POST /api/oauth2/register - register new user
  * 
- * All endpoints use OAuth2Service for business logic.
+ * Token logic is orchestrated by <see cref="Services.IOAuth2Service"/> (delegates to client validator, access JWT factory, refresh store).
  */
 
 using Microsoft.AspNetCore.Identity;
