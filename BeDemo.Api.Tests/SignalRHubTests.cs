@@ -8,6 +8,11 @@ using BeDemo.Api.Models.DTOs;
 
 namespace BeDemo.Api.Tests;
 
+/// <summary>
+/// SignalR hub security matrix: anonymous negotiate attempts must fail for face-scoped hubs, while authenticated
+/// scenarios (JWT in query string + long polling) prove the happy path for browser-compatible transports.
+/// Complements manual checks documented in <c>docs/guides/signalr-hub-security-matrix.md</c>.
+/// </summary>
 public class SignalRHubTests : IClassFixture<CustomWebApplicationFactory<Program>>, IDisposable
 {
     private readonly CustomWebApplicationFactory<Program> _factory;
@@ -22,16 +27,85 @@ public class SignalRHubTests : IClassFixture<CustomWebApplicationFactory<Program
     [Fact]
     public async Task SignalRHub_ShouldRejectConnection_WhenNoToken()
     {
-        // Arrange
-        var hubConnection = new HubConnectionBuilder()
-            .WithUrl(new Uri(_client.BaseAddress!, "/public/hubs/chat"), options =>
+        await AssertHubRejectsWithoutTokenAsync("/public/hubs/chat");
+    }
+
+    [Fact]
+    public async Task MessengerHub_ShouldRejectConnection_WhenNoToken() =>
+        await AssertHubRejectsWithoutTokenAsync("/public/hubs/messenger");
+
+    [Fact]
+    public async Task ChatRoomHub_ShouldRejectConnection_WhenNoToken() =>
+        await AssertHubRejectsWithoutTokenAsync("/public/hubs/chatroom");
+
+    /// <summary>
+    /// Positive-path check for browser SignalR clients that pass JWT as <c>access_token</c> on the query string
+    /// (WebSockets can attach headers; long polling historically relied on query for bearer material in some stacks).
+    /// Uses in-memory test server handler + long polling only to keep the test deterministic without real WebSocket infra.
+    /// </summary>
+    [Fact]
+    public async Task ChatHub_ShouldConnect_WhenValidJwtInQueryString()
+    {
+        var email = $"sr_{Guid.NewGuid():N}@test.com";
+        const string password = "Test123!@#";
+
+        var reg = await _client.PostAsJsonAsync(
+            "/api/oauth2/register",
+            new { email, password, firstName = "S", lastName = "R" });
+        reg.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        HttpResponseMessage? tokResp = null;
+        for (var i = 0; i < 15; i++)
+        {
+            await Task.Delay(150 * (i + 1));
+            tokResp = await _client.PostAsJsonAsync(
+                "/api/oauth2/token",
+                new OAuth2TokenRequest
+                {
+                    GrantType = "password",
+                    ClientId = "be-demo-client",
+                    ClientSecret = "be-demo-secret-very-strong-key",
+                    Username = email,
+                    Password = password,
+                });
+            if (tokResp.StatusCode == HttpStatusCode.OK)
+                break;
+        }
+
+        tokResp.Should().NotBeNull();
+        tokResp!.StatusCode.Should().Be(HttpStatusCode.OK);
+        var tokenData = await tokResp.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
+        tokenData!.AccessToken.Should().NotBeNullOrEmpty();
+
+        var hubUrl = new Uri(
+            _client.BaseAddress!,
+            $"/public/hubs/chat?access_token={Uri.EscapeDataString(tokenData.AccessToken)}");
+        await using var hubConnection = new HubConnectionBuilder()
+            .WithUrl(hubUrl, options =>
             {
                 options.HttpMessageHandlerFactory = _ => _factory.Server.CreateHandler();
                 options.Transports = Microsoft.AspNetCore.Http.Connections.HttpTransportType.LongPolling;
             })
             .Build();
 
-        // Act & Assert
+        await hubConnection.StartAsync();
+        hubConnection.State.Should().Be(HubConnectionState.Connected);
+        await hubConnection.StopAsync();
+    }
+
+    /// <summary>
+    /// All face-prefixed hubs require Bearer or <c>access_token</c> query; unauthenticated negotiate must fail.
+    /// </summary>
+    private async Task AssertHubRejectsWithoutTokenAsync(string relativePath)
+    {
+        var hubConnection = new HubConnectionBuilder()
+            .WithUrl(new Uri(_client.BaseAddress!, relativePath), options =>
+            {
+                options.HttpMessageHandlerFactory = _ => _factory.Server.CreateHandler();
+                options.Transports = Microsoft.AspNetCore.Http.Connections.HttpTransportType.LongPolling;
+            })
+            .Build();
+
         var exception = await Assert.ThrowsAsync<HttpRequestException>(async () =>
         {
             await hubConnection.StartAsync();
