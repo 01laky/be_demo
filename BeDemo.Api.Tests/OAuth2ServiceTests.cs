@@ -5,6 +5,7 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.AspNetCore.Identity;
 using Moq;
 using Xunit;
@@ -68,8 +69,24 @@ public class OAuth2ServiceTests
         _mockKeyService.Setup(x => x.GetIssuerSigningKeys()).Returns(new List<Microsoft.IdentityModel.Tokens.SecurityKey> { securityKey }.AsReadOnly());
     }
 
-    private OAuth2Service CreateService() =>
-        new OAuth2Service(_mockKeyService.Object, _configuration, _mockLogger.Object, _db, _mockRefreshStore.Object, _oauthClientHasher);
+    private OAuth2Service CreateService()
+    {
+        var accessFactory = new OAuthAccessTokenFactory(
+            _mockKeyService.Object,
+            _configuration,
+            _db,
+            NullLogger<OAuthAccessTokenFactory>.Instance);
+        var clientValidator = new OAuthClientValidator(_db, _oauthClientHasher, NullLogger<OAuthClientValidator>.Instance);
+        var signatureVerifier = new OAuthTokenRequestSignatureVerifier(
+            _mockKeyService.Object,
+            NullLogger<OAuthTokenRequestSignatureVerifier>.Instance);
+        return new OAuth2Service(
+            accessFactory,
+            clientValidator,
+            signatureVerifier,
+            _mockRefreshStore.Object,
+            _mockLogger.Object);
+    }
 
     [Fact]
     public async Task ValidateClientAsync_ShouldReturnTrue_WhenCredentialsAreValid()

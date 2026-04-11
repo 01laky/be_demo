@@ -286,8 +286,9 @@ builder.Services.AddSingleton<IECDSAKeyService>(ecdsaKeyService);
 
 builder.Services.AddScoped<IPasswordHasher<OAuthClient>, PasswordHasher<OAuthClient>>();
 
-// Adds OAuth2Service as scoped service - new instance for each HTTP request
-// Scoped means the service lives during the HTTP request lifetime
+builder.Services.AddScoped<IOAuthClientValidator, OAuthClientValidator>();
+builder.Services.AddScoped<IOAuthTokenRequestSignatureVerifier, OAuthTokenRequestSignatureVerifier>();
+builder.Services.AddScoped<IOAuthAccessTokenFactory, OAuthAccessTokenFactory>();
 builder.Services.AddScoped<IOAuth2Service, OAuth2Service>();
 
 // AI gRPC client - singleton to reuse the HTTP/2 channel across requests

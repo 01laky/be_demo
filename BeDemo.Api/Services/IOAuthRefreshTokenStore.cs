@@ -1,7 +1,7 @@
 namespace BeDemo.Api.Services;
 
 /// <summary>
-/// Database-backed refresh tokens with rotation (ACL A17). Used by <see cref="OAuth2Service"/>.
+/// Database-backed refresh tokens with rotation (ACL A17). Used by <see cref="OAuth2Service"/> after password grant.
 /// </summary>
 public interface IOAuthRefreshTokenStore
 {
