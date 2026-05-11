@@ -56,6 +56,8 @@ public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<UserFaceProfileLike> UserFaceProfileLikes { get; set; } = null!;
     public DbSet<UserFaceProfileComment> UserFaceProfileComments { get; set; } = null!;
     public DbSet<UserFaceProfileReview> UserFaceProfileReviews { get; set; } = null!;
+    public DbSet<AiReviewJob> AiReviewJobs { get; set; } = null!;
+    public DbSet<ContentModerationEvent> ContentModerationEvents { get; set; } = null!;
 
     /// <summary>OAuth2 refresh token persistence (rotation, revocation) — see <see cref="IOAuthRefreshTokenStore"/>.</summary>
     public DbSet<OAuthRefreshToken> OAuthRefreshTokens { get; set; } = null!;
@@ -428,9 +430,25 @@ public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.Description).HasMaxLength(2000);
             entity.Property(e => e.AlbumType).IsRequired();
             entity.Property(e => e.MediaType).IsRequired();
+            entity.Property(e => e.ApprovalStatus).IsRequired().HasConversion<int>();
+            entity.Property(e => e.AiReviewStatus).IsRequired().HasConversion<int>();
+            entity.Property(e => e.AiReviewDecision).IsRequired().HasConversion<int>();
+            entity.Property(e => e.AiReviewRiskLevel).IsRequired().HasConversion<int>();
+            entity.Property(e => e.AiReviewFlagsJson).HasColumnType("text");
+            entity.Property(e => e.AiReviewReason).HasMaxLength(2000);
+            entity.Property(e => e.AiReviewUserMessage).HasMaxLength(1000);
+            entity.Property(e => e.AiReviewModelVersion).HasMaxLength(100);
+            entity.Property(e => e.AiReviewTraceId).HasMaxLength(200);
+            entity.Property(e => e.HumanReviewedByUserId).HasMaxLength(450);
+            entity.Property(e => e.HumanDecisionReason).HasMaxLength(2000);
+            entity.Property(e => e.RemovedByUserId).HasMaxLength(450);
+            entity.Property(e => e.RemovalReason).HasMaxLength(2000);
+            entity.Property(e => e.ModerationVersion).IsRequired();
             entity.Property(e => e.CreatedAt).IsRequired();
 
             entity.HasIndex(e => e.CreatorId);
+            entity.HasIndex(e => e.ApprovalStatus);
+            entity.HasIndex(e => e.AiReviewStatus);
 
             entity.HasOne(e => e.Creator)
                 .WithMany()
@@ -503,10 +521,26 @@ public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.CreatorId).IsRequired().HasMaxLength(450);
             entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
             entity.Property(e => e.Content).IsRequired().HasColumnType("text");
+            entity.Property(e => e.ApprovalStatus).IsRequired().HasConversion<int>();
+            entity.Property(e => e.AiReviewStatus).IsRequired().HasConversion<int>();
+            entity.Property(e => e.AiReviewDecision).IsRequired().HasConversion<int>();
+            entity.Property(e => e.AiReviewRiskLevel).IsRequired().HasConversion<int>();
+            entity.Property(e => e.AiReviewFlagsJson).HasColumnType("text");
+            entity.Property(e => e.AiReviewReason).HasMaxLength(2000);
+            entity.Property(e => e.AiReviewUserMessage).HasMaxLength(1000);
+            entity.Property(e => e.AiReviewModelVersion).HasMaxLength(100);
+            entity.Property(e => e.AiReviewTraceId).HasMaxLength(200);
+            entity.Property(e => e.HumanReviewedByUserId).HasMaxLength(450);
+            entity.Property(e => e.HumanDecisionReason).HasMaxLength(2000);
+            entity.Property(e => e.RemovedByUserId).HasMaxLength(450);
+            entity.Property(e => e.RemovalReason).HasMaxLength(2000);
+            entity.Property(e => e.ModerationVersion).IsRequired();
             entity.Property(e => e.CreatedAt).IsRequired();
 
             entity.HasIndex(e => e.CreatorId);
             entity.HasIndex(e => e.FaceId);
+            entity.HasIndex(e => e.ApprovalStatus);
+            entity.HasIndex(e => e.AiReviewStatus);
 
             entity.HasOne(e => e.Creator)
                 .WithMany()
@@ -580,9 +614,25 @@ public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
             entity.Property(e => e.Description).HasMaxLength(2000);
             entity.Property(e => e.VideoUrl).IsRequired().HasMaxLength(1000);
+            entity.Property(e => e.ApprovalStatus).IsRequired().HasConversion<int>();
+            entity.Property(e => e.AiReviewStatus).IsRequired().HasConversion<int>();
+            entity.Property(e => e.AiReviewDecision).IsRequired().HasConversion<int>();
+            entity.Property(e => e.AiReviewRiskLevel).IsRequired().HasConversion<int>();
+            entity.Property(e => e.AiReviewFlagsJson).HasColumnType("text");
+            entity.Property(e => e.AiReviewReason).HasMaxLength(2000);
+            entity.Property(e => e.AiReviewUserMessage).HasMaxLength(1000);
+            entity.Property(e => e.AiReviewModelVersion).HasMaxLength(100);
+            entity.Property(e => e.AiReviewTraceId).HasMaxLength(200);
+            entity.Property(e => e.HumanReviewedByUserId).HasMaxLength(450);
+            entity.Property(e => e.HumanDecisionReason).HasMaxLength(2000);
+            entity.Property(e => e.RemovedByUserId).HasMaxLength(450);
+            entity.Property(e => e.RemovalReason).HasMaxLength(2000);
+            entity.Property(e => e.ModerationVersion).IsRequired();
             entity.Property(e => e.CreatedAt).IsRequired();
 
             entity.HasIndex(e => e.CreatorId);
+            entity.HasIndex(e => e.ApprovalStatus);
+            entity.HasIndex(e => e.AiReviewStatus);
 
             entity.HasOne(e => e.Creator)
                 .WithMany()
@@ -956,6 +1006,38 @@ public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.ClientId).IsRequired().HasMaxLength(128);
             entity.Property(e => e.SecretHash).IsRequired().HasMaxLength(500);
             entity.HasIndex(e => e.ClientId).IsUnique();
+        });
+
+        builder.Entity<AiReviewJob>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ContentType).IsRequired().HasConversion<int>();
+            entity.Property(e => e.CreatedByUserId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.Status).IsRequired().HasConversion<int>();
+            entity.Property(e => e.LastError).HasMaxLength(2000);
+            entity.Property(e => e.CreatedAtUtc).IsRequired();
+            entity.HasIndex(e => new { e.ContentType, e.ContentId, e.ModerationVersion }).IsUnique();
+            entity.HasIndex(e => new { e.Status, e.NextAttemptAtUtc });
+            entity.HasIndex(e => e.FaceId);
+        });
+
+        builder.Entity<ContentModerationEvent>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ContentType).IsRequired().HasConversion<int>();
+            entity.Property(e => e.OldApprovalStatus).HasConversion<int>();
+            entity.Property(e => e.NewApprovalStatus).HasConversion<int>();
+            entity.Property(e => e.OldAiReviewStatus).HasConversion<int>();
+            entity.Property(e => e.NewAiReviewStatus).HasConversion<int>();
+            entity.Property(e => e.ActorType).IsRequired().HasConversion<int>();
+            entity.Property(e => e.ActorUserId).HasMaxLength(450);
+            entity.Property(e => e.Reason).HasMaxLength(2000);
+            entity.Property(e => e.UserMessage).HasMaxLength(1000);
+            entity.Property(e => e.AiTraceId).HasMaxLength(200);
+            entity.Property(e => e.AiModelVersion).HasMaxLength(100);
+            entity.Property(e => e.CreatedAtUtc).IsRequired();
+            entity.HasIndex(e => new { e.ContentType, e.ContentId, e.CreatedAtUtc });
+            entity.HasIndex(e => e.FaceId);
         });
     }
 }

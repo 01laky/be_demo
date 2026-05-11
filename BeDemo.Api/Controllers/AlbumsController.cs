@@ -16,17 +16,20 @@ public class AlbumsController : ControllerBase
     private readonly ILogger<AlbumsController> _logger;
     private readonly IFaceScopeContext _faceScope;
     private readonly IAccessEvaluator _access;
+    private readonly IRedisJobQueue _jobQueue;
 
     public AlbumsController(
         ApplicationDbContext context,
         ILogger<AlbumsController> logger,
         IFaceScopeContext faceScope,
-        IAccessEvaluator access)
+        IAccessEvaluator access,
+        IRedisJobQueue jobQueue)
     {
         _context = context;
         _logger = logger;
         _faceScope = faceScope;
         _access = access;
+        _jobQueue = jobQueue;
     }
 
     private string? UserId => User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -41,6 +44,7 @@ public class AlbumsController : ControllerBase
             return Unauthorized();
 
         var query = _context.Albums
+            .Where(a => a.ApprovalStatus == ContentApprovalStatus.Approved)
             .Where(a => a.AlbumType == AlbumTypeEnum.Public || a.CreatorId == UserId);
 
         // Tenant: always filter to scoped face. Admin: optional ?faceId= targets a tenant (required to see non-admin face albums).
@@ -65,6 +69,9 @@ public class AlbumsController : ControllerBase
                 faces = a.AlbumFaces.Select(af => new { af.FaceId, af.Face.Title }),
                 likesCount = a.Likes.Count,
                 commentsCount = a.Comments.Count,
+                approvalStatus = a.ApprovalStatus.ToString(),
+                aiReviewStatus = a.AiReviewStatus.ToString(),
+                creatorStatusLabel = ContentModerationHelpers.CreatorStatusLabel(a.ApprovalStatus, a.AiReviewStatus),
                 a.CreatedAt,
                 a.UpdatedAt,
             })
@@ -90,8 +97,12 @@ public class AlbumsController : ControllerBase
         if (album == null)
             return NotFound(new { error = "Album not found" });
 
-        // Visibility check: private/paid only visible to creator
-        if (album.AlbumType != AlbumTypeEnum.Public && album.CreatorId != UserId)
+        var isCreator = album.CreatorId == UserId;
+        if (!isCreator && album.ApprovalStatus != ContentApprovalStatus.Approved)
+            return NotFound(new { error = "Album not found" });
+
+        // Visibility check: private/paid only visible to creator.
+        if (album.AlbumType != AlbumTypeEnum.Public && !isCreator)
             return Forbid();
 
         var effectiveFaceId = _faceScope.ResolveDataFaceId(
@@ -112,6 +123,11 @@ public class AlbumsController : ControllerBase
             likesCount = album.Likes.Count,
             commentsCount = album.Comments.Count,
             isLikedByMe = album.Likes.Any(l => l.UserId == UserId),
+            approvalStatus = album.ApprovalStatus.ToString(),
+            aiReviewStatus = album.AiReviewStatus.ToString(),
+            aiReviewUserMessage = isCreator ? album.AiReviewUserMessage : null,
+            humanDecisionReason = isCreator ? album.HumanDecisionReason : null,
+            creatorStatusLabel = ContentModerationHelpers.CreatorStatusLabel(album.ApprovalStatus, album.AiReviewStatus),
             album.CreatedAt,
             album.UpdatedAt,
         });
@@ -128,7 +144,9 @@ public class AlbumsController : ControllerBase
 
         // Other users can only see public albums
         if (userId != UserId)
-            query = query.Where(a => a.AlbumType == AlbumTypeEnum.Public);
+            query = query.Where(a =>
+                a.ApprovalStatus == ContentApprovalStatus.Approved &&
+                a.AlbumType == AlbumTypeEnum.Public);
 
         var effectiveFaceId = _faceScope.ResolveDataFaceId(
             Request.Query.TryGetValue("faceId", out var qf) && int.TryParse(qf.FirstOrDefault(), out var qid) ? qid : null);
@@ -152,6 +170,9 @@ public class AlbumsController : ControllerBase
                 faces = a.AlbumFaces.Select(af => new { af.FaceId, af.Face.Title }),
                 likesCount = a.Likes.Count,
                 commentsCount = a.Comments.Count,
+                approvalStatus = a.ApprovalStatus.ToString(),
+                aiReviewStatus = a.AiReviewStatus.ToString(),
+                creatorStatusLabel = ContentModerationHelpers.CreatorStatusLabel(a.ApprovalStatus, a.AiReviewStatus),
                 a.CreatedAt,
                 a.UpdatedAt,
             })
@@ -177,6 +198,9 @@ public class AlbumsController : ControllerBase
             Description = dto.Description?.Trim(),
             AlbumType = dto.AlbumType,
             MediaType = dto.MediaType,
+            ApprovalStatus = ContentApprovalStatus.PendingApproval,
+            AiReviewStatus = AiReviewStatus.Queued,
+            SubmittedAtUtc = DateTime.UtcNow,
         };
 
         _context.Albums.Add(album);
@@ -209,7 +233,34 @@ public class AlbumsController : ControllerBase
         }
 
         if (validFaceIds.Count > 0)
+        {
+            var firstFaceId = validFaceIds[0];
+            _context.AiReviewJobs.Add(new AiReviewJob
+            {
+                ContentType = ModeratedContentType.Album,
+                ContentId = album.Id,
+                FaceId = firstFaceId,
+                CreatedByUserId = UserId,
+                Status = AiReviewJobStatus.Queued,
+                ModerationVersion = album.ModerationVersion,
+                MaxAttempts = ContentModerationHelpers.DefaultMaxAttempts,
+                CreatedAtUtc = DateTime.UtcNow,
+            });
+            _context.ContentModerationEvents.Add(ContentModerationHelpers.BuildEvent(
+                ModeratedContentType.Album,
+                album.Id,
+                firstFaceId,
+                null,
+                album.ApprovalStatus,
+                AiReviewStatus.NotQueued,
+                album.AiReviewStatus,
+                ModerationActorType.User,
+                UserId,
+                "Content submitted for approval.",
+                "Your content was created and is waiting for review."));
             await _context.SaveChangesAsync();
+            await EnqueueAiReviewAsync(ModeratedContentType.Album, album.Id, album.ModerationVersion);
+        }
 
         _logger.LogInformation("User {UserId} created album {AlbumId}", UserId, album.Id);
 
@@ -221,6 +272,9 @@ public class AlbumsController : ControllerBase
             albumType = (int)album.AlbumType,
             mediaType = (int)album.MediaType,
             album.CreatorId,
+            approvalStatus = album.ApprovalStatus.ToString(),
+            aiReviewStatus = album.AiReviewStatus.ToString(),
+            creatorStatusLabel = ContentModerationHelpers.CreatorStatusLabel(album.ApprovalStatus, album.AiReviewStatus),
             album.CreatedAt,
         });
     }
@@ -242,6 +296,9 @@ public class AlbumsController : ControllerBase
         if (album.CreatorId != UserId)
             return Forbid();
 
+        if (!ContentModerationHelpers.IsCreatorEditable(album.ApprovalStatus))
+            return Conflict(new { error = "Only pending or rejected albums can be edited by the creator" });
+
         var scopeFace = _faceScope.ResolveDataFaceId(null);
         if (!album.AlbumFaces.Any(af => af.FaceId == scopeFace))
             return NotFound(new { error = "Album not found" });
@@ -254,6 +311,17 @@ public class AlbumsController : ControllerBase
             album.AlbumType = dto.AlbumType.Value;
         if (dto.MediaType.HasValue)
             album.MediaType = dto.MediaType.Value;
+
+        if (album.ApprovalStatus == ContentApprovalStatus.Rejected)
+        {
+            album.ApprovalStatus = ContentApprovalStatus.PendingApproval;
+            album.AiReviewStatus = AiReviewStatus.Queued;
+            album.SubmittedAtUtc = DateTime.UtcNow;
+            album.HumanReviewedAtUtc = null;
+            album.HumanReviewedByUserId = null;
+            album.HumanDecisionReason = null;
+            album.ModerationVersion++;
+        }
 
         album.UpdatedAt = DateTime.UtcNow;
 
@@ -284,6 +352,8 @@ public class AlbumsController : ControllerBase
         }
 
         await _context.SaveChangesAsync();
+        if (album.AiReviewStatus == AiReviewStatus.Queued)
+            await EnqueueAiReviewAsync(ModeratedContentType.Album, album.Id, album.ModerationVersion);
 
         _logger.LogInformation("User {UserId} updated album {AlbumId}", UserId, album.Id);
         return Ok(new
@@ -294,6 +364,9 @@ public class AlbumsController : ControllerBase
             albumType = (int)album.AlbumType,
             mediaType = (int)album.MediaType,
             album.CreatorId,
+            approvalStatus = album.ApprovalStatus.ToString(),
+            aiReviewStatus = album.AiReviewStatus.ToString(),
+            creatorStatusLabel = ContentModerationHelpers.CreatorStatusLabel(album.ApprovalStatus, album.AiReviewStatus),
             album.CreatedAt,
             album.UpdatedAt,
         });
@@ -314,6 +387,9 @@ public class AlbumsController : ControllerBase
         if (album.CreatorId != UserId)
             return Forbid();
 
+        if (!ContentModerationHelpers.IsCreatorDeletable(album.ApprovalStatus))
+            return Conflict(new { error = "Only pending or rejected albums can be deleted by the creator" });
+
         var scopeFace = _faceScope.ResolveDataFaceId(null);
         if (!album.AlbumFaces.Any(af => af.FaceId == scopeFace))
             return NotFound(new { error = "Album not found" });
@@ -323,6 +399,24 @@ public class AlbumsController : ControllerBase
 
         _logger.LogInformation("User {UserId} deleted album {AlbumId}", UserId, album.Id);
         return NoContent();
+    }
+
+    private async Task EnqueueAiReviewAsync(
+        ModeratedContentType contentType,
+        int contentId,
+        int moderationVersion)
+    {
+        try
+        {
+            await _jobQueue.EnqueueAsync(
+                ContentModerationHelpers.AiReviewJobType,
+                ContentModerationHelpers.BuildAiReviewPayload(contentType, contentId, moderationVersion),
+                CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to enqueue AI review for {ContentType} {ContentId}", contentType, contentId);
+        }
     }
 }
 

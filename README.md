@@ -164,7 +164,7 @@ flowchart LR
 
 ## AI-Assisted Content Approval
 
-The backend is the source of truth for the planned approval workflow for regular FE user-created albums, blogs, and reels. New user-created content should be stored as `PendingApproval`, excluded from public grid/list/detail queries, and routed into a review process before it can become public. Full design: [`docs/guides/ai-assisted-content-approval.md`](../docs/guides/ai-assisted-content-approval.md).
+The backend is the source of truth for the approval workflow for regular FE user-created albums, blogs, and reels. New user-created content is stored as `PendingApproval`, excluded from public grid/list/detail queries, and routed into a review process before it can become public. Full design: [`docs/guides/ai-assisted-content-approval.md`](../docs/guides/ai-assisted-content-approval.md).
 
 Backend responsibilities:
 
@@ -172,17 +172,25 @@ Backend responsibilities:
 - Default existing/admin-created content to `Approved` unless product changes that rule.
 - Default regular FE-created content to `PendingApproval`.
 - Keep public queries filtered to `Approved` content only.
-- Enqueue AI review jobs instead of calling AI synchronously from create requests.
+- Create AI review job records and enqueue review work instead of calling AI synchronously from create requests.
 - Store AI recommendation metadata separately from final approval status.
 - Apply backend policy before any AI recommendation changes public visibility.
-- Expose protected admin/superadmin review APIs.
+- Expose protected moderation APIs restricted to `SUPER_ADMIN` for approve/reject/remove in this phase.
 - Write moderation audit events for submit, queue, AI recommendation, approve, reject, remove, and override transitions.
 
 Safe decision rule:
 
 - AI recommends.
 - Backend policy validates.
-- Admin/superadmin finalizes unless a future controlled auto-approval policy is explicitly enabled.
+- `SUPER_ADMIN` finalizes unless a future controlled auto-approval policy is explicitly enabled.
+
+Implemented backend pieces:
+
+- `ContentApprovalStatus`, `AiReviewStatus`, AI decision/risk enums, `AiReviewJob`, and `ContentModerationEvent`.
+- Moderation metadata fields on `Album`, `Blog`, and `Reel`.
+- `ContentModerationController` for queue listing, audit events, and superadmin-only approve/reject/remove actions.
+- Migration defaults that preserve existing content as `Approved`.
+- Tests covering pending defaults, public visibility filtering, AI recommendation validation, media URL safety, superadmin restrictions, and audit writes.
 
 ```mermaid
 flowchart TD

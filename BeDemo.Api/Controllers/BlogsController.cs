@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BeDemo.Api.Data;
 using BeDemo.Api.Models;
+using BeDemo.Api.Services;
 
 namespace BeDemo.Api.Controllers;
 
@@ -13,13 +14,16 @@ public class BlogsController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<BlogsController> _logger;
+    private readonly IRedisJobQueue _jobQueue;
 
     public BlogsController(
         ApplicationDbContext context,
-        ILogger<BlogsController> logger)
+        ILogger<BlogsController> logger,
+        IRedisJobQueue jobQueue)
     {
         _context = context;
         _logger = logger;
+        _jobQueue = jobQueue;
     }
 
     private string? UserId => User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -31,7 +35,9 @@ public class BlogsController : ControllerBase
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
 
-        var query = _context.Blogs.AsQueryable();
+        var query = _context.Blogs
+            .Where(b => b.ApprovalStatus == ContentApprovalStatus.Approved)
+            .AsQueryable();
 
         if (faceId.HasValue)
             query = query.Where(b => b.FaceId == faceId.Value);
@@ -55,6 +61,9 @@ public class BlogsController : ControllerBase
                 images = b.Images.OrderBy(i => i.SortOrder).Select(i => new { i.Id, i.ImageUrl, i.SortOrder }),
                 likesCount = b.Likes.Count,
                 commentsCount = b.Comments.Count,
+                approvalStatus = b.ApprovalStatus.ToString(),
+                aiReviewStatus = b.AiReviewStatus.ToString(),
+                creatorStatusLabel = ContentModerationHelpers.CreatorStatusLabel(b.ApprovalStatus, b.AiReviewStatus),
                 b.CreatedAt,
                 b.UpdatedAt,
             })
@@ -81,6 +90,10 @@ public class BlogsController : ControllerBase
         if (blog == null)
             return NotFound(new { error = "Blog not found" });
 
+        var isCreator = blog.CreatorId == UserId;
+        if (!isCreator && blog.ApprovalStatus != ContentApprovalStatus.Approved)
+            return NotFound(new { error = "Blog not found" });
+
         return Ok(new
         {
             blog.Id,
@@ -94,6 +107,11 @@ public class BlogsController : ControllerBase
             likesCount = blog.Likes.Count,
             commentsCount = blog.Comments.Count,
             isLikedByMe = blog.Likes.Any(l => l.UserId == UserId),
+            approvalStatus = blog.ApprovalStatus.ToString(),
+            aiReviewStatus = blog.AiReviewStatus.ToString(),
+            aiReviewUserMessage = isCreator ? blog.AiReviewUserMessage : null,
+            humanDecisionReason = isCreator ? blog.HumanDecisionReason : null,
+            creatorStatusLabel = ContentModerationHelpers.CreatorStatusLabel(blog.ApprovalStatus, blog.AiReviewStatus),
             blog.CreatedAt,
             blog.UpdatedAt,
         });
@@ -125,6 +143,9 @@ public class BlogsController : ControllerBase
             FaceId = dto.FaceId,
             Title = dto.Title.Trim(),
             Content = dto.Content.Trim(),
+            ApprovalStatus = ContentApprovalStatus.PendingApproval,
+            AiReviewStatus = AiReviewStatus.Queued,
+            SubmittedAtUtc = DateTime.UtcNow,
         };
 
         _context.Blogs.Add(blog);
@@ -149,6 +170,32 @@ public class BlogsController : ControllerBase
             await _context.SaveChangesAsync();
         }
 
+        _context.AiReviewJobs.Add(new AiReviewJob
+        {
+            ContentType = ModeratedContentType.Blog,
+            ContentId = blog.Id,
+            FaceId = blog.FaceId,
+            CreatedByUserId = UserId,
+            Status = AiReviewJobStatus.Queued,
+            ModerationVersion = blog.ModerationVersion,
+            MaxAttempts = ContentModerationHelpers.DefaultMaxAttempts,
+            CreatedAtUtc = DateTime.UtcNow,
+        });
+        _context.ContentModerationEvents.Add(ContentModerationHelpers.BuildEvent(
+            ModeratedContentType.Blog,
+            blog.Id,
+            blog.FaceId,
+            null,
+            blog.ApprovalStatus,
+            AiReviewStatus.NotQueued,
+            blog.AiReviewStatus,
+            ModerationActorType.User,
+            UserId,
+            "Content submitted for approval.",
+            "Your content was created and is waiting for review."));
+        await _context.SaveChangesAsync();
+        await EnqueueAiReviewAsync(ModeratedContentType.Blog, blog.Id, blog.ModerationVersion);
+
         _logger.LogInformation("User {UserId} created blog {BlogId}", UserId, blog.Id);
 
         return CreatedAtAction(nameof(GetBlog), new { id = blog.Id }, new
@@ -158,6 +205,9 @@ public class BlogsController : ControllerBase
             blog.Content,
             blog.FaceId,
             blog.CreatorId,
+            approvalStatus = blog.ApprovalStatus.ToString(),
+            aiReviewStatus = blog.AiReviewStatus.ToString(),
+            creatorStatusLabel = ContentModerationHelpers.CreatorStatusLabel(blog.ApprovalStatus, blog.AiReviewStatus),
             blog.CreatedAt,
         });
     }
@@ -178,6 +228,9 @@ public class BlogsController : ControllerBase
 
         if (blog.CreatorId != UserId)
             return Forbid();
+
+        if (!ContentModerationHelpers.IsCreatorEditable(blog.ApprovalStatus))
+            return Conflict(new { error = "Only pending or rejected blogs can be edited by the creator" });
 
         if (dto.Title != null)
             blog.Title = dto.Title.Trim();
@@ -210,8 +263,21 @@ public class BlogsController : ControllerBase
             }
         }
 
+        if (blog.ApprovalStatus == ContentApprovalStatus.Rejected)
+        {
+            blog.ApprovalStatus = ContentApprovalStatus.PendingApproval;
+            blog.AiReviewStatus = AiReviewStatus.Queued;
+            blog.SubmittedAtUtc = DateTime.UtcNow;
+            blog.HumanReviewedAtUtc = null;
+            blog.HumanReviewedByUserId = null;
+            blog.HumanDecisionReason = null;
+            blog.ModerationVersion++;
+        }
+
         blog.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
+        if (blog.AiReviewStatus == AiReviewStatus.Queued)
+            await EnqueueAiReviewAsync(ModeratedContentType.Blog, blog.Id, blog.ModerationVersion);
 
         _logger.LogInformation("User {UserId} updated blog {BlogId}", UserId, blog.Id);
         return Ok(new
@@ -221,6 +287,9 @@ public class BlogsController : ControllerBase
             blog.Content,
             blog.FaceId,
             blog.CreatorId,
+            approvalStatus = blog.ApprovalStatus.ToString(),
+            aiReviewStatus = blog.AiReviewStatus.ToString(),
+            creatorStatusLabel = ContentModerationHelpers.CreatorStatusLabel(blog.ApprovalStatus, blog.AiReviewStatus),
             blog.CreatedAt,
             blog.UpdatedAt,
         });
@@ -241,11 +310,32 @@ public class BlogsController : ControllerBase
         if (blog.CreatorId != UserId)
             return Forbid();
 
+        if (!ContentModerationHelpers.IsCreatorDeletable(blog.ApprovalStatus))
+            return Conflict(new { error = "Only pending or rejected blogs can be deleted by the creator" });
+
         _context.Blogs.Remove(blog);
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("User {UserId} deleted blog {BlogId}", UserId, blog.Id);
         return NoContent();
+    }
+
+    private async Task EnqueueAiReviewAsync(
+        ModeratedContentType contentType,
+        int contentId,
+        int moderationVersion)
+    {
+        try
+        {
+            await _jobQueue.EnqueueAsync(
+                ContentModerationHelpers.AiReviewJobType,
+                ContentModerationHelpers.BuildAiReviewPayload(contentType, contentId, moderationVersion),
+                CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to enqueue AI review for {ContentType} {ContentId}", contentType, contentId);
+        }
     }
 }
 

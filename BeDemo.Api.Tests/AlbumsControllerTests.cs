@@ -71,6 +71,18 @@ public class AlbumsControllerTests : IClassFixture<CustomWebApplicationFactory<P
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
 
+    private async Task ApproveAsSuperAdminAsync(ModeratedContentType contentType, int contentId)
+    {
+        using var admin = _factory.CreateFaceClient("admin");
+        admin.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            await IntegrationTestSeed.GetSuperAdminAccessTokenAsync(admin));
+        var response = await admin.PostAsJsonAsync(
+            $"/api/contentmoderation/{contentType}/{contentId}/approve",
+            new { reason = "Approved for test" });
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
     private static async Task<int> GetScopedFaceIdFromConfigAsync(HttpClient faceScopedClient, string bearerToken)
     {
         faceScopedClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
@@ -136,6 +148,8 @@ public class AlbumsControllerTests : IClassFixture<CustomWebApplicationFactory<P
             mediaType = 1,
         });
         pubResp.StatusCode.Should().Be(HttpStatusCode.Created);
+        var pubAlbum = await pubResp.Content.ReadFromJsonAsync<JsonElement>();
+        await ApproveAsSuperAdminAsync(ModeratedContentType.Album, pubAlbum.GetProperty("id").GetInt32());
 
         var basicResp = await basicClient.PostAsJsonAsync("/api/albums", new
         {
@@ -144,6 +158,8 @@ public class AlbumsControllerTests : IClassFixture<CustomWebApplicationFactory<P
             mediaType = 1,
         });
         basicResp.StatusCode.Should().Be(HttpStatusCode.Created);
+        var basicAlbum = await basicResp.Content.ReadFromJsonAsync<JsonElement>();
+        await ApproveAsSuperAdminAsync(ModeratedContentType.Album, basicAlbum.GetProperty("id").GetInt32());
 
         var publicList = await publicClient.GetFromJsonAsync<JsonElement[]>("/api/albums");
         publicList.Should().NotBeNull();
@@ -174,6 +190,33 @@ public class AlbumsControllerTests : IClassFixture<CustomWebApplicationFactory<P
         album.GetProperty("title").GetString().Should().Be("My Public Album");
         album.GetProperty("albumType").GetInt32().Should().Be(1);
         album.GetProperty("mediaType").GetInt32().Should().Be(1);
+        album.GetProperty("approvalStatus").GetString().Should().Be(nameof(ContentApprovalStatus.PendingApproval));
+        album.GetProperty("aiReviewStatus").GetString().Should().Be(nameof(AiReviewStatus.Queued));
+    }
+
+    [Fact]
+    public async Task CreateAlbum_ShouldNotAppearInPublicList_UntilApproved()
+    {
+        SetAuth(await GetAuthTokenAsync());
+
+        var response = await _client.PostAsJsonAsync("/api/albums", new
+        {
+            title = "Pending Album",
+            albumType = 1,
+            mediaType = 1
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var created = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var albumId = created.GetProperty("id").GetInt32();
+
+        var list = await _client.GetFromJsonAsync<JsonElement[]>("/api/albums");
+        list!.Select(e => e.GetProperty("id").GetInt32()).Should().NotContain(albumId);
+
+        await ApproveAsSuperAdminAsync(ModeratedContentType.Album, albumId);
+
+        var approvedList = await _client.GetFromJsonAsync<JsonElement[]>("/api/albums");
+        approvedList!.Select(e => e.GetProperty("id").GetInt32()).Should().Contain(albumId);
     }
 
     [Fact]

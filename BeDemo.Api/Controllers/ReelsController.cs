@@ -37,7 +37,9 @@ public class ReelsController : ControllerBase
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
 
-        var query = _context.Reels.AsQueryable();
+        var query = _context.Reels
+            .Where(r => r.ApprovalStatus == ContentApprovalStatus.Approved)
+            .AsQueryable();
 
         if (faceId.HasValue)
         {
@@ -63,6 +65,9 @@ public class ReelsController : ControllerBase
                 faces = r.ReelFaces.Select(rf => new { rf.FaceId, rf.Face.Title }),
                 likesCount = r.Likes.Count,
                 commentsCount = r.Comments.Count,
+                approvalStatus = r.ApprovalStatus.ToString(),
+                aiReviewStatus = r.AiReviewStatus.ToString(),
+                creatorStatusLabel = ContentModerationHelpers.CreatorStatusLabel(r.ApprovalStatus, r.AiReviewStatus),
                 r.CreatedAt,
                 r.UpdatedAt,
             })
@@ -87,6 +92,10 @@ public class ReelsController : ControllerBase
         if (reel == null)
             return NotFound(new { error = "Reel not found" });
 
+        var isCreator = reel.CreatorId == UserId;
+        if (!isCreator && reel.ApprovalStatus != ContentApprovalStatus.Approved)
+            return NotFound(new { error = "Reel not found" });
+
         if (!ReelVisibility.IsVisibleForFace(reel, faceId))
             return NotFound(new { error = "Reel not found" });
 
@@ -102,6 +111,11 @@ public class ReelsController : ControllerBase
             likesCount = reel.Likes.Count,
             commentsCount = reel.Comments.Count,
             isLikedByMe = reel.Likes.Any(l => l.UserId == UserId),
+            approvalStatus = reel.ApprovalStatus.ToString(),
+            aiReviewStatus = reel.AiReviewStatus.ToString(),
+            aiReviewUserMessage = isCreator ? reel.AiReviewUserMessage : null,
+            humanDecisionReason = isCreator ? reel.HumanDecisionReason : null,
+            creatorStatusLabel = ContentModerationHelpers.CreatorStatusLabel(reel.ApprovalStatus, reel.AiReviewStatus),
             reel.CreatedAt,
             reel.UpdatedAt,
         });
@@ -114,6 +128,8 @@ public class ReelsController : ControllerBase
             return Unauthorized();
 
         var query = _context.Reels.Where(r => r.CreatorId == userId);
+        if (userId != UserId)
+            query = query.Where(r => r.ApprovalStatus == ContentApprovalStatus.Approved);
 
         if (faceId.HasValue)
         {
@@ -139,6 +155,9 @@ public class ReelsController : ControllerBase
                 faces = r.ReelFaces.Select(rf => new { rf.FaceId, rf.Face.Title }),
                 likesCount = r.Likes.Count,
                 commentsCount = r.Comments.Count,
+                approvalStatus = r.ApprovalStatus.ToString(),
+                aiReviewStatus = r.AiReviewStatus.ToString(),
+                creatorStatusLabel = ContentModerationHelpers.CreatorStatusLabel(r.ApprovalStatus, r.AiReviewStatus),
                 r.CreatedAt,
                 r.UpdatedAt,
             })
@@ -158,6 +177,8 @@ public class ReelsController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(dto.VideoUrl))
             return BadRequest(new { error = "VideoUrl is required" });
+        if (!ContentModerationHelpers.IsSafeHttpUrl(dto.VideoUrl))
+            return BadRequest(new { error = "VideoUrl must be an absolute http or https URL" });
 
         var reel = new Reel
         {
@@ -165,6 +186,9 @@ public class ReelsController : ControllerBase
             Title = dto.Title.Trim(),
             Description = dto.Description?.Trim(),
             VideoUrl = dto.VideoUrl.Trim(),
+            ApprovalStatus = ContentApprovalStatus.PendingApproval,
+            AiReviewStatus = AiReviewStatus.Queued,
+            SubmittedAtUtc = DateTime.UtcNow,
         };
 
         _context.Reels.Add(reel);
@@ -185,11 +209,40 @@ public class ReelsController : ControllerBase
             await _context.SaveChangesAsync();
         }
 
+        var firstFaceId = dto.FaceIds?.FirstOrDefault() ?? 0;
+        if (firstFaceId > 0)
+        {
+            _context.AiReviewJobs.Add(new AiReviewJob
+            {
+                ContentType = ModeratedContentType.Reel,
+                ContentId = reel.Id,
+                FaceId = firstFaceId,
+                CreatedByUserId = UserId,
+                Status = AiReviewJobStatus.Queued,
+                ModerationVersion = reel.ModerationVersion,
+                MaxAttempts = ContentModerationHelpers.DefaultMaxAttempts,
+                CreatedAtUtc = DateTime.UtcNow,
+            });
+            _context.ContentModerationEvents.Add(ContentModerationHelpers.BuildEvent(
+                ModeratedContentType.Reel,
+                reel.Id,
+                firstFaceId,
+                null,
+                reel.ApprovalStatus,
+                AiReviewStatus.NotQueued,
+                reel.AiReviewStatus,
+                ModerationActorType.User,
+                UserId,
+                "Content submitted for approval.",
+                "Your content was created and is waiting for review."));
+            await _context.SaveChangesAsync();
+        }
+
         try
         {
             await _jobQueue.EnqueueAsync(
-                "reel.postprocess",
-                JsonSerializer.Serialize(new { reelId = reel.Id }),
+                ContentModerationHelpers.AiReviewJobType,
+                ContentModerationHelpers.BuildAiReviewPayload(ModeratedContentType.Reel, reel.Id, reel.ModerationVersion),
                 CancellationToken.None);
             await _jobQueue.ScheduleAsync(
                 "reel.postprocess",
@@ -224,12 +277,30 @@ public class ReelsController : ControllerBase
         if (reel.CreatorId != UserId)
             return Forbid();
 
+        if (!ContentModerationHelpers.IsCreatorEditable(reel.ApprovalStatus))
+            return Conflict(new { error = "Only pending or rejected reels can be edited by the creator" });
+
         if (dto.Title != null)
             reel.Title = dto.Title.Trim();
         if (dto.Description != null)
             reel.Description = dto.Description.Trim();
         if (dto.VideoUrl != null)
+        {
+            if (!ContentModerationHelpers.IsSafeHttpUrl(dto.VideoUrl))
+                return BadRequest(new { error = "VideoUrl must be an absolute http or https URL" });
             reel.VideoUrl = dto.VideoUrl.Trim();
+        }
+
+        if (reel.ApprovalStatus == ContentApprovalStatus.Rejected)
+        {
+            reel.ApprovalStatus = ContentApprovalStatus.PendingApproval;
+            reel.AiReviewStatus = AiReviewStatus.Queued;
+            reel.SubmittedAtUtc = DateTime.UtcNow;
+            reel.HumanReviewedAtUtc = null;
+            reel.HumanReviewedByUserId = null;
+            reel.HumanDecisionReason = null;
+            reel.ModerationVersion++;
+        }
 
         reel.UpdatedAt = DateTime.UtcNow;
 
@@ -248,6 +319,13 @@ public class ReelsController : ControllerBase
         }
 
         await _context.SaveChangesAsync();
+        if (reel.AiReviewStatus == AiReviewStatus.Queued)
+        {
+            await _jobQueue.EnqueueAsync(
+                ContentModerationHelpers.AiReviewJobType,
+                ContentModerationHelpers.BuildAiReviewPayload(ModeratedContentType.Reel, reel.Id, reel.ModerationVersion),
+                CancellationToken.None);
+        }
         _logger.LogInformation("User {UserId} updated reel {ReelId}", UserId, reel.Id);
 
         var updated = await LoadReelDetailAsync(reel.Id, UserId);
@@ -266,6 +344,9 @@ public class ReelsController : ControllerBase
 
         if (reel.CreatorId != UserId)
             return Forbid();
+
+        if (!ContentModerationHelpers.IsCreatorDeletable(reel.ApprovalStatus))
+            return Conflict(new { error = "Only pending or rejected reels can be deleted by the creator" });
 
         _context.Reels.Remove(reel);
         await _context.SaveChangesAsync();
@@ -297,6 +378,11 @@ public class ReelsController : ControllerBase
             likesCount = reel.Likes.Count,
             commentsCount = reel.Comments.Count,
             isLikedByMe = reel.Likes.Any(l => l.UserId == currentUserId),
+            approvalStatus = reel.ApprovalStatus.ToString(),
+            aiReviewStatus = reel.AiReviewStatus.ToString(),
+            aiReviewUserMessage = reel.CreatorId == currentUserId ? reel.AiReviewUserMessage : null,
+            humanDecisionReason = reel.CreatorId == currentUserId ? reel.HumanDecisionReason : null,
+            creatorStatusLabel = ContentModerationHelpers.CreatorStatusLabel(reel.ApprovalStatus, reel.AiReviewStatus),
             reel.CreatedAt,
             reel.UpdatedAt,
         };

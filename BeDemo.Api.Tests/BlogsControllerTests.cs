@@ -71,6 +71,19 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
     }
 
+    private async Task ApproveAsSuperAdminAsync(ModeratedContentType contentType, int contentId)
+    {
+        using var admin = _factory.CreateFaceClient("admin");
+        admin.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue(
+                "Bearer",
+                await IntegrationTestSeed.GetSuperAdminAccessTokenAsync(admin));
+        var response = await admin.PostAsJsonAsync(
+            $"/api/contentmoderation/{contentType}/{contentId}/approve",
+            new { reason = "Approved for test" });
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
     private Task<int> CreateTestFaceAsync() => IntegrationTestFaceHelper.CreateUniqueFaceIdAsync(_factory);
 
     private async Task<int> CreateTestBlogAsync(int? faceId = null, List<string>? imageUrls = null)
@@ -129,6 +142,34 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         blog.GetProperty("title").GetString().Should().Be("My First Blog");
         blog.GetProperty("content").GetString().Should().Be("<p>Hello world!</p>");
         blog.GetProperty("faceId").GetInt32().Should().Be(faceId);
+        blog.GetProperty("approvalStatus").GetString().Should().Be(nameof(ContentApprovalStatus.PendingApproval));
+        blog.GetProperty("aiReviewStatus").GetString().Should().Be(nameof(AiReviewStatus.Queued));
+    }
+
+    [Fact]
+    public async Task CreateBlog_ShouldNotAppearInPublicList_UntilApproved()
+    {
+        SetAuth(await GetAuthTokenAsync());
+        var cfg = await _client.GetFromJsonAsync<JsonElement[]>("/api/faces/config");
+        var faceId = cfg![0].GetProperty("id").GetInt32();
+
+        var response = await _client.PostAsJsonAsync("/api/blogs", new
+        {
+            title = "Pending Blog",
+            content = "<p>Review me</p>",
+            faceId
+        });
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var created = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var blogId = created.GetProperty("id").GetInt32();
+
+        var list = await _client.GetFromJsonAsync<JsonElement[]>($"/api/blogs?faceId={faceId}");
+        list!.Select(e => e.GetProperty("id").GetInt32()).Should().NotContain(blogId);
+
+        await ApproveAsSuperAdminAsync(ModeratedContentType.Blog, blogId);
+
+        var approvedList = await _client.GetFromJsonAsync<JsonElement[]>($"/api/blogs?faceId={faceId}");
+        approvedList!.Select(e => e.GetProperty("id").GetInt32()).Should().Contain(blogId);
     }
 
     [Fact]
@@ -258,8 +299,10 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         SetAuth(await GetAuthTokenAsync());
         var cfg = await _client.GetFromJsonAsync<JsonElement[]>("/api/faces/config");
         var scopedFaceId = cfg![0].GetProperty("id").GetInt32();
-        await CreateTestBlogAsync(faceId: scopedFaceId);
-        await CreateTestBlogAsync(faceId: scopedFaceId);
+        var first = await CreateTestBlogAsync(faceId: scopedFaceId);
+        var second = await CreateTestBlogAsync(faceId: scopedFaceId);
+        await ApproveAsSuperAdminAsync(ModeratedContentType.Blog, first);
+        await ApproveAsSuperAdminAsync(ModeratedContentType.Blog, second);
 
         var response = await _client.GetAsync("/api/blogs");
         response.StatusCode.Should().Be(HttpStatusCode.OK);

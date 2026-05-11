@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
 using Xunit;
+using BeDemo.Api.Models;
 using BeDemo.Api.Models.DTOs;
 
 namespace BeDemo.Api.Tests;
@@ -72,6 +73,16 @@ public class ReelsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         return cfg[0].GetProperty("id").GetInt32();
     }
 
+    private async Task ApproveAsSuperAdminAsync(ModeratedContentType contentType, int contentId)
+    {
+        using var admin = _factory.CreateFaceClient("admin");
+        SetAuth(admin, await IntegrationTestSeed.GetSuperAdminAccessTokenAsync(admin));
+        var response = await admin.PostAsJsonAsync(
+            $"/api/contentmoderation/{contentType}/{contentId}/approve",
+            new { reason = "Approved for test" });
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
     private async Task<int> CreateTestReelAsync(HttpClient client, List<int>? faceIds = null, string? videoUrl = null)
     {
         var token = await GetAuthTokenAsync();
@@ -122,6 +133,36 @@ public class ReelsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         var reel = await response.Content.ReadFromJsonAsync<JsonElement>();
         reel!.GetProperty("title").GetString().Should().Be("My Reel");
         reel.GetProperty("videoUrl").GetString().Should().Be("https://cdn.example.com/v.mp4");
+        reel.GetProperty("approvalStatus").GetString().Should().Be(nameof(ContentApprovalStatus.PendingApproval));
+        reel.GetProperty("aiReviewStatus").GetString().Should().Be(nameof(AiReviewStatus.Queued));
+    }
+
+    [Fact]
+    public async Task CreateReel_ShouldRejectUnsafeVideoUrl()
+    {
+        SetAuth(_client, await GetAuthTokenAsync());
+
+        var response = await _client.PostAsJsonAsync("/api/reels", new
+        {
+            title = "Unsafe",
+            videoUrl = "javascript:alert(1)",
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task CreateReel_ShouldNotAppearInPublicList_UntilApproved()
+    {
+        var reelId = await CreateTestReelAsync(_client);
+
+        var list = await _client.GetFromJsonAsync<JsonElement[]>("/api/reels");
+        list!.Select(e => e.GetProperty("id").GetInt32()).Should().NotContain(reelId);
+
+        await ApproveAsSuperAdminAsync(ModeratedContentType.Reel, reelId);
+
+        var approvedList = await _client.GetFromJsonAsync<JsonElement[]>("/api/reels");
+        approvedList!.Select(e => e.GetProperty("id").GetInt32()).Should().Contain(reelId);
     }
 
     [Fact]
@@ -147,6 +188,7 @@ public class ReelsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
 
         var scopedId = await CreateTestReelAsync(publicClient, new List<int> { publicFaceId });
         await CreateTestReelAsync(publicClient, null);
+        await ApproveAsSuperAdminAsync(ModeratedContentType.Reel, scopedId);
 
         var onPublic = await publicClient.GetFromJsonAsync<JsonElement[]>("/api/reels");
         onPublic.Should().NotBeNull();
