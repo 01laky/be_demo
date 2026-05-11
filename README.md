@@ -162,6 +162,53 @@ flowchart LR
     worker --> logs["Serilog / Seq"]
 ```
 
+## AI-Assisted Content Approval
+
+The backend is the source of truth for the planned approval workflow for regular FE user-created albums, blogs, and reels. New user-created content should be stored as `PendingApproval`, excluded from public grid/list/detail queries, and routed into a review process before it can become public. Full design: [`docs/guides/ai-assisted-content-approval.md`](../docs/guides/ai-assisted-content-approval.md).
+
+Backend responsibilities:
+
+- Persist approval status and moderation metadata for albums, blogs, and reels.
+- Default existing/admin-created content to `Approved` unless product changes that rule.
+- Default regular FE-created content to `PendingApproval`.
+- Keep public queries filtered to `Approved` content only.
+- Enqueue AI review jobs instead of calling AI synchronously from create requests.
+- Store AI recommendation metadata separately from final approval status.
+- Apply backend policy before any AI recommendation changes public visibility.
+- Expose protected admin/superadmin review APIs.
+- Write moderation audit events for submit, queue, AI recommendation, approve, reject, remove, and override transitions.
+
+Safe decision rule:
+
+- AI recommends.
+- Backend policy validates.
+- Admin/superadmin finalizes unless a future controlled auto-approval policy is explicitly enabled.
+
+```mermaid
+flowchart TD
+    create["FE create album/blog/reel"] --> backend["Backend create endpoint"]
+    backend --> pending["ApprovalStatus = PendingApproval"]
+    pending --> filter["Public APIs return<br/>Approved only"]
+    pending --> job["Create AI review job"]
+
+    job --> worker["Queue worker<br/>rate-limited + retryable"]
+    worker --> ai["ai_demo recommendation"]
+    ai --> policy["Backend policy validation"]
+
+    policy --> recApprove["RecommendedApprove"]
+    policy --> recReject["RecommendedReject"]
+    policy --> needsHuman["NeedsHumanReview"]
+
+    recApprove --> adminApi["Admin moderation API"]
+    recReject --> adminApi
+    needsHuman --> adminApi
+
+    adminApi --> approved["Approved"]
+    adminApi --> rejected["Rejected"]
+    adminApi --> removed["Removed"]
+    adminApi --> audit["ContentModerationEvents"]
+```
+
 ## Security (operations)
 
 - **OAuth token code layout:** `OAuth2Service` orchestrates grants; `OAuthClientValidator` (DB clients), `OAuthAccessTokenFactory` (ES512 access JWT + misuse-as-refresh guard), `OAuthTokenRequestSignatureVerifier` (legacy body signature, `IClock` for tests), `OAuthRefreshTokenStore`. See monorepo [`docs/guides/authentication-and-sessions.md`](../docs/guides/authentication-and-sessions.md) (section 2). Unit tests: `OAuth*Tests` in `BeDemo.Api.Tests`.
