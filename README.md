@@ -307,10 +307,7 @@ many_faces_backend/
 │   └── Migrations/          # Database migrations
 ├── BeDemo.Api.Tests/        # Unit tests
 ├── docker-compose.dev.yml   # Docker Compose configuration for development
-├── start-dev.sh             # Script to start development environment
-├── stop-dev.sh              # Script to stop development environment
-├── clear-dev.sh             # Script to clear containers and volumes
-├── rebuild-dev.sh           # Script to rebuild Docker images
+├── scripts/                 # Shell helpers (start/stop/clear/rebuild dev, lint, generate-diagram)
 └── README.md                # This file
 ```
 
@@ -321,7 +318,7 @@ many_faces_backend/
 The easiest way to run the backend API in development:
 
 ```bash
-./start-dev.sh
+./scripts/start-dev.sh
 ```
 
 This script will:
@@ -349,7 +346,7 @@ docker-compose -f docker-compose.dev.yml up --build
 ### Stopping Services
 
 ```bash
-./stop-dev.sh
+./scripts/stop-dev.sh
 ```
 
 Or manually:
@@ -361,7 +358,7 @@ docker-compose -f docker-compose.dev.yml down
 ### Clearing Everything
 
 ```bash
-./clear-dev.sh
+./scripts/clear-dev.sh
 ```
 
 This removes containers, volumes, and images.
@@ -371,15 +368,15 @@ This removes containers, volumes, and images.
 To perform a clean rebuild of Docker images:
 
 ```bash
-./rebuild-dev.sh
+./scripts/rebuild-dev.sh
 ```
 
-**Note**: This only builds images, it does NOT start containers. Use `./start-dev.sh` to start containers after rebuilding.
+**Note**: This only builds images, it does NOT start containers. Use `./scripts/start-dev.sh` to start containers after rebuilding.
 
 ### Local Development (Without Docker)
 
 1. **Ensure PostgreSQL is running** (see `many_faces_database` folder or monorepo `./scripts/start-all-dev.sh`)
-2. **For job queue**: Redis via submodule `many_faces_redis` (`./start-redis.sh` or monorepo `./scripts/start-all-dev.sh`)
+2. **For job queue**: Redis via submodule `many_faces_redis` (`./scripts/start-redis.sh` from that repo, or monorepo `./scripts/start-all-dev.sh`)
 
 3. **Install .NET SDK 10.0**
 
@@ -625,7 +622,7 @@ dotnet ef migrations remove
 
 2. **Start Redis** (optional, for job queue): submodule `many_faces_redis` or monorepo `./scripts/start-all-dev.sh`
 
-3. **Start backend**: Run `./start-dev.sh` or use monorepo `./scripts/start-all-dev.sh` to start all services
+3. **Start backend**: Run `./scripts/start-dev.sh` or use monorepo `./scripts/start-all-dev.sh` to start all services
 
 4. **Make code changes**: Edit code in `BeDemo.Api/`
 
@@ -635,7 +632,7 @@ dotnet ef migrations remove
 
 6. **View logs**: Check Docker logs or Seq UI
 
-7. **Stop services**: Run `./stop-dev.sh` or monorepo `./scripts/stop-all-dev.sh`
+7. **Stop services**: Run `./scripts/stop-dev.sh` or monorepo `./scripts/stop-all-dev.sh`
 
 ## Testing
 
@@ -665,7 +662,7 @@ This backend is part of the **`many_faces_main`** monorepo (`many_faces_backend/
 - **AI Demo**: **many_faces_ai** (`many_faces_ai/`)
 - **Logger Demo**: **many_faces_logger** (`many_faces_logger/`)
 
-Use root-level scripts to manage all services:
+From the **many_faces_main** repository root, use the orchestration scripts to manage all services:
 
 - `./scripts/start-all-dev.sh` - Start all services
 - `./scripts/stop-all-dev.sh` - Stop all services
@@ -687,7 +684,7 @@ lsof -ti:8000,8001
 lsof -ti:8000,8001 | xargs kill -9
 
 # Or use clear script
-./clear-dev.sh
+./scripts/clear-dev.sh
 ```
 
 ### Database Connection Failed

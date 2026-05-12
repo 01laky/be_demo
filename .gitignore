@@ -70,3 +70,6 @@ secrets.json
 
 # Node (Husky / commitlint only)
 node_modules/
+
+# xUnit / VSTest output (local test runs)
+TestResults/
