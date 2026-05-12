@@ -41,11 +41,12 @@ artifacts/
 # Mac
 .DS_Store
 
-# Database
+# Database files (do not use BeDemo.Api/data/ here: on case-insensitive volumes it
+# matches EF's BeDemo.Api/Data/ and silently excludes source files from git.)
+
 *.db
 *.mdf
 *.ldf
-BeDemo.Api/data/
 
 # HTTPS certificates (development only)
 BeDemo.Api/https/*.pem
