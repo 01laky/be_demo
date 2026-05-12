@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# Script to start Be Demo API in Docker container for development
+# Script to start Many Faces API in Docker container for development
 
 set -e
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-echo "🚀 Starting Be Demo API in Docker container..."
+echo "🚀 Starting Many Faces API in Docker container..."
 
 # Stop existing containers if running
 echo "🛑 Stopping existing containers..."

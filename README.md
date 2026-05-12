@@ -1,4 +1,4 @@
-# Be Demo API
+# Many Faces API
 
 ASP.NET Core WebAPI project with Identity framework and PostgreSQL database.
 
@@ -659,8 +659,8 @@ This backend is part of the **`many_faces_main`** monorepo (`many_faces_backend/
 - **Redis**: **many_faces_redis** (`many_faces_redis/`)
 - **Frontend**: **many_faces_portal** (`many_faces_portal/`)
 - **Admin**: **many_faces_admin** (`many_faces_admin/`)
-- **AI Demo**: **many_faces_ai** (`many_faces_ai/`)
-- **Logger Demo**: **many_faces_logger** (`many_faces_logger/`)
+- **Many Faces AI service**: **many_faces_ai** (`many_faces_ai/`)
+- **Many Faces log viewer**: **many_faces_logger** (`many_faces_logger/`)
 
 From the **many_faces_main** repository root, use the orchestration scripts to manage all services:
 

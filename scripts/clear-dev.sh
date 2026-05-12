@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Script to completely remove Be Demo API Docker containers and volumes
+# Script to completely remove Many Faces API Docker containers and volumes
 # Usage: ./clear-dev.sh
 
 set -e
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
-echo "🧹 Clearing Be Demo API containers and volumes..."
+echo "🧹 Clearing Many Faces API containers and volumes..."
 
 # Stop and remove containers
 docker-compose -f docker-compose.dev.yml down -v 2>/dev/null || true
@@ -18,4 +18,4 @@ docker rm -f be-demo-dev seq-dev 2>/dev/null || true
 docker volume rm be-demo-https 2>/dev/null || true
 docker volume rm be-demo-data 2>/dev/null || true
 
-echo "✅ Be Demo API containers and volumes cleared"
+echo "✅ Many Faces API containers and volumes cleared"
