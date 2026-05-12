@@ -14,11 +14,16 @@ public sealed class ContentModerationController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly IAccessEvaluator _access;
+    private readonly IContentModerationMetrics _metrics;
 
-    public ContentModerationController(ApplicationDbContext context, IAccessEvaluator access)
+    public ContentModerationController(
+        ApplicationDbContext context,
+        IAccessEvaluator access,
+        IContentModerationMetrics metrics)
     {
         _context = context;
         _access = access;
+        _metrics = metrics;
     }
 
     private string? UserId => User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -160,6 +165,15 @@ public sealed class ContentModerationController : ControllerBase
             .ToListAsync();
 
         return Ok(events);
+    }
+
+    [HttpGet("metrics")]
+    public async Task<IActionResult> GetMetrics()
+    {
+        if (!CanModerate())
+            return Forbid();
+
+        return Ok(await _metrics.GetSnapshotAsync());
     }
 
     [HttpPost("{contentType}/{contentId:int}/approve")]

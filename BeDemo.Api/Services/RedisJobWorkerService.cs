@@ -101,6 +101,9 @@ public sealed class RedisJobWorkerService : BackgroundService
                     env.Id,
                     env.Payload);
                 break;
+            case ContentModerationHelpers.AiReviewJobType:
+                await ProcessContentAiReviewJobAsync(env, ct);
+                break;
             case "story.publish":
             case "story.expire":
                 await ProcessStoryJobAsync(env, ct);
@@ -114,6 +117,20 @@ public sealed class RedisJobWorkerService : BackgroundService
             default:
                 _logger.LogWarning("Unknown job type {Type} id={Id}", env.Type, env.Id);
                 break;
+        }
+    }
+
+    private async Task ProcessContentAiReviewJobAsync(RedisJobEnvelope env, CancellationToken ct)
+    {
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var service = scope.ServiceProvider.GetRequiredService<IContentAiReviewService>();
+            await service.ProcessQueuedReviewAsync(env.Payload, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Content AI review job failed id={Id}", env.Id);
         }
     }
 

@@ -84,6 +84,8 @@ if (builder.Environment.IsDevelopment() && !builder.Environment.IsEnvironment("T
 }
 
 builder.Services.AddScoped<IChatRoomLifecycleService, ChatRoomLifecycleService>();
+builder.Services.AddScoped<IContentAiReviewService, ContentAiReviewService>();
+builder.Services.AddScoped<IContentModerationMetrics, ContentModerationMetrics>();
 
 // Configure Serilog for structured logging
 // Serilog provides better logging capabilities than default .NET logging

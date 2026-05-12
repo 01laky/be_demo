@@ -4,6 +4,8 @@
  * Used by ChatHub to call the Python AI service (ai_demo) via gRPC Generate RPC.
  */
 
+using BeDemo.Api.Models;
+
 namespace BeDemo.Api.Services;
 
 /// <summary>
@@ -19,4 +21,23 @@ public interface IAiGrpcService
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Generated text, or error message if the RPC failed.</returns>
     Task<string> GenerateAsync(string prompt, int maxNewTokens = 50, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Calls the AI service structured content review RPC and returns a moderation recommendation.
+    /// </summary>
+    Task<AiContentReviewResult> ReviewContentAsync(
+        AiContentReviewRequest request,
+        CancellationToken cancellationToken = default);
 }
+
+public sealed record AiContentReviewRequest(
+    ModeratedContentType ContentType,
+    int ContentId,
+    int ModerationVersion,
+    int FaceId,
+    string Title,
+    string Body,
+    string? MediaUrl,
+    string CreatorId);
+
+public sealed record AiContentReviewResult(AiReviewRecommendation? Recommendation, string? Error);

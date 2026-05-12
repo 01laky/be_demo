@@ -3,6 +3,9 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
+using BeDemo.Api.Data;
 using BeDemo.Api.Models;
 using BeDemo.Api.Models.DTOs;
 using BeDemo.Api.Services;
@@ -71,6 +74,165 @@ public class ContentModerationTests : IClassFixture<CustomWebApplicationFactory<
     public void IsSafeHttpUrl_ShouldAllowOnlyAbsoluteHttpUrls(string value, bool expected)
     {
         ContentModerationHelpers.IsSafeHttpUrl(value).Should().Be(expected);
+    }
+
+    [Fact]
+    public async Task ContentAiReviewService_ShouldStoreRecommendationWithoutPublishingContent()
+    {
+        await using var context = CreateContext();
+        var face = new Face { Index = $"face-{Guid.NewGuid():N}", Title = "Review Face" };
+        var user = CreateUser("ai-review-user");
+        context.Faces.Add(face);
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+        var blog = new Blog
+        {
+            CreatorId = user.Id,
+            FaceId = face.Id,
+            Title = "Safe community update",
+            Content = "<p>Useful community content.</p>",
+            ApprovalStatus = ContentApprovalStatus.PendingApproval,
+            AiReviewStatus = AiReviewStatus.Queued,
+            SubmittedAtUtc = DateTime.UtcNow,
+            ModerationVersion = 1,
+        };
+        context.Blogs.Add(blog);
+        await context.SaveChangesAsync();
+        context.AiReviewJobs.Add(new AiReviewJob
+        {
+            ContentType = ModeratedContentType.Blog,
+            ContentId = blog.Id,
+            FaceId = face.Id,
+            CreatedByUserId = user.Id,
+            ModerationVersion = 1,
+        });
+        await context.SaveChangesAsync();
+
+        var ai = new FakeAiGrpcService(new AiReviewRecommendation(
+            AiReviewDecision.Approve,
+            0.94,
+            AiReviewRiskLevel.Low,
+            Array.Empty<string>(),
+            "Looks safe.",
+            "Your content is waiting for final approval.",
+            "test-model",
+            "trace-1"));
+        var service = CreateReviewService(context, ai);
+
+        await service.ProcessQueuedReviewAsync(ContentModerationHelpers.BuildAiReviewPayload(
+            ModeratedContentType.Blog,
+            blog.Id,
+            1));
+
+        blog.ApprovalStatus.Should().Be(ContentApprovalStatus.PendingApproval);
+        blog.AiReviewStatus.Should().Be(AiReviewStatus.RecommendedApprove);
+        blog.AiReviewDecision.Should().Be(AiReviewDecision.Approve);
+        blog.AiReviewConfidence.Should().Be(0.94);
+        blog.AiReviewModelVersion.Should().Be("test-model");
+        context.AiReviewJobs.Single().Status.Should().Be(AiReviewJobStatus.Completed);
+        context.ContentModerationEvents.Select(e => e.NewAiReviewStatus).Should().Contain(AiReviewStatus.RecommendedApprove);
+    }
+
+    [Fact]
+    public async Task ContentAiReviewService_ShouldRetryFailure_ThenFallbackToHumanReview()
+    {
+        await using var context = CreateContext();
+        var face = new Face { Index = $"face-{Guid.NewGuid():N}", Title = "Retry Face" };
+        var user = CreateUser("ai-retry-user");
+        context.Faces.Add(face);
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+        var blog = new Blog
+        {
+            CreatorId = user.Id,
+            FaceId = face.Id,
+            Title = "Retry me",
+            Content = "<p>AI outage</p>",
+            ApprovalStatus = ContentApprovalStatus.PendingApproval,
+            AiReviewStatus = AiReviewStatus.Queued,
+            ModerationVersion = 1,
+        };
+        context.Blogs.Add(blog);
+        var job = new AiReviewJob
+        {
+            ContentType = ModeratedContentType.Blog,
+            ContentId = blog.Id,
+            FaceId = face.Id,
+            CreatedByUserId = user.Id,
+            ModerationVersion = 1,
+            MaxAttempts = 2,
+        };
+        await context.SaveChangesAsync();
+        context.AiReviewJobs.Add(job);
+        await context.SaveChangesAsync();
+
+        var queue = new CapturingRedisJobQueue();
+        var service = CreateReviewService(context, new FakeAiGrpcService("timeout"), queue);
+        var payload = ContentModerationHelpers.BuildAiReviewPayload(ModeratedContentType.Blog, blog.Id, 1);
+
+        await service.ProcessQueuedReviewAsync(payload);
+        job.Status.Should().Be(AiReviewJobStatus.RetryScheduled);
+        blog.AiReviewStatus.Should().Be(AiReviewStatus.Queued);
+        queue.Scheduled.Should().ContainSingle();
+
+        await service.ProcessQueuedReviewAsync(payload);
+        job.Status.Should().Be(AiReviewJobStatus.NeedsHumanReview);
+        blog.AiReviewStatus.Should().Be(AiReviewStatus.NeedsHumanReview);
+        blog.AiReviewDecision.Should().Be(AiReviewDecision.NeedsHumanReview);
+    }
+
+    [Fact]
+    public async Task ContentAiReviewService_ShouldIgnoreStaleModerationVersion()
+    {
+        await using var context = CreateContext();
+        var face = new Face { Index = $"face-{Guid.NewGuid():N}", Title = "Stale Face" };
+        var user = CreateUser("ai-stale-user");
+        context.Faces.Add(face);
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+        var blog = new Blog
+        {
+            CreatorId = user.Id,
+            FaceId = face.Id,
+            Title = "Stale",
+            Content = "<p>Edited later</p>",
+            ApprovalStatus = ContentApprovalStatus.PendingApproval,
+            AiReviewStatus = AiReviewStatus.Queued,
+            ModerationVersion = 2,
+        };
+        context.Blogs.Add(blog);
+        await context.SaveChangesAsync();
+        var staleJob = new AiReviewJob
+        {
+            ContentType = ModeratedContentType.Blog,
+            ContentId = blog.Id,
+            FaceId = face.Id,
+            CreatedByUserId = user.Id,
+            ModerationVersion = 1,
+        };
+        context.AiReviewJobs.Add(staleJob);
+        await context.SaveChangesAsync();
+
+        var service = CreateReviewService(context, new FakeAiGrpcService("should not be called"));
+        await service.ProcessQueuedReviewAsync(ContentModerationHelpers.BuildAiReviewPayload(
+            ModeratedContentType.Blog,
+            blog.Id,
+            1));
+
+        staleJob.Status.Should().Be(AiReviewJobStatus.Failed);
+        blog.AiReviewStatus.Should().Be(AiReviewStatus.Queued);
+    }
+
+    [Fact]
+    public async Task ContentModerationMetrics_ShouldReturnEmptySnapshotSafely()
+    {
+        await using var context = CreateContext();
+        var metrics = new ContentModerationMetrics(context);
+
+        var snapshot = await metrics.GetSnapshotAsync();
+
+        snapshot.PendingSubmissions.Should().Be(0);
+        snapshot.OldestPendingSubmissionUtc.Should().BeNull();
     }
 
     [Fact]
@@ -199,6 +361,78 @@ public class ContentModerationTests : IClassFixture<CustomWebApplicationFactory<
         var cfg = await client.GetFromJsonAsync<JsonElement[]>("/api/faces/config");
         cfg.Should().NotBeNull();
         return cfg![0].GetProperty("id").GetInt32();
+    }
+
+    private static ApplicationDbContext CreateContext()
+    {
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase($"content-moderation-{Guid.NewGuid():N}")
+            .Options;
+        var context = new ApplicationDbContext(options);
+        context.Database.EnsureCreated();
+        return context;
+    }
+
+    private static ApplicationUser CreateUser(string prefix) => new()
+    {
+        Id = $"{prefix}-{Guid.NewGuid():N}",
+        UserName = $"{prefix}@example.com",
+        Email = $"{prefix}@example.com",
+        UserRoleId = 1,
+    };
+
+    private static ContentAiReviewService CreateReviewService(
+        ApplicationDbContext context,
+        IAiGrpcService ai,
+        IRedisJobQueue? queue = null) =>
+        new(
+            context,
+            ai,
+            queue ?? new CapturingRedisJobQueue(),
+            NullLogger<ContentAiReviewService>.Instance);
+
+    private sealed class FakeAiGrpcService : IAiGrpcService
+    {
+        private readonly AiReviewRecommendation? _recommendation;
+        private readonly string? _error;
+
+        public FakeAiGrpcService(AiReviewRecommendation recommendation)
+        {
+            _recommendation = recommendation;
+        }
+
+        public FakeAiGrpcService(string error)
+        {
+            _error = error;
+        }
+
+        public Task<string> GenerateAsync(string prompt, int maxNewTokens = 50, CancellationToken cancellationToken = default) =>
+            Task.FromResult(string.Empty);
+
+        public Task<AiContentReviewResult> ReviewContentAsync(
+            AiContentReviewRequest request,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(_recommendation == null
+                ? new AiContentReviewResult(null, _error)
+                : new AiContentReviewResult(_recommendation, null));
+    }
+
+    private sealed class CapturingRedisJobQueue : IRedisJobQueue
+    {
+        public List<(string JobType, string PayloadJson, DateTime RunAtUtc)> Scheduled { get; } = new();
+
+        public Task EnqueueAsync(string jobType, string payloadJson, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task ScheduleAsync(
+            string jobType,
+            string payloadJson,
+            DateTime runAtUtc,
+            CancellationToken cancellationToken = default)
+        {
+            Scheduled.Add((jobType, payloadJson, runAtUtc));
+            return Task.CompletedTask;
+        }
     }
 
     public void Dispose() => _client.Dispose();

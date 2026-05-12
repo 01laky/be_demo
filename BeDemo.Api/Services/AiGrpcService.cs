@@ -8,6 +8,7 @@
 
 using Grpc.Core;
 using Grpc.Net.Client;
+using BeDemo.Api.Models;
 using Health;
 
 namespace BeDemo.Api.Services;
@@ -130,6 +131,101 @@ public class AiGrpcService : IAiGrpcService, IDisposable
         }
         return "Error: AI service unavailable";
     }
+
+    public async Task<AiContentReviewResult> ReviewContentAsync(
+        AiContentReviewRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var grpcRequest = new ContentReviewRequest
+        {
+            ContentType = request.ContentType.ToString(),
+            ContentId = request.ContentId,
+            ModerationVersion = request.ModerationVersion,
+            FaceId = request.FaceId,
+            Title = request.Title,
+            Body = request.Body,
+            MediaUrl = request.MediaUrl ?? string.Empty,
+            CreatorId = request.CreatorId,
+        };
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(_deadline);
+        var callOptions = new CallOptions(deadline: DateTime.UtcNow.Add(_deadline), cancellationToken: cts.Token);
+
+        for (int attempt = 1; attempt <= 2; attempt++)
+        {
+            try
+            {
+                var channel = GetOrCreateChannel();
+                var client = new HealthService.HealthServiceClient(channel);
+                _logger.LogInformation(
+                    "Sending ReviewContent request (attempt {Attempt}) for {ContentType}:{ContentId} v{ModerationVersion}",
+                    attempt,
+                    request.ContentType,
+                    request.ContentId,
+                    request.ModerationVersion);
+                var response = await client.ReviewContentAsync(grpcRequest, callOptions);
+                if (!string.IsNullOrWhiteSpace(response.Error))
+                {
+                    _logger.LogWarning("AI ReviewContent returned error: {Error}", response.Error);
+                    return new AiContentReviewResult(null, response.Error);
+                }
+
+                var recommendation = new AiReviewRecommendation(
+                    ParseDecision(response.Decision),
+                    response.Confidence,
+                    ParseRiskLevel(response.RiskLevel),
+                    response.Flags.ToArray(),
+                    response.Reason,
+                    response.UserMessage,
+                    response.ModelVersion,
+                    response.TraceId);
+                return new AiContentReviewResult(recommendation, null);
+            }
+            catch (RpcException ex) when (ex.StatusCode == StatusCode.Unavailable || ex.StatusCode == StatusCode.Unimplemented)
+            {
+                _logger.LogWarning(ex, "ReviewContent gRPC unavailable/unimplemented (attempt {Attempt})", attempt);
+                InvalidateChannel();
+                if (attempt == 2)
+                    return new AiContentReviewResult(null, $"AI service unavailable ({ex.StatusCode})");
+            }
+            catch (RpcException ex)
+            {
+                _logger.LogError(ex, "ReviewContent gRPC failed: Status={Status}", ex.StatusCode);
+                return new AiContentReviewResult(null, $"AI service unavailable ({ex.StatusCode})");
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogWarning("AI ReviewContent timed out after {Seconds}s", _deadline.TotalSeconds);
+                return new AiContentReviewResult(null, "AI service timed out");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "AI ReviewContent failed");
+                return new AiContentReviewResult(null, ex.Message);
+            }
+        }
+
+        return new AiContentReviewResult(null, "AI service unavailable");
+    }
+
+    private static AiReviewDecision ParseDecision(string? value) =>
+        value?.Trim().ToLowerInvariant() switch
+        {
+            "approve" => AiReviewDecision.Approve,
+            "reject" => AiReviewDecision.Reject,
+            "needs_human_review" => AiReviewDecision.NeedsHumanReview,
+            "needshumanreview" => AiReviewDecision.NeedsHumanReview,
+            _ => (AiReviewDecision)(-1),
+        };
+
+    private static AiReviewRiskLevel ParseRiskLevel(string? value) =>
+        value?.Trim().ToLowerInvariant() switch
+        {
+            "low" => AiReviewRiskLevel.Low,
+            "medium" => AiReviewRiskLevel.Medium,
+            "high" => AiReviewRiskLevel.High,
+            _ => AiReviewRiskLevel.Unknown,
+        };
 
     public void Dispose()
     {

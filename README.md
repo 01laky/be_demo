@@ -189,6 +189,8 @@ Implemented backend pieces:
 - `ContentApprovalStatus`, `AiReviewStatus`, AI decision/risk enums, `AiReviewJob`, and `ContentModerationEvent`.
 - Moderation metadata fields on `Album`, `Blog`, and `Reel`.
 - `ContentModerationController` for queue listing, audit events, and superadmin-only approve/reject/remove actions.
+- `ContentAiReviewService` for `content.ai-review` job processing, structured AI calls, retry scheduling, stale-version protection, and fallback to human review.
+- Moderation metrics for pending submissions and AI queue health.
 - Migration defaults that preserve existing content as `Approved`.
 - Tests covering pending defaults, public visibility filtering, AI recommendation validation, media URL safety, superadmin restrictions, and audit writes.
 
