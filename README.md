@@ -717,6 +717,24 @@ The database schema diagram is automatically generated after each migration and 
 ```mermaid
 erDiagram
 
+    AiReviewJobs {
+        integer Id PK NOT NULL
+        integer ContentType NOT NULL
+        integer ContentId NOT NULL
+        integer FaceId NOT NULL
+        varchar CreatedByUserId NOT NULL
+        integer Priority NOT NULL
+        integer Status NOT NULL
+        integer Attempts NOT NULL
+        integer MaxAttempts NOT NULL
+        integer ModerationVersion NOT NULL
+        timestamp NextAttemptAtUtc
+        timestamp CreatedAtUtc NOT NULL
+        timestamp StartedAtUtc
+        timestamp CompletedAtUtc
+        varchar LastError
+    }
+
     AlbumComments {
         integer Id PK NOT NULL
         integer AlbumId NOT NULL
@@ -749,6 +767,25 @@ erDiagram
         integer MediaType NOT NULL
         timestamp CreatedAt NOT NULL
         timestamp UpdatedAt
+        double AiReviewConfidence
+        integer AiReviewDecision NOT NULL
+        text AiReviewFlagsJson
+        varchar AiReviewModelVersion
+        varchar AiReviewReason
+        integer AiReviewRiskLevel NOT NULL
+        integer AiReviewStatus NOT NULL
+        varchar AiReviewTraceId
+        varchar AiReviewUserMessage
+        timestamp AiReviewedAtUtc
+        integer ApprovalStatus NOT NULL
+        varchar HumanDecisionReason
+        timestamp HumanReviewedAtUtc
+        varchar HumanReviewedByUserId
+        integer ModerationVersion NOT NULL
+        varchar RemovalReason
+        timestamp RemovedAtUtc
+        varchar RemovedByUserId
+        timestamp SubmittedAtUtc
     }
 
     AspNetRoleClaims {
@@ -849,6 +886,25 @@ erDiagram
         text Content NOT NULL
         timestamp CreatedAt NOT NULL
         timestamp UpdatedAt
+        double AiReviewConfidence
+        integer AiReviewDecision NOT NULL
+        text AiReviewFlagsJson
+        varchar AiReviewModelVersion
+        varchar AiReviewReason
+        integer AiReviewRiskLevel NOT NULL
+        integer AiReviewStatus NOT NULL
+        varchar AiReviewTraceId
+        varchar AiReviewUserMessage
+        timestamp AiReviewedAtUtc
+        integer ApprovalStatus NOT NULL
+        varchar HumanDecisionReason
+        timestamp HumanReviewedAtUtc
+        varchar HumanReviewedByUserId
+        integer ModerationVersion NOT NULL
+        varchar RemovalReason
+        timestamp RemovedAtUtc
+        varchar RemovedByUserId
+        timestamp SubmittedAtUtc
     }
 
     ComponentTypes {
@@ -857,6 +913,24 @@ erDiagram
         varchar Name NOT NULL
         timestamp CreatedAt NOT NULL
         timestamp UpdatedAt
+    }
+
+    ContentModerationEvents {
+        integer Id PK NOT NULL
+        integer ContentType NOT NULL
+        integer ContentId NOT NULL
+        integer FaceId NOT NULL
+        integer OldApprovalStatus
+        integer NewApprovalStatus
+        integer OldAiReviewStatus
+        integer NewAiReviewStatus
+        integer ActorType NOT NULL
+        varchar ActorUserId
+        varchar Reason
+        varchar UserMessage
+        varchar AiTraceId
+        varchar AiModelVersion
+        timestamp CreatedAtUtc NOT NULL
     }
 
     DisplayModes {
@@ -1078,6 +1152,25 @@ erDiagram
         varchar VideoUrl NOT NULL
         timestamp CreatedAt NOT NULL
         timestamp UpdatedAt
+        double AiReviewConfidence
+        integer AiReviewDecision NOT NULL
+        text AiReviewFlagsJson
+        varchar AiReviewModelVersion
+        varchar AiReviewReason
+        integer AiReviewRiskLevel NOT NULL
+        integer AiReviewStatus NOT NULL
+        varchar AiReviewTraceId
+        varchar AiReviewUserMessage
+        timestamp AiReviewedAtUtc
+        integer ApprovalStatus NOT NULL
+        varchar HumanDecisionReason
+        timestamp HumanReviewedAtUtc
+        varchar HumanReviewedByUserId
+        integer ModerationVersion NOT NULL
+        varchar RemovalReason
+        timestamp RemovedAtUtc
+        varchar RemovedByUserId
+        timestamp SubmittedAtUtc
     }
 
     Stories {

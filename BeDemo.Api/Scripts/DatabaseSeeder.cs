@@ -11,7 +11,8 @@ namespace BeDemo.Api.Scripts;
 /// </summary>
 public static class DatabaseSeeder
 {
-    public static async Task SeedAsync(ApplicationDbContext context)
+    /// <param name="seedReferenceDataViaApi">When false, reference data is assumed to come from external SQL (see <see cref="ReferenceSeedOptions"/>).</param>
+    public static async Task SeedAsync(ApplicationDbContext context, bool seedReferenceDataViaApi = true)
     {
         // Apply migrations - this will create database and tables if they don't exist
         // MigrateAsync is safer than EnsureCreatedAsync when using migrations
@@ -34,22 +35,25 @@ public static class DatabaseSeeder
             }
         }
 
-        // Seed UserRoles (must be before PageTypes to ensure roles exist for users)
-        await SeedUserRolesAsync(context);
+        if (seedReferenceDataViaApi)
+        {
+            // Seed UserRoles (must be before PageTypes to ensure roles exist for users)
+            await SeedUserRolesAsync(context);
 
-        // Seed PageTypes
-        await SeedPageTypesAsync(context);
+            // Seed PageTypes
+            await SeedPageTypesAsync(context);
 
-        // Seed ComponentTypes
-        await SeedComponentTypesAsync(context);
+            // Seed ComponentTypes
+            await SeedComponentTypesAsync(context);
 
-        // Seed DisplayModes
-        await SeedDisplayModesAsync(context);
+            // Seed DisplayModes
+            await SeedDisplayModesAsync(context);
 
-        // Seed Faces and Pages
-        await SeedFacesAndPagesAsync(context);
+            // Seed Faces and Pages
+            await SeedFacesAndPagesAsync(context);
 
-        await SeedOAuthClientsAsync(context);
+            await SeedOAuthClientsAsync(context);
+        }
 
         await context.SaveChangesAsync();
     }

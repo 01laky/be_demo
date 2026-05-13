@@ -23,6 +23,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using BeDemo.Api.Data;
@@ -456,7 +457,11 @@ if (!app.Environment.IsEnvironment("Testing"))
         using (var scope = app.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            await DatabaseSeeder.SeedAsync(context);
+            var hostEnvironment = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
+            var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+            await DatabaseSeeder.SeedAsync(
+                context,
+                ReferenceSeedOptions.ShouldSeedReferenceDataViaApi(hostEnvironment, configuration));
             Log.Information("Database seeded successfully");
         }
     }

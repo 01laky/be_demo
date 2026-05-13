@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using BeDemo.Api.Data;
 using BeDemo.Api.Models;
 
@@ -22,7 +24,8 @@ public static class DatabaseInitializer
         {
             var context = services.GetRequiredService<ApplicationDbContext>();
             var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-            var configuration = services.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>();
+            var configuration = services.GetRequiredService<IConfiguration>();
+            var hostEnvironment = services.GetRequiredService<IHostEnvironment>();
 
             // Run migrations (this will create database if it doesn't exist)
             // MigrateAsync is safer than EnsureCreatedAsync when using migrations
@@ -35,8 +38,9 @@ public static class DatabaseInitializer
                 await DatabaseDiagramGenerator.GenerateDiagramAsync(context, connectionString);
             }
 
-            // Ensure UserRoles are seeded before creating users
-            await DatabaseSeeder.SeedUserRolesAsync(context);
+            // Ensure UserRoles exist before creating users (SQL seeds may already have inserted them).
+            if (ReferenceSeedOptions.ShouldSeedReferenceDataViaApi(hostEnvironment, configuration))
+                await DatabaseSeeder.SeedUserRolesAsync(context);
 
             // Get SUPER_ADMIN (global) role for admin user
             var superAdminRole = await context.UserRoles.FirstOrDefaultAsync(r => r.Name == UserRole.GlobalRoleNames.SuperAdmin);
