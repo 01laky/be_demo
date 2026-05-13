@@ -24,7 +24,8 @@ For engineers, the backend is designed as a layered ASP.NET Core service: middle
 - CRUD and domain APIs for users, faces, pages, page types, route translations, profiles, albums, blogs, reels, stories, wall listings, chats, comments, likes, follows, blocks, and notifications.
 - Page `gridSchema` persistence used by **many_faces_admin** (`many_faces_admin/`) to configure layouts and by **many_faces_portal** (`many_faces_portal/`) to render them.
 - SignalR hubs for chat and real-time communication.
-- AI gRPC client integration and Redis-backed queue infrastructure for asynchronous workflows.
+- **Operator statistics APIs:** `GET /api/Stats`, `GET /api/Stats/timeseries` (JWT + **`CanManageAllFaces`**), and **`GET /api/Stats/public`** (anonymous aggregate counts on the **`public`** face prefix only). Counts for the full dashboard are centralized in **`IPlatformStatsQueryService`**.
+- AI gRPC client integration (**`Generate`** with optional **`stats_context_json`**, **`OperatorStatsChat`**, **`ReviewContent`**) and Redis-backed queue infrastructure for asynchronous workflows.
 - Structured Serilog/Seq logging, Swagger/OpenAPI documentation, migrations, seed data, and unit/integration tests.
 
 ## Technical Specification
@@ -83,6 +84,10 @@ flowchart TD
     ef --> pg["PostgreSQL"]
     controller --> response["Typed DTO / OpenAPI response"]
 ```
+
+## Operator statistics and admin AI chat (optional)
+
+The **admin dashboard** uses **`GET /api/Stats`** and **`GET /api/Stats/timeseries`** with a platform-operator JWT under the **admin** face prefix. **`GET /api/Stats/public`** returns **`PublicStatsSnapshotDto`** (counts only) and is **`[AllowAnonymous]`** when called under the **`public`** face prefix — used for optional **AI chat** context (**SignalR** `SendToAiWithOperatorStats`, gRPC **`Generate`** / **`OperatorStatsChat`**). Configure **`AiStats:PublicSnapshotAbsoluteUrl`** for **live** mode. Full write-up: monorepo [`docs/guides/admin-dashboard-metrics.md`](../../docs/guides/admin-dashboard-metrics.md).
 
 ## OAuth2, JWT, And Session Flow
 

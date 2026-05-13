@@ -67,6 +67,57 @@ public sealed class StatsControllerTests : IClassFixture<CustomWebApplicationFac
     }
 
     [Fact]
+    public async Task GetPublicStats_ShouldReturnUnauthorized_OnAdminFace_WithoutJwt()
+    {
+        var client = _factory.CreateFaceClient("admin");
+        var response = await client.GetAsync("/api/Stats/public");
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task GetPublicStats_ShouldReturnBadRequest_WhenBareApiPathMissingFacePrefix()
+    {
+        using var client = _factory.CreateUnscopedClient();
+        var response = await client.GetAsync("/api/Stats/public");
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task GetPublicStats_ShouldReturnOk_OnPublicFace_WithOperatorJwt()
+    {
+        var client = _factory.CreateFaceClient("public");
+        var token = await IntegrationTestSeed.GetAdminAccessTokenAsync(client);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await client.GetAsync("/api/Stats/public");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task GetPublicStats_ShouldExposeOnlyAggregateNumericFields_AndNoOperatorAuditFields()
+    {
+        var client = _factory.CreateFaceClient("public");
+        var response = await client.GetAsync("/api/Stats/public");
+        response.EnsureSuccessStatusCode();
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        foreach (var name in new[]
+                 {
+                     "usersCount", "facesCount", "pagesCount", "friendshipsCount", "friendRequestsPendingCount",
+                     "messagesCount", "albumsCount", "blogsCount", "reelsCount", "storiesCount", "storyViewsCount",
+                     "faceWallTicketsCount", "faceChatRoomsCount", "faceChatRoomMessagesCount",
+                 })
+        {
+            json.TryGetProperty(name, out var p).Should().BeTrue($"{name} missing");
+            p.ValueKind.Should().Be(JsonValueKind.Number, because: $"{name} must be a JSON number");
+        }
+
+        json.TryGetProperty("oauthClientsCount", out _).Should().BeFalse();
+        json.TryGetProperty("contentModerationEventsCount", out _).Should().BeFalse();
+        json.TryGetProperty("aiReviewJobsCount", out _).Should().BeFalse();
+    }
+
+    [Fact]
     public async Task GetTimeseries_ShouldReturnBadRequest_WhenInvalidRange()
     {
         var client = _factory.CreateFaceClient("admin");
