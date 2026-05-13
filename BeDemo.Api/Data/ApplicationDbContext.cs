@@ -65,6 +65,9 @@ public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     /// <summary>OAuth2 confidential clients with hashed secrets (O1).</summary>
     public DbSet<OAuthClient> OAuthClients { get; set; } = null!;
 
+    /// <summary>FCM / push registration rows for signed-in mobile clients (<c>POST /api/me/push-token</c>).</summary>
+    public DbSet<UserPushDevice> UserPushDevices { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -1038,6 +1041,27 @@ public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.CreatedAtUtc).IsRequired();
             entity.HasIndex(e => new { e.ContentType, e.ContentId, e.CreatedAtUtc });
             entity.HasIndex(e => e.FaceId);
+        });
+
+        // FCM device tokens: one registration token globally unique; optional per-user installation upsert when InstallationId is set.
+        builder.Entity<UserPushDevice>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.Platform).IsRequired().HasMaxLength(32);
+            entity.Property(e => e.RegistrationToken).IsRequired().HasMaxLength(512);
+            entity.Property(e => e.InstallationId).HasMaxLength(200);
+            entity.Property(e => e.CreatedAtUtc).IsRequired();
+            entity.Property(e => e.UpdatedAtUtc).IsRequired();
+            entity.HasIndex(e => e.RegistrationToken).IsUnique();
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => new { e.UserId, e.InstallationId })
+                .IsUnique()
+                .HasFilter("\"InstallationId\" IS NOT NULL");
+            entity.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

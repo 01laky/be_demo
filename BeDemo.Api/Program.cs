@@ -55,9 +55,11 @@ if (args.Length > 0 && args[0] == "generate-diagram")
 // Creates WebApplicationBuilder, which is used to configure the application
 var builder = WebApplication.CreateBuilder(args);
 
-// gRPC to many_faces_elastic search-worker may use cleartext HTTP/2 (h2c) when Search:WorkerGrpcUrl is http://; .NET requires this switch before opening those channels.
+// gRPC to many_faces_elastic search-worker and many_faces_push may use cleartext HTTP/2 (h2c) when WorkerGrpcUrl is http://; .NET requires this switch before opening those channels.
 var searchWorkerGrpcUrl = builder.Configuration["Search:WorkerGrpcUrl"] ?? string.Empty;
-if (searchWorkerGrpcUrl.TrimStart().StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+var pushWorkerGrpcUrl = builder.Configuration["Push:WorkerGrpcUrl"] ?? string.Empty;
+if (searchWorkerGrpcUrl.TrimStart().StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+    || pushWorkerGrpcUrl.TrimStart().StartsWith("http://", StringComparison.OrdinalIgnoreCase))
 {
     AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 }
@@ -102,8 +104,10 @@ builder.Services.AddHostedService<ContentRetentionHostedService>();
 builder.Services.Configure<ContentModerationSecurityOptions>(
     builder.Configuration.GetSection(ContentModerationSecurityOptions.SectionName));
 builder.Services.Configure<SearchOptions>(builder.Configuration.GetSection(SearchOptions.SectionName));
+builder.Services.Configure<PushOptions>(builder.Configuration.GetSection(PushOptions.SectionName));
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<ISearchWorkerProbe, SearchWorkerGrpcProbe>();
+builder.Services.AddSingleton<IPushWorkerClient, PushWorkerGrpcClient>();
 
 // Configure Serilog for structured logging
 // Serilog provides better logging capabilities than default .NET logging
