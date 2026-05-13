@@ -94,6 +94,9 @@ builder.Services.AddScoped<IContentRetentionCleanupService, ContentRetentionClea
 builder.Services.AddHostedService<ContentRetentionHostedService>();
 builder.Services.Configure<ContentModerationSecurityOptions>(
     builder.Configuration.GetSection(ContentModerationSecurityOptions.SectionName));
+builder.Services.Configure<SearchOptions>(builder.Configuration.GetSection(SearchOptions.SectionName));
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<ISearchElasticsearchProbe, SearchElasticsearchProbe>();
 
 // Configure Serilog for structured logging
 // Serilog provides better logging capabilities than default .NET logging
