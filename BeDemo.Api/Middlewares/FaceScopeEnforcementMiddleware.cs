@@ -54,7 +54,7 @@ public class FaceScopeEnforcementMiddleware
         var isPublic = context.Items.TryGetValue(FaceScopeConstants.RequestFaceIsPublicItemKey, out var pubObj) &&
                        pubObj is true;
 
-        if (!isPublic && context.User?.Identity?.IsAuthenticated != true)
+        if (!isPublic && !IsAnonymousMailerPilotLink(context) && context.User?.Identity?.IsAuthenticated != true)
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
             context.Response.ContentType = "text/plain; charset=utf-8";
@@ -113,6 +113,21 @@ public class FaceScopeEnforcementMiddleware
         }
 
         await _next(context);
+    }
+
+    /// <summary>
+    /// GET <c>*/api/admin/mailer/pilot-link</c> is linked from operator pilot mail; mail clients have no JWT cookie.
+    /// The URL still uses a face prefix (e.g. <c>/admin/api/...</c>) so routing stays consistent.
+    /// </summary>
+    private static bool IsAnonymousMailerPilotLink(HttpContext context)
+    {
+        if (!HttpMethods.IsGet(context.Request.Method))
+        {
+            return false;
+        }
+
+        var path = context.Request.Path.Value ?? string.Empty;
+        return path.Contains("/api/admin/mailer/pilot-link", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
