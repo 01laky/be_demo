@@ -225,8 +225,9 @@ builder.Services.AddMemoryCache();
 // CORS: default dev origins + optional Cors:Origins[] from configuration (production).
 var defaultCorsOrigins = new[]
 {
-    "http://localhost:8081", "http://localhost:8082", "http://localhost:8080", "http://localhost:9081",
-    "https://localhost:8081", "https://localhost:8082", "https://localhost:8080", "https://localhost:9081",
+    "http://localhost:8081", "http://localhost:8082", "http://localhost:8080", "http://localhost:9080",
+    "http://localhost:9081", "https://localhost:8081", "https://localhost:8082", "https://localhost:8080",
+    "https://localhost:9080", "https://localhost:9081",
 };
 var extraOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? Array.Empty<string>();
 var corsOrigins = defaultCorsOrigins.Concat(extraOrigins).Where(o => !string.IsNullOrWhiteSpace(o)).Distinct().ToArray();
