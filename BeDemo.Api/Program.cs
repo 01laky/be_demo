@@ -309,16 +309,26 @@ builder.Services.AddScoped<IFaceWallTicketLifecycleService, FaceWallTicketLifecy
 // ASP.NET CORE IDENTITY CONFIGURATION
 // ============================================================================
 
+// SHV2 BE-A3: minimum password length from Identity:Password:RequiredLength (12 default; 4 allowed in Development only).
+builder.Services.AddOptions<BeDemo.Api.Configuration.IdentityPasswordPolicyOptions>()
+    .BindConfiguration(BeDemo.Api.Configuration.IdentityPasswordPolicyOptions.SectionName)
+    .ValidateOnStart();
+builder.Services.AddSingleton<
+    Microsoft.Extensions.Options.IValidateOptions<BeDemo.Api.Configuration.IdentityPasswordPolicyOptions>,
+    BeDemo.Api.Configuration.IdentityPasswordPolicyValidateOptions>();
+builder.Services.AddSingleton<
+    Microsoft.Extensions.Options.IPostConfigureOptions<Microsoft.AspNetCore.Identity.IdentityOptions>,
+    BeDemo.Api.Configuration.ConfigureIdentityPasswordPolicy>();
+
 // Adds ASP.NET Core Identity framework for user, role and authentication management
 // Identity automatically creates necessary database tables (Users, Roles, UserRoles, etc.)
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
-    // Password validation settings
+    // Password complexity (minimum length applied via ConfigureIdentityPasswordPolicy from config).
     options.Password.RequireDigit = true;              // Password must contain at least one digit
     options.Password.RequireLowercase = true;           // Password must contain at least one lowercase letter
     options.Password.RequireUppercase = true;           // Password must contain at least one uppercase letter
     options.Password.RequireNonAlphanumeric = true;    // Password must contain at least one special character
-    options.Password.RequiredLength = 4;                // Minimum password length is 4 characters
 
     // User settings
     options.User.RequireUniqueEmail = true;             // Email must be unique

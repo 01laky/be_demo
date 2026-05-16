@@ -695,7 +695,7 @@
     <value>Email je povinný</value>
   </data>
   <data name="pages.login.validation.passwordMinLength" xml:space="preserve">
-    <value>Heslo musí mať aspoň 4 znaky</value>
+    <value>Heslo musí mať aspoň 12 znakov</value>
   </data>
   <data name="pages.login.validation.passwordRequired" xml:space="preserve">
     <value>Heslo je povinné</value>
@@ -791,7 +791,7 @@
     <value>Priezvisko je povinné</value>
   </data>
   <data name="pages.register.validation.passwordMinLength" xml:space="preserve">
-    <value>Heslo musí mať aspoň 4 znaky</value>
+    <value>Heslo musí mať aspoň 12 znakov</value>
   </data>
   <data name="pages.register.validation.passwordMismatch" xml:space="preserve">
     <value>Heslá sa musia zhodovať</value>

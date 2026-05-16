@@ -16,7 +16,7 @@ namespace BeDemo.Api.Tests;
 
 public class FaceWallTicketsControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
 {
-    private const string WallTicketsTestPassword = "Test123!@#";
+    private const string WallTicketsTestPassword = "Test1234!@##";
 
     private readonly CustomWebApplicationFactory<Program> _factory;
 

@@ -55,14 +55,14 @@ public sealed class OAuthRateLimit429Tests : IClassFixture<RateLimitedOAuthWebAp
         await Task.Delay(TimeSpan.FromSeconds(3.5));
 
         var email = $"rl_tok_{Guid.NewGuid():N}@test.com";
-        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
+        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test1234!@##");
         var req = new OAuth2TokenRequest
         {
             GrantType = "password",
             ClientId = "be-demo-client",
             ClientSecret = "be-demo-secret-very-strong-key",
             Username = email,
-            Password = "Test123!@#",
+            Password = "Test1234!@##",
         };
         (await _client.PostAsJsonAsync("/api/oauth2/token", req)).StatusCode.Should().Be(HttpStatusCode.OK);
         (await _client.PostAsJsonAsync("/api/oauth2/token", req)).StatusCode.Should().Be(HttpStatusCode.OK);

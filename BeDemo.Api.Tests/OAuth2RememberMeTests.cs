@@ -45,7 +45,7 @@ public class OAuth2RememberMeTests
         CustomWebApplicationFactory<Program> factory)
     {
         var email = $"remember_{Guid.NewGuid():N}@test.com";
-        await IntegrationTestRegistration.CompleteRegistrationAsync(client, factory, email, "Test123!@#", "R", "M");
+        await IntegrationTestRegistration.CompleteRegistrationAsync(client, factory, email, "Test1234!@##", "R", "M");
         return email;
     }
 
@@ -81,7 +81,7 @@ public class OAuth2RememberMeTests
         using var client = factory.CreateClient();
         var email = await RegisterUniqueUserAsync(client, factory);
 
-        var token = await LoginAsync(client, email, "Test123!@#", rememberMe: null);
+        var token = await LoginAsync(client, email, "Test1234!@##", rememberMe: null);
 
         token.Should().NotBeNull();
         token!.ExpiresIn.Should().Be(sessionMin * 60);
@@ -96,7 +96,7 @@ public class OAuth2RememberMeTests
         using var client = factory.CreateClient();
         var email = await RegisterUniqueUserAsync(client, factory);
 
-        var token = await LoginAsync(client, email, "Test123!@#", rememberMe: false);
+        var token = await LoginAsync(client, email, "Test1234!@##", rememberMe: false);
 
         token.Should().NotBeNull();
         token!.ExpiresIn.Should().Be(sessionMin * 60);
@@ -111,7 +111,7 @@ public class OAuth2RememberMeTests
         using var client = factory.CreateClient();
         var email = await RegisterUniqueUserAsync(client, factory);
 
-        var token = await LoginAsync(client, email, "Test123!@#", rememberMe: true);
+        var token = await LoginAsync(client, email, "Test1234!@##", rememberMe: true);
 
         token.Should().NotBeNull();
         token!.ExpiresIn.Should().Be(rememberMin * 60);
@@ -124,7 +124,7 @@ public class OAuth2RememberMeTests
         using var client = factory.CreateClient();
         var email = await RegisterUniqueUserAsync(client, factory);
 
-        var token = await LoginAsync(client, email, "Test123!@#", rememberMe: true);
+        var token = await LoginAsync(client, email, "Test1234!@##", rememberMe: true);
 
         token.Should().NotBeNull();
         token!.ExpiresIn.Should().Be(JwtTokenLifetimeOptions.RecommendedRememberMeAccessMinutes * 60);
@@ -143,7 +143,7 @@ public class OAuth2RememberMeTests
         for (var i = 0; i < 15; i++)
         {
             await Task.Delay(150 * (i + 1));
-            token = await LoginAsync(client, email, "Test123!@#", rememberMe: true);
+            token = await LoginAsync(client, email, "Test1234!@##", rememberMe: true);
             if (token != null)
                 break;
         }

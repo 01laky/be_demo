@@ -15,7 +15,7 @@ public static class IntegrationTestSeed
 {
     public const string Email = "integration-admin@test.com";
     public const string SuperAdminEmail = "integration-superadmin@test.com";
-    public const string Password = "Test123!@#";
+    public const string Password = IntegrationTestCredentials.DefaultPassword;
 
     public static async Task EnsureAsync(IServiceProvider services, CancellationToken cancellationToken = default)
     {

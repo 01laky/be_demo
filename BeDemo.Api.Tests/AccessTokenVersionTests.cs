@@ -25,7 +25,7 @@ public class AccessTokenVersionTests : IClassFixture<CustomWebApplicationFactory
     {
         var client = _factory.CreateClient();
         var email = $"atv_{Guid.NewGuid():N}@test.com";
-        var access = await IntegrationTestRegistration.RegisterAndGetAccessTokenViaPasswordGrantAsync(client, _factory, email, "Test123!@#");
+        var access = await IntegrationTestRegistration.RegisterAndGetAccessTokenViaPasswordGrantAsync(client, _factory, email, "Test1234!@##");
         access.Should().NotBeNullOrEmpty();
 
         var faceClient = _factory.CreateFaceClient("public");
@@ -52,7 +52,7 @@ public class AccessTokenVersionTests : IClassFixture<CustomWebApplicationFactory
     {
         var client = _factory.CreateClient();
         var email = $"atv_role_{Guid.NewGuid():N}@test.com";
-        var access = await IntegrationTestRegistration.RegisterAndGetAccessTokenViaPasswordGrantAsync(client, _factory, email, "Test123!@#");
+        var access = await IntegrationTestRegistration.RegisterAndGetAccessTokenViaPasswordGrantAsync(client, _factory, email, "Test1234!@##");
 
         var faceClient = _factory.CreateFaceClient("public");
         faceClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", access);

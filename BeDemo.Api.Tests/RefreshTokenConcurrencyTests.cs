@@ -21,14 +21,14 @@ public sealed class RefreshTokenConcurrencyTests : IClassFixture<CustomWebApplic
     {
         using var client = _factory.CreateUnscopedClient();
         var email = $"conc_{Guid.NewGuid():N}@test.com";
-        await IntegrationTestRegistration.CompleteRegistrationAsync(client, _factory, email, "Test123!@#");
+        await IntegrationTestRegistration.CompleteRegistrationAsync(client, _factory, email, "Test1234!@##");
         var tokenReq = new OAuth2TokenRequest
         {
             GrantType = "password",
             ClientId = "be-demo-client",
             ClientSecret = "be-demo-secret-very-strong-key",
             Username = email,
-            Password = "Test123!@#",
+            Password = "Test1234!@##",
         };
         var first = await client.PostAsJsonAsync("/api/oauth2/token", tokenReq);
         first.StatusCode.Should().Be(HttpStatusCode.OK);

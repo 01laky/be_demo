@@ -47,7 +47,7 @@ public class SignalRHubTests : IClassFixture<CustomWebApplicationFactory<Program
     public async Task ChatHub_ShouldConnect_WhenValidJwtInQueryString()
     {
         var email = $"sr_{Guid.NewGuid():N}@test.com";
-        const string password = "Test123!@#";
+        const string password = "Test1234!@##";
 
         var tokenData = await IntegrationTestRegistration.CompleteRegistrationAsync(
             _client,
@@ -101,7 +101,7 @@ public class SignalRHubTests : IClassFixture<CustomWebApplicationFactory<Program
     // {
     //     // Arrange
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     var password = "Test123!@#";
+    //     var password = "Test1234!@##";
 
     //     // Register and get token
     //     await _client.PostAsJsonAsync("/api/oauth2/register", new
@@ -157,7 +157,7 @@ public class SignalRHubTests : IClassFixture<CustomWebApplicationFactory<Program
     // {
     //     // Arrange
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     var password = "Test123!@#";
+    //     var password = "Test1234!@##";
 
     //     // Register and get token
     //     await _client.PostAsJsonAsync("/api/oauth2/register", new
@@ -225,7 +225,7 @@ public class SignalRHubTests : IClassFixture<CustomWebApplicationFactory<Program
     //     // Arrange - Create two users
     //     var email1 = $"test1_{Guid.NewGuid()}@test.com";
     //     var email2 = $"test2_{Guid.NewGuid()}@test.com";
-    //     var password = "Test123!@#";
+    //     var password = "Test1234!@##";
 
     //     // Register users
     //     await _client.PostAsJsonAsync("/api/oauth2/register", new

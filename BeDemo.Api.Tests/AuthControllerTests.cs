@@ -23,7 +23,7 @@ public class AuthControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         // Arrange
         var registerRequest = new
         {
-            password = "Test123!@#",
+            password = "Test1234!@##",
             firstName = "Test",
             lastName = "User"
         };
@@ -60,7 +60,7 @@ public class AuthControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         var registerRequest = new
         {
             email = $"test_{Guid.NewGuid()}@test.com",
-            password = "Test123!@#",
+            password = "Test1234!@##",
             firstName = "Test",
             lastName = "User"
         };
@@ -82,7 +82,7 @@ public class AuthControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         var registerRequest = new
         {
             email = email,
-            password = "Test123!@#",
+            password = "Test1234!@##",
             firstName = "Test",
             lastName = "User"
         };

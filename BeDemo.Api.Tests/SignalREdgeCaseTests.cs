@@ -76,7 +76,7 @@ public class SignalREdgeCaseTests : IClassFixture<CustomWebApplicationFactory<Pr
     // public async Task SignalR_ShouldHandleEmptyMessage()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     var token = await GetTokenAsync(email, "Test123!@#");
+    //     var token = await GetTokenAsync(email, "Test1234!@##");
     //     var hubConnection = new HubConnectionBuilder()
     //         .WithUrl(new Uri(_client.BaseAddress!, $"/hubs/chat?access_token={token}"), options =>
     //         {
@@ -95,7 +95,7 @@ public class SignalREdgeCaseTests : IClassFixture<CustomWebApplicationFactory<Pr
     // public async Task SignalR_ShouldHandleVeryLongMessage()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     var token = await GetTokenAsync(email, "Test123!@#");
+    //     var token = await GetTokenAsync(email, "Test1234!@##");
     //     var longMessage = new string('a', 10000);
     //     var hubConnection = new HubConnectionBuilder()
     //         .WithUrl(new Uri(_client.BaseAddress!, $"/hubs/chat?access_token={token}"), options =>
@@ -115,7 +115,7 @@ public class SignalREdgeCaseTests : IClassFixture<CustomWebApplicationFactory<Pr
     // public async Task SignalR_ShouldHandleSpecialCharactersInMessage()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     var token = await GetTokenAsync(email, "Test123!@#");
+    //     var token = await GetTokenAsync(email, "Test1234!@##");
     //     var specialMessage = "!@#$%^&*()_+-=[]{}|;':\",./<>?";
     //     var hubConnection = new HubConnectionBuilder()
     //         .WithUrl(new Uri(_client.BaseAddress!, $"/hubs/chat?access_token={token}"), options =>
@@ -135,7 +135,7 @@ public class SignalREdgeCaseTests : IClassFixture<CustomWebApplicationFactory<Pr
     // public async Task SignalR_ShouldHandleUnicodeInMessage()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     var token = await GetTokenAsync(email, "Test123!@#");
+    //     var token = await GetTokenAsync(email, "Test1234!@##");
     //     var unicodeMessage = "Hello 世界 🌍 Привет";
     //     var hubConnection = new HubConnectionBuilder()
     //         .WithUrl(new Uri(_client.BaseAddress!, $"/hubs/chat?access_token={token}"), options =>
@@ -155,7 +155,7 @@ public class SignalREdgeCaseTests : IClassFixture<CustomWebApplicationFactory<Pr
     // public async Task SignalR_ShouldHandleMultipleConnectionsFromSameUser()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     var token = await GetTokenAsync(email, "Test123!@#");
+    //     var token = await GetTokenAsync(email, "Test1234!@##");
     //     
     //     var connection1 = new HubConnectionBuilder()
     //         .WithUrl(new Uri(_client.BaseAddress!, $"/hubs/chat?access_token={token}"), options =>
@@ -189,7 +189,7 @@ public class SignalREdgeCaseTests : IClassFixture<CustomWebApplicationFactory<Pr
     // public async Task SignalR_ShouldHandleRapidConnectDisconnect()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     var token = await GetTokenAsync(email, "Test123!@#");
+    //     var token = await GetTokenAsync(email, "Test1234!@##");
     //     
     //     for (int i = 0; i < 5; i++)
     //     {
@@ -211,7 +211,7 @@ public class SignalREdgeCaseTests : IClassFixture<CustomWebApplicationFactory<Pr
     // public async Task SignalR_ShouldHandlePrivateMessageToNonExistentUser()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     var token = await GetTokenAsync(email, "Test123!@#");
+    //     var token = await GetTokenAsync(email, "Test1234!@##");
     //     var hubConnection = new HubConnectionBuilder()
     //         .WithUrl(new Uri(_client.BaseAddress!, $"/hubs/chat?access_token={token}"), options =>
     //         {
@@ -231,8 +231,8 @@ public class SignalREdgeCaseTests : IClassFixture<CustomWebApplicationFactory<Pr
     // {
     //     var email1 = $"test1_{Guid.NewGuid()}@test.com";
     //     var email2 = $"test2_{Guid.NewGuid()}@test.com";
-    //     var token1 = await GetTokenAsync(email1, "Test123!@#");
-    //     var token2 = await GetTokenAsync(email2, "Test123!@#");
+    //     var token1 = await GetTokenAsync(email1, "Test1234!@##");
+    //     var token2 = await GetTokenAsync(email2, "Test1234!@##");
     //     
     //     var connection1 = new HubConnectionBuilder()
     //         .WithUrl(new Uri(_client.BaseAddress!, $"/hubs/chat?access_token={token1}"), options =>

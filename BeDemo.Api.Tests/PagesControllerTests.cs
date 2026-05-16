@@ -51,7 +51,7 @@ public class PagesControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
             _client,
             _factory,
             $"admin_{Guid.NewGuid()}@test.com",
-            "Test123!@#",
+            "Test1234!@##",
             "Admin",
             "User");
         return _authToken;

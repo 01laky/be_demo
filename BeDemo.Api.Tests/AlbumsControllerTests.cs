@@ -32,7 +32,7 @@ public class AlbumsControllerTests : IClassFixture<RegistrationInviteWebApplicat
             return _authToken;
 
         var email = $"album_test_{Guid.NewGuid()}@test.com";
-        var password = "Test123!@#";
+        var password = "Test1234!@##";
 
         var tokens = await IntegrationTestRegistration.CompleteRegistrationAsync(
             _client,

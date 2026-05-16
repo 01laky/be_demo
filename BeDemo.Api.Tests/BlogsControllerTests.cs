@@ -31,7 +31,7 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
             return _authToken;
 
         var email = $"blog_test_{Guid.NewGuid()}@test.com";
-        const string password = "Test123!@#";
+        const string password = "Test1234!@##";
         _authToken = await IntegrationTestRegistration.RegisterAndGetAccessTokenViaPasswordGrantAsync(
             _client,
             _factory,

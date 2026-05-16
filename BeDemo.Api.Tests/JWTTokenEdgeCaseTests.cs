@@ -27,8 +27,8 @@ public class JWTTokenEdgeCaseTests : IClassFixture<CustomWebApplicationFactory<P
     // public async Task Token_ShouldContainCorrectClaims()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#", firstName = "John", lastName = "Doe" });
-    //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#" };
+    //     await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test1234!@##", firstName = "John", lastName = "Doe" });
+    //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test1234!@##" };
     //     var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
     //     var tokenResponse = await response.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
     //     var handler = new JwtSecurityTokenHandler();
@@ -43,8 +43,8 @@ public class JWTTokenEdgeCaseTests : IClassFixture<CustomWebApplicationFactory<P
     // public async Task Token_ShouldHaveExpiration()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
-    //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#" };
+    //     await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test1234!@##");
+    //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test1234!@##" };
     //     var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
     //     var tokenResponse = await response.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
     //     var handler = new JwtSecurityTokenHandler();
@@ -57,8 +57,8 @@ public class JWTTokenEdgeCaseTests : IClassFixture<CustomWebApplicationFactory<P
     // public async Task Token_ShouldHaveCorrectIssuer()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
-    //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#" };
+    //     await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test1234!@##");
+    //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test1234!@##" };
     //     var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
     //     var tokenResponse = await response.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
     //     var handler = new JwtSecurityTokenHandler();
@@ -70,8 +70,8 @@ public class JWTTokenEdgeCaseTests : IClassFixture<CustomWebApplicationFactory<P
     // public async Task Token_ShouldHaveCorrectAudience()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
-    //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#" };
+    //     await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test1234!@##");
+    //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test1234!@##" };
     //     var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
     //     var tokenResponse = await response.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
     //     var handler = new JwtSecurityTokenHandler();
@@ -83,8 +83,8 @@ public class JWTTokenEdgeCaseTests : IClassFixture<CustomWebApplicationFactory<P
     // public async Task Token_ShouldHaveJtiClaim()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
-    //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#" };
+    //     await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test1234!@##");
+    //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test1234!@##" };
     //     var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
     //     var tokenResponse = await response.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
     //     var handler = new JwtSecurityTokenHandler();
@@ -96,8 +96,8 @@ public class JWTTokenEdgeCaseTests : IClassFixture<CustomWebApplicationFactory<P
     // public async Task Token_ShouldHaveIatClaim()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
-    //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#" };
+    //     await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test1234!@##");
+    //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test1234!@##" };
     //     var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
     //     var tokenResponse = await response.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
     //     var handler = new JwtSecurityTokenHandler();
@@ -109,8 +109,8 @@ public class JWTTokenEdgeCaseTests : IClassFixture<CustomWebApplicationFactory<P
     // public async Task Token_ShouldHaveUniqueJtiForEachRequest()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
-    //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#" };
+    //     await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test1234!@##");
+    //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test1234!@##" };
     //     var response1 = await _client.PostAsJsonAsync("/api/oauth2/token", request);
     //     var response2 = await _client.PostAsJsonAsync("/api/oauth2/token", request);
     //     var token1 = await response1.Content.ReadFromJsonAsync<OAuth2TokenResponse>();

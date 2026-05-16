@@ -36,11 +36,11 @@ public class ResourceJsonUnflattenerTests
     {
         var obj = ResourceJsonUnflattener.ToNestedObject(new Dictionary<string, string>
         {
-            ["pages.register.validation.passwordMinLength"] = "Password must be at least 4 characters",
+            ["pages.register.validation.passwordMinLength"] = "Password must be at least 12 characters",
         });
 
         Assert.Equal(
-            "Password must be at least 4 characters",
+            "Password must be at least 12 characters",
             obj["pages"]?["register"]?["validation"]?["passwordMinLength"]?.GetValue<string>());
     }
 

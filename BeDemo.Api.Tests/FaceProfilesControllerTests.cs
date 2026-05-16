@@ -19,7 +19,7 @@ public class FaceProfilesControllerTests : IClassFixture<CustomWebApplicationFac
             client,
             _factory,
             $"fp_{Guid.NewGuid()}@test.com",
-            "Test123!@#",
+            "Test1234!@##",
             "Fp",
             "Test");
         return (token, userId);

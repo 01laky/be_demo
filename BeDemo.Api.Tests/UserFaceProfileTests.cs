@@ -36,7 +36,7 @@ public class UserFaceProfileTests : IClassFixture<CustomWebApplicationFactory<Pr
             _client,
             _factory,
             email,
-            "Test123!@#",
+            "Test1234!@##",
             "Test",
             "User");
 

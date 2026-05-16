@@ -23,7 +23,7 @@ public sealed class AdminRegistrationInvitesControllerTests
     public async Task List_ShouldReturn403_WhenNotSuperAdmin()
     {
         var email = $"member_{Guid.NewGuid():N}@test.com";
-        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
+        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test1234!@##");
 
         var tokenRequest = new OAuth2TokenRequest
         {
@@ -31,7 +31,7 @@ public sealed class AdminRegistrationInvitesControllerTests
             ClientId = "be-demo-client",
             ClientSecret = "be-demo-secret-very-strong-key",
             Username = email,
-            Password = "Test123!@#",
+            Password = "Test1234!@##",
         };
         var tokenResponse = await _client.PostAsJsonAsync("/api/oauth2/token", tokenRequest);
         tokenResponse.StatusCode.Should().Be(HttpStatusCode.OK);

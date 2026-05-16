@@ -356,7 +356,7 @@ public class CreateUserModel
     public string Email { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Password is required")]
-    [MinLength(4, ErrorMessage = "Password must be at least 4 characters")]
+    [MinLength(BeDemo.Api.Configuration.IdentityPasswordPolicyOptions.RecommendedMinimumLength, ErrorMessage = "Password must be at least 12 characters")]
     public string Password { get; set; } = string.Empty;
 
     public string? FirstName { get; set; }
@@ -372,7 +372,7 @@ public class UpdateUserModel
     [EmailAddress(ErrorMessage = "Invalid email address")]
     public string? Email { get; set; }
 
-    [MinLength(4, ErrorMessage = "Password must be at least 4 characters")]
+    [MinLength(BeDemo.Api.Configuration.IdentityPasswordPolicyOptions.RecommendedMinimumLength, ErrorMessage = "Password must be at least 12 characters")]
     public string? Password { get; set; }
 
     public string? FirstName { get; set; }

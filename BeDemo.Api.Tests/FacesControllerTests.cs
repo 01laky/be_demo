@@ -34,7 +34,7 @@ public class FacesControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
             return _tenantToken;
 
         var email = $"faces_tenant_{Guid.NewGuid()}@test.com";
-        const string password = "Test123!@#";
+        const string password = "Test1234!@##";
 
         _tenantToken = await IntegrationTestRegistration.RegisterAndGetAccessTokenViaPasswordGrantAsync(
             _client,

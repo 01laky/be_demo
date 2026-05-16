@@ -35,7 +35,7 @@ internal static class IntegrationTestRegistration
         HttpClient client,
         CustomWebApplicationFactory<Program> factory,
         string? email = null,
-        string password = "Test123!@#",
+        string password = IntegrationTestCredentials.DefaultPassword,
         string firstName = "Test",
         string lastName = "User")
     {
@@ -94,7 +94,7 @@ internal static class IntegrationTestRegistration
         HttpClient client,
         CustomWebApplicationFactory<Program> factory,
         string? email = null,
-        string password = "Test123!@#",
+        string password = IntegrationTestCredentials.DefaultPassword,
         string firstName = "Test",
         string lastName = "User")
     {
@@ -126,7 +126,7 @@ internal static class IntegrationTestRegistration
         HttpClient client,
         CustomWebApplicationFactory<Program> factory,
         string? email = null,
-        string password = "Test123!@#",
+        string password = IntegrationTestCredentials.DefaultPassword,
         string firstName = "Test",
         string lastName = "User")
     {

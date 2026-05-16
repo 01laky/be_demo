@@ -26,7 +26,7 @@ public class LoginTests : IClassFixture<CustomWebApplicationFactory<Program>>, I
     {
         // Arrange
         var email = $"test_{Guid.NewGuid()}@test.com";
-        var password = "Test123!@#";
+        var password = "Test1234!@##";
 
         // Register user first
         await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, password, "Test", "User");
@@ -70,7 +70,7 @@ public class LoginTests : IClassFixture<CustomWebApplicationFactory<Program>>, I
             ClientId = "be-demo-client",
             ClientSecret = "be-demo-secret-very-strong-key",
             Username = "nonexistent@test.com",
-            Password = "Test123!@#"
+            Password = "Test1234!@##"
         };
 
         // Act
@@ -88,7 +88,7 @@ public class LoginTests : IClassFixture<CustomWebApplicationFactory<Program>>, I
     {
         // Arrange
         var email = $"test_{Guid.NewGuid()}@test.com";
-        var password = "Test123!@#";
+        var password = "Test1234!@##";
 
         await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, password, "Test", "User");
 
@@ -116,7 +116,7 @@ public class LoginTests : IClassFixture<CustomWebApplicationFactory<Program>>, I
     {
         // Arrange
         var email = $"test_{Guid.NewGuid()}@test.com";
-        var password = "Test123!@#";
+        var password = "Test1234!@##";
 
         await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, password, "Test", "User");
 
@@ -141,7 +141,7 @@ public class LoginTests : IClassFixture<CustomWebApplicationFactory<Program>>, I
     {
         // Arrange
         var email = $"test_{Guid.NewGuid()}@test.com";
-        var password = "Test123!@#";
+        var password = "Test1234!@##";
 
         await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, password, "Test", "User");
 
@@ -170,7 +170,7 @@ public class LoginTests : IClassFixture<CustomWebApplicationFactory<Program>>, I
             ClientId = "be-demo-client",
             ClientSecret = "be-demo-secret-very-strong-key",
             Username = "test@test.com",
-            Password = "Test123!@#"
+            Password = "Test1234!@##"
         };
 
         // Act
@@ -190,7 +190,7 @@ public class LoginTests : IClassFixture<CustomWebApplicationFactory<Program>>, I
             ClientId = "be-demo-client",
             ClientSecret = "be-demo-secret-very-strong-key",
             Username = "test@test.com",
-            Password = "Test123!@#"
+            Password = "Test1234!@##"
         };
 
         // Act
@@ -205,7 +205,7 @@ public class LoginTests : IClassFixture<CustomWebApplicationFactory<Program>>, I
     {
         // Arrange
         var email = $"test_{Guid.NewGuid()}@test.com";
-        var password = "Test123!@#";
+        var password = "Test1234!@##";
 
         await IntegrationTestRegistration.CompleteRegistrationAsync(
             _client,
@@ -253,7 +253,7 @@ public class LoginTests : IClassFixture<CustomWebApplicationFactory<Program>>, I
             ClientId = "be-demo-client",
             ClientSecret = "be-demo-secret-very-strong-key",
             Username = "",
-            Password = "Test123!@#"
+            Password = "Test1234!@##"
         };
 
         // Act
@@ -288,7 +288,7 @@ public class LoginTests : IClassFixture<CustomWebApplicationFactory<Program>>, I
     {
         // Arrange
         var email = $"test_{Guid.NewGuid()}@test.com";
-        var password = "Test123!@#";
+        var password = "Test1234!@##";
 
         // Register user first
         await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, password, "Test", "User");

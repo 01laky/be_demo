@@ -46,7 +46,7 @@ public class UsersControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
             _client,
             _factory,
             $"admin_{Guid.NewGuid()}@test.com",
-            "Test123!@#",
+            "Test1234!@##",
             "Admin",
             "User");
         return _authToken;
@@ -96,7 +96,7 @@ public class UsersControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         var createResponse = await admin.PostAsJsonAsync("/api/users", new
         {
             email = $"test_{Guid.NewGuid()}@test.com",
-            password = "Test123!@#",
+            password = "Test1234!@##",
             firstName = "Test",
             lastName = "User",
         });
@@ -134,7 +134,7 @@ public class UsersControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         var createRequest = new
         {
             email = $"test_{Guid.NewGuid()}@test.com",
-            password = "Test123!@#",
+            password = "Test1234!@##",
             firstName = "Test",
             lastName = "User",
         };
@@ -157,7 +157,7 @@ public class UsersControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         var createRequest = new
         {
             email = "invalid-email",
-            password = "Test123!@#",
+            password = "Test1234!@##",
             firstName = "Test",
             lastName = "User"
         };
@@ -177,7 +177,7 @@ public class UsersControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         var createResponse = await admin.PostAsJsonAsync("/api/users", new
         {
             email = $"test_{Guid.NewGuid()}@test.com",
-            password = "Test123!@#",
+            password = "Test1234!@##",
             firstName = "Test",
             lastName = "User",
         });

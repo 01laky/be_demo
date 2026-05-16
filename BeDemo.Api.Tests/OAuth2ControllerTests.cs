@@ -26,7 +26,7 @@ public class OAuth2ControllerTests : IClassFixture<RegistrationInviteWebApplicat
         var response = await _client.PostAsJsonAsync("/api/oauth2/register", new
         {
             email = $"test_{Guid.NewGuid()}@test.com",
-            password = "Test123!@#",
+            password = "Test1234!@##",
         });
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -36,7 +36,7 @@ public class OAuth2ControllerTests : IClassFixture<RegistrationInviteWebApplicat
     {
         // Arrange
         var email = $"test_{Guid.NewGuid()}@test.com";
-        var password = "Test123!@#";
+        var password = "Test1234!@##";
 
         await RegisterViaInviteFlowAsync(email, password);
 

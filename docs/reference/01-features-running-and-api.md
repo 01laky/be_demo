@@ -204,7 +204,7 @@ To perform a clean rebuild of Docker images:
   - `POST /api/oauth2/register/request` — start signup (generic OK; mail via `account_registration_code`)
   - `POST /api/oauth2/register/resend` — resend mail (rate limited)
   - `GET /api/oauth2/register/prefill?hash=` — prefill when link valid
-  - `POST /api/oauth2/register/complete` — `hash` + `code` + `password` → user + OAuth tokens
+  - `POST /api/oauth2/register/complete` — `hash` + `code` + `password` → user + OAuth tokens (password ≥ **12** chars by default; SHV2 **BE-A3** `Identity:Password:RequiredLength`, Development may use **4**)
   - `POST /api/oauth2/register` — **deprecated** (`registration_flow_deprecated`)
 
 ### Static UI localization

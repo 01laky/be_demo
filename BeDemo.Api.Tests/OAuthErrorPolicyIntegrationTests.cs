@@ -33,7 +33,7 @@ public sealed class OAuthErrorPolicyIntegrationTests : IClassFixture<CustomWebAp
             ClientId = "be-demo-client",
             ClientSecret = "wrong-secret",
             Username = "any@test.com",
-            Password = "Test123!@#",
+            Password = "Test1234!@##",
         };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", req);
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -45,7 +45,7 @@ public sealed class OAuthErrorPolicyIntegrationTests : IClassFixture<CustomWebAp
     public async Task Token_Returns401_InvalidGrant_WrongPassword_WithOAuthErrorBody()
     {
         var email = $"pol_{Guid.NewGuid():N}@test.com";
-        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
+        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test1234!@##");
         var req = new OAuth2TokenRequest
         {
             GrantType = "password",

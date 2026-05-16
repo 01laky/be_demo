@@ -6,7 +6,7 @@
       "error": "Login failed. Please check your credentials.",
       "title": "Login",
       "validation": {
-        "passwordMinLength": "Password must be at least 4 characters",
+        "passwordMinLength": "Password must be at least 12 characters",
         "emailInvalid": "Please enter a valid email address",
         "emailRequired": "Email is required",
         "passwordRequired": "Password is required"
@@ -20,7 +20,7 @@
       "validation": {
         "lastNameRequired": "Last name is required",
         "firstNameMinLength": "First name must be at least 2 characters",
-        "passwordMinLength": "Password must be at least 4 characters",
+        "passwordMinLength": "Password must be at least 12 characters",
         "firstNameRequired": "First name is required",
         "emailInvalid": "Please enter a valid email address",
         "passwordMismatch": "Passwords must match",

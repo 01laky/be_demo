@@ -50,7 +50,7 @@ public class ApiIntegrationTests : IClassFixture<RegistrationInviteWebApplicatio
         var response = await _client.PostAsJsonAsync("/api/oauth2/register", new
         {
             email = $"test_{Guid.NewGuid()}@test.com",
-            password = "Test123!@#",
+            password = "Test1234!@##",
             firstName = "Test",
             lastName = "User"
         });
@@ -66,7 +66,7 @@ public class ApiIntegrationTests : IClassFixture<RegistrationInviteWebApplicatio
     {
         // Arrange - register user first
         var email = $"test_{Guid.NewGuid()}@test.com";
-        var password = "Test123!@#";
+        var password = "Test1234!@##";
 
         await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, password);
 
@@ -119,7 +119,7 @@ public class ApiIntegrationTests : IClassFixture<RegistrationInviteWebApplicatio
         var response = await _client.PostAsJsonAsync("/api/auth/register", new
         {
             email = $"test_{Guid.NewGuid()}@test.com",
-            password = "Test123!@#",
+            password = "Test1234!@##",
             firstName = "Test",
             lastName = "User"
         });
@@ -134,7 +134,7 @@ public class ApiIntegrationTests : IClassFixture<RegistrationInviteWebApplicatio
     {
         // Arrange - register user first
         var email = $"test_{Guid.NewGuid()}@test.com";
-        var password = "Test123!@#";
+        var password = "Test1234!@##";
 
         await _client.PostAsJsonAsync("/api/auth/register", new
         {
@@ -232,7 +232,7 @@ public class ApiIntegrationTests : IClassFixture<RegistrationInviteWebApplicatio
     {
         // Arrange - register and get token
         var email = $"test_{Guid.NewGuid()}@test.com";
-        var password = "Test123!@#";
+        var password = "Test1234!@##";
 
         await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, password);
 
@@ -368,7 +368,7 @@ public class ApiIntegrationTests : IClassFixture<RegistrationInviteWebApplicatio
     {
         // 1. Register
         var email = $"test_{Guid.NewGuid()}@test.com";
-        var password = "Test123!@#";
+        var password = "Test1234!@##";
 
         var tokens = await IntegrationTestRegistration.CompleteRegistrationAsync(
             _client,

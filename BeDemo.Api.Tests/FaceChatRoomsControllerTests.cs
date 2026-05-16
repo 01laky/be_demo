@@ -18,7 +18,7 @@ namespace BeDemo.Api.Tests;
 /// </summary>
 public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
 {
-    private const string ChatRoomsTestPassword = "Test123!@#";
+    private const string ChatRoomsTestPassword = "Test1234!@##";
 
     private readonly CustomWebApplicationFactory<Program> _factory;
 

@@ -1094,7 +1094,7 @@ public class ContentModerationTests : IClassFixture<CustomWebApplicationFactory<
     private async Task<string> RegisterAndLoginAsync(string prefix)
     {
         var email = $"{prefix}_{Guid.NewGuid()}@test.com";
-        const string password = "Test123!@#";
+        const string password = "Test1234!@##";
         return await IntegrationTestRegistration.RegisterAndGetAccessTokenViaPasswordGrantAsync(
             _client,
             _factory,

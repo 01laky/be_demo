@@ -38,7 +38,7 @@ public class OAuth2EdgeCaseTests : IClassFixture<RegistrationInviteWebApplicatio
     public async Task RegisterRequest_ShouldReturnOk_WhenEmailAlreadyRegistered_NoEnumeration()
     {
         var email = $"dup_{Guid.NewGuid()}@test.com";
-        await CompleteInviteRegistrationAsync(email, "Test123!@#");
+        await CompleteInviteRegistrationAsync(email, "Test1234!@##");
         var response = await _client.PostAsJsonAsync("/api/oauth2/register/request", new { email });
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -62,7 +62,7 @@ public class OAuth2EdgeCaseTests : IClassFixture<RegistrationInviteWebApplicatio
     [Fact]
     public async Task LegacyRegister_ShouldReturn400()
     {
-        var response = await _client.PostAsJsonAsync("/api/oauth2/register", new { email = "a@b.com", password = "Test123!@#" });
+        var response = await _client.PostAsJsonAsync("/api/oauth2/register", new { email = "a@b.com", password = "Test1234!@##" });
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
@@ -97,7 +97,7 @@ public class OAuth2EdgeCaseTests : IClassFixture<RegistrationInviteWebApplicatio
     [Fact]
     public async Task Token_ShouldFail_WhenClientIdIsMissing()
     {
-        var request = new OAuth2TokenRequest { GrantType = "password", ClientSecret = "be-demo-secret-very-strong-key", Username = "test@test.com", Password = "Test123!@#" };
+        var request = new OAuth2TokenRequest { GrantType = "password", ClientSecret = "be-demo-secret-very-strong-key", Username = "test@test.com", Password = "Test1234!@##" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -105,7 +105,7 @@ public class OAuth2EdgeCaseTests : IClassFixture<RegistrationInviteWebApplicatio
     [Fact]
     public async Task Token_ShouldFail_WhenClientSecretIsMissing()
     {
-        var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", Username = "test@test.com", Password = "Test123!@#" };
+        var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", Username = "test@test.com", Password = "Test1234!@##" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -113,7 +113,7 @@ public class OAuth2EdgeCaseTests : IClassFixture<RegistrationInviteWebApplicatio
     [Fact]
     public async Task Token_ShouldFail_WhenClientIdIsWrong()
     {
-        var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "wrong-client", ClientSecret = "be-demo-secret-very-strong-key", Username = "test@test.com", Password = "Test123!@#" };
+        var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "wrong-client", ClientSecret = "be-demo-secret-very-strong-key", Username = "test@test.com", Password = "Test1234!@##" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -121,7 +121,7 @@ public class OAuth2EdgeCaseTests : IClassFixture<RegistrationInviteWebApplicatio
     [Fact]
     public async Task Token_ShouldFail_WhenClientSecretIsWrong()
     {
-        var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "wrong-secret", Username = "test@test.com", Password = "Test123!@#" };
+        var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "wrong-secret", Username = "test@test.com", Password = "Test1234!@##" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -129,7 +129,7 @@ public class OAuth2EdgeCaseTests : IClassFixture<RegistrationInviteWebApplicatio
     [Fact]
     public async Task Token_ShouldFail_WhenUsernameIsMissing()
     {
-        var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Password = "Test123!@#" };
+        var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Password = "Test1234!@##" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -145,7 +145,7 @@ public class OAuth2EdgeCaseTests : IClassFixture<RegistrationInviteWebApplicatio
     [Fact]
     public async Task Token_ShouldFail_WhenUsernameIsEmpty()
     {
-        var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = "", Password = "Test123!@#" };
+        var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = "", Password = "Test1234!@##" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -187,8 +187,8 @@ public class OAuth2EdgeCaseTests : IClassFixture<RegistrationInviteWebApplicatio
     // public async Task Token_ShouldSucceed_WithCaseInsensitiveGrantType()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
-    //     var request = new { grantType = "PASSWORD", clientId = "be-demo-client", clientSecret = "be-demo-secret-very-strong-key", username = email, password = "Test123!@#" };
+    //     await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test1234!@##" });
+    //     var request = new { grantType = "PASSWORD", clientId = "be-demo-client", clientSecret = "be-demo-secret-very-strong-key", username = email, password = "Test1234!@##" };
     //     var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
     //     response.StatusCode.Should().Be(HttpStatusCode.OK);
     // }
@@ -197,8 +197,8 @@ public class OAuth2EdgeCaseTests : IClassFixture<RegistrationInviteWebApplicatio
     // public async Task Token_ShouldSucceed_WithScope()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
-    //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#", Scope = "read write" };
+    //     await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test1234!@##" });
+    //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test1234!@##", Scope = "read write" };
     //     var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
     //     response.StatusCode.Should().Be(HttpStatusCode.OK);
     //     var tokenResponse = await response.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
@@ -209,8 +209,8 @@ public class OAuth2EdgeCaseTests : IClassFixture<RegistrationInviteWebApplicatio
     // public async Task Token_ShouldReturnValidTokenStructure()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
-    //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#" };
+    //     await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test1234!@##" });
+    //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test1234!@##" };
     //     var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
     //     response.StatusCode.Should().Be(HttpStatusCode.OK);
     //     var tokenResponse = await response.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
@@ -225,8 +225,8 @@ public class OAuth2EdgeCaseTests : IClassFixture<RegistrationInviteWebApplicatio
     // public async Task Token_ShouldReturnDifferentTokensForSameUser()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
-    //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#" };
+    //     await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test1234!@##" });
+    //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test1234!@##" };
     //     var response1 = await _client.PostAsJsonAsync("/api/oauth2/token", request);
     //     var response2 = await _client.PostAsJsonAsync("/api/oauth2/token", request);
     //     var token1 = await response1.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
@@ -270,7 +270,7 @@ public class OAuth2EdgeCaseTests : IClassFixture<RegistrationInviteWebApplicatio
     public async Task Token_ShouldHandleVeryLongUsername()
     {
         var longUsername = new string('a', 1000) + "@test.com";
-        var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = longUsername, Password = "Test123!@#" };
+        var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = longUsername, Password = "Test1234!@##" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -279,7 +279,7 @@ public class OAuth2EdgeCaseTests : IClassFixture<RegistrationInviteWebApplicatio
     // public async Task Token_ShouldHandleVeryLongPassword()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     var longPassword = "Test123!@#" + new string('a', 1000);
+    //     var longPassword = "Test1234!@##" + new string('a', 1000);
     //     await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = longPassword });
     //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = longPassword };
     //     var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
@@ -326,8 +326,8 @@ public class OAuth2EdgeCaseTests : IClassFixture<RegistrationInviteWebApplicatio
     // public async Task Token_ShouldHandleConcurrentRequests()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
-    //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#" };
+    //     await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test1234!@##" });
+    //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test1234!@##" };
     //     
     //     var tasks = Enumerable.Range(0, 10).Select(_ => _client.PostAsJsonAsync("/api/oauth2/token", request));
     //     var responses = await Task.WhenAll(tasks);

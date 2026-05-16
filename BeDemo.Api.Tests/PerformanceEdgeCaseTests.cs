@@ -27,7 +27,7 @@ public class PerformanceEdgeCaseTests : IClassFixture<CustomWebApplicationFactor
                 _client,
                 _factory,
                 $"test_{Guid.NewGuid()}@test.com",
-                "Test123!@#"));
+                "Test1234!@##"));
         var results = await Task.WhenAll(tasks);
         results.Count(r => !string.IsNullOrEmpty(r.AccessToken)).Should().Be(100);
     }
@@ -40,7 +40,7 @@ public class PerformanceEdgeCaseTests : IClassFixture<CustomWebApplicationFactor
             _client,
             _factory,
             $"test_{Guid.NewGuid()}@test.com",
-            "Test123!@#");
+            "Test1234!@##");
         stopwatch.Stop();
 
         body.AccessToken.Should().NotBeNullOrEmpty();
@@ -56,7 +56,7 @@ public class PerformanceEdgeCaseTests : IClassFixture<CustomWebApplicationFactor
                 _client,
                 _factory,
                 $"test_{Guid.NewGuid()}@test.com",
-                "Test123!@#");
+                "Test1234!@##");
             body.AccessToken.Should().NotBeNullOrEmpty();
         }
     }

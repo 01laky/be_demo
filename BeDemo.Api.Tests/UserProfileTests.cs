@@ -37,7 +37,7 @@ public class UserProfileTests : IClassFixture<CustomWebApplicationFactory<Progra
     public async Task Register_ShouldCreateUserProfile_WhenUserIsRegistered()
     {
         var email = $"test_{Guid.NewGuid()}@test.com";
-        const string password = "Test123!@#";
+        const string password = "Test1234!@##";
 
         var completed = await IntegrationTestRegistration.CompleteRegistrationAsync(
             _client,
@@ -60,7 +60,7 @@ public class UserProfileTests : IClassFixture<CustomWebApplicationFactory<Progra
     public async Task UserProfile_ShouldHaveOneToOneRelationship_WithApplicationUser()
     {
         var email = $"test_{Guid.NewGuid()}@test.com";
-        const string password = "Test123!@#";
+        const string password = "Test1234!@##";
 
         var completed = await IntegrationTestRegistration.CompleteRegistrationAsync(
             _client,
@@ -94,7 +94,7 @@ public class UserProfileTests : IClassFixture<CustomWebApplicationFactory<Progra
     [Fact]
     public async Task UserProfile_ShouldHaveAutoIncrementId()
     {
-        const string password = "Test123!@#";
+        const string password = "Test1234!@##";
         var email1 = $"test_{Guid.NewGuid()}@test.com";
         var email2 = $"test_{Guid.NewGuid()}@test.com";
 
@@ -126,7 +126,7 @@ public class UserProfileTests : IClassFixture<CustomWebApplicationFactory<Progra
     public async Task UserProfile_ShouldBeCreatedWithDefaultValues()
     {
         var email = $"test_{Guid.NewGuid()}@test.com";
-        const string password = "Test123!@#";
+        const string password = "Test1234!@##";
 
         var completed = await IntegrationTestRegistration.CompleteRegistrationAsync(
             _client,

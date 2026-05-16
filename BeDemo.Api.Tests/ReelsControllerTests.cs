@@ -30,7 +30,7 @@ public class ReelsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
             _client,
             _factory,
             $"reel_test_{Guid.NewGuid()}@test.com",
-            "Test123!@#",
+            "Test1234!@##",
             "Reel",
             "Tester");
         return _authToken;

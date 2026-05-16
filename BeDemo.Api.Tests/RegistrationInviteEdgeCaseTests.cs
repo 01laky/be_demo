@@ -41,7 +41,7 @@ public sealed class RegistrationInviteEdgeCaseTests : IClassFixture<Registration
         {
             Hash = "unknown-hash-value",
             Code = "ABC123",
-            Password = "Test123!@#",
+            Password = "Test1234!@##",
             ClientId = "be-demo-client",
             ClientSecret = "be-demo-secret-very-strong-key",
         });
@@ -58,7 +58,7 @@ public sealed class RegistrationInviteEdgeCaseTests : IClassFixture<Registration
         {
             Hash = hash,
             Code = code,
-            Password = "Test123!@#",
+            Password = "Test1234!@##",
             FirstName = "Test",
             LastName = "User",
             ClientId = "be-demo-client",
@@ -83,7 +83,7 @@ public sealed class RegistrationInviteEdgeCaseTests : IClassFixture<Registration
         {
             Hash = hash,
             Code = "WRONG1",
-            Password = "Test123!@#",
+            Password = "Test1234!@##",
             ClientId = "be-demo-client",
             ClientSecret = "be-demo-secret-very-strong-key",
         });
@@ -104,7 +104,7 @@ public sealed class RegistrationInviteEdgeCaseTests : IClassFixture<Registration
         {
             Hash = oldHash,
             Code = oldCode,
-            Password = "Test123!@#",
+            Password = "Test1234!@##",
             ClientId = "be-demo-client",
             ClientSecret = "be-demo-secret-very-strong-key",
         });
@@ -121,7 +121,7 @@ public sealed class RegistrationInviteEdgeCaseTests : IClassFixture<Registration
         {
             Hash = invite.LinkHash,
             Code = newCode,
-            Password = "Test123!@#",
+            Password = "Test1234!@##",
             ClientId = "be-demo-client",
             ClientSecret = "be-demo-secret-very-strong-key",
         });
@@ -140,7 +140,7 @@ public sealed class RegistrationInviteEdgeCaseTests : IClassFixture<Registration
         {
             Hash = hashA,
             Code = codeB,
-            Password = "Test123!@#",
+            Password = "Test1234!@##",
             ClientId = "be-demo-client",
             ClientSecret = "be-demo-secret-very-strong-key",
         });
@@ -153,7 +153,7 @@ public sealed class RegistrationInviteEdgeCaseTests : IClassFixture<Registration
         var response = await _client.PostAsJsonAsync("/api/oauth2/register", new
         {
             email = $"old_{Guid.NewGuid():N}@test.com",
-            password = "Test123!@#",
+            password = "Test1234!@##",
         });
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }

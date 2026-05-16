@@ -23,7 +23,7 @@ public static class AclTestClients
         CustomWebApplicationFactory<Program> factory,
         HttpClient oauthClient,
         string? email = null,
-        string password = "Test123!@#") =>
+        string password = "Test1234!@##") =>
         IntegrationTestRegistration.RegisterAndGetAccessTokenViaPasswordGrantAsync(
             oauthClient,
             factory,

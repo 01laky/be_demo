@@ -22,47 +22,77 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
     }
 
     [Fact]
-    public async Task Register_ShouldFail_WhenPasswordIs3Chars()
+    public async Task Register_ShouldFail_WhenPasswordIsBelowBeA3Minimum()
     {
-        // Minimum password length is 4, so 3 chars should fail
-        // Password "Te1!" has 4 chars, so we need something with 3 chars that meets other requirements
-        // But we can't have 3 chars with all requirements, so test with just 3 chars
-        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(_client, _factory, $"test_{Guid.NewGuid()}@test.com", "Te1");
+        // SHV2 BE-A3: Testing host requires 12 characters; IntegrationTestCredentials.PasswordOneBelowMinimum is 11.
+        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(
+            _client,
+            _factory,
+            $"test_{Guid.NewGuid()}@test.com",
+            IntegrationTestCredentials.PasswordOneBelowMinimum);
         status.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
-    public async Task Register_ShouldSucceed_WhenPasswordIs4Chars()
+    public async Task Register_ShouldSucceed_WhenPasswordMeetsBeA3Minimum()
     {
-        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(_client, _factory, $"test_{Guid.NewGuid()}@test.com", "Test1!@");
+        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(
+            _client,
+            _factory,
+            $"test_{Guid.NewGuid()}@test.com",
+            IntegrationTestCredentials.DefaultPassword);
         status.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
-    public async Task Register_ShouldSucceed_WhenPasswordIs7Chars()
+    public async Task Register_ShouldFail_WhenPasswordIs7Chars()
     {
-        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(_client, _factory, $"test_{Guid.NewGuid()}@test.com", "Test12!");
-        status.Should().Be(HttpStatusCode.OK);
+        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(
+            _client,
+            _factory,
+            $"test_{Guid.NewGuid()}@test.com",
+            "Test12!");
+        status.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
-    public async Task Register_ShouldSucceed_WhenPasswordIs8Chars()
+    public async Task Register_ShouldFail_WhenPasswordIs8Chars()
     {
-        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(_client, _factory, $"test_{Guid.NewGuid()}@test.com", "Test1!@#");
-        status.Should().Be(HttpStatusCode.OK);
+        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(
+            _client,
+            _factory,
+            $"test_{Guid.NewGuid()}@test.com",
+            "Test1!@#");
+        status.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
-    public async Task Register_ShouldSucceed_WhenPasswordIs9Chars()
+    public async Task Register_ShouldFail_WhenPasswordIs11Chars()
     {
-        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(_client, _factory, $"test_{Guid.NewGuid()}@test.com", "Test12!@#");
+        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(
+            _client,
+            _factory,
+            $"test_{Guid.NewGuid()}@test.com",
+            IntegrationTestCredentials.PasswordOneBelowMinimum);
+        status.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Register_ShouldSucceed_WhenPasswordIsExactly12Chars()
+    {
+        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(
+            _client,
+            _factory,
+            $"test_{Guid.NewGuid()}@test.com",
+            IntegrationTestCredentials.DefaultPassword);
         status.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
     public async Task Register_ShouldSucceed_WhenPasswordIs255Chars()
     {
-        var password = "Test1!@#" + new string('a', 247);
+        // Prefix meets BE-A3 minimum (12); remainder pads to upper boundary.
+        var password = IntegrationTestCredentials.DefaultPassword + new string('a', 243);
         var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(
             _client,
             _factory,
@@ -76,7 +106,11 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
     {
         // Use unique email to avoid conflicts from previous tests
         var uniqueEmail = $"a{Guid.NewGuid().ToString("N")[..8]}@b.c";
-        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(_client, _factory, uniqueEmail, "Test123!@#");
+        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(
+            _client,
+            _factory,
+            uniqueEmail,
+            IntegrationTestCredentials.DefaultPassword);
         status.Should().Be(HttpStatusCode.OK);
     }
 
@@ -88,7 +122,7 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
             _client,
             _factory,
             longEmail,
-            "Test123!@#");
+            IntegrationTestCredentials.DefaultPassword);
         status.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.BadRequest);
     }
 
@@ -96,7 +130,7 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
     public async Task Token_ShouldSucceed_WithMinimalValidRequest()
     {
         var email = $"test_{Guid.NewGuid()}@test.com";
-        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#", "Test", "User");
+        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test1234!@##", "Test", "User");
 
         var request = new OAuth2TokenRequest
         {
@@ -104,7 +138,7 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
             ClientId = "be-demo-client",
             ClientSecret = "be-demo-secret-very-strong-key",
             Username = email,
-            Password = "Test123!@#"
+            Password = "Test1234!@##"
         };
 
         // Retry logic with exponential backoff for in-memory database timing issues
@@ -125,14 +159,14 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
     // public async Task Token_ShouldSucceed_WithAllOptionalFields()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
+    //     await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test1234!@##");
     //     var request = new OAuth2TokenRequest 
     //     { 
     //         GrantType = "password", 
     //         ClientId = "be-demo-client", 
     //         ClientSecret = "be-demo-secret-very-strong-key", 
     //         Username = email, 
-    //         Password = "Test123!@#",
+    //         Password = "Test1234!@##",
     //         Scope = "read write admin",
     //         Signature = null,
     //         SignatureAlgorithm = "ES512"
@@ -145,8 +179,8 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
     // public async Task Token_ShouldHandleEmptyScope()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
-    //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#", Scope = "" };
+    //     await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test1234!@##");
+    //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test1234!@##", Scope = "" };
     //     var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
     //     response.StatusCode.Should().Be(HttpStatusCode.OK);
     // }
@@ -155,8 +189,8 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
     // public async Task Token_ShouldHandleNullScope()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
-    //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#", Scope = null };
+    //     await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test1234!@##");
+    //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test1234!@##", Scope = null };
     //     var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
     //     response.StatusCode.Should().Be(HttpStatusCode.OK);
     // }
@@ -168,7 +202,7 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
             _client,
             _factory,
             $"test_{Guid.NewGuid()}@test.com",
-            "Test123!@#",
+            "Test1234!@##",
             firstName: "",
             lastName: "Doe");
         status.Should().Be(HttpStatusCode.OK);
@@ -181,7 +215,7 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
             _client,
             _factory,
             $"test_{Guid.NewGuid()}@test.com",
-            "Test123!@#",
+            "Test1234!@##",
             firstName: "John",
             lastName: "");
         status.Should().Be(HttpStatusCode.OK);
@@ -195,7 +229,7 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
             _client,
             _factory,
             $"test_{Guid.NewGuid()}@test.com",
-            "Test123!@#",
+            "Test1234!@##",
             firstName: longName);
         status.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.BadRequest);
     }
@@ -208,7 +242,7 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
             _client,
             _factory,
             $"test_{Guid.NewGuid()}@test.com",
-            "Test123!@#",
+            "Test1234!@##",
             lastName: longName);
         status.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.BadRequest);
     }
@@ -216,7 +250,7 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
     [Fact]
     public async Task Token_ShouldHandleWhitespaceOnlyInUsername()
     {
-        var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = "   ", Password = "Test123!@#" };
+        var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = "   ", Password = "Test1234!@##" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -233,8 +267,8 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
     public async Task Token_ShouldHandleWhitespaceInUsername()
     {
         var email = $"test_{Guid.NewGuid()}@test.com";
-        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
-        var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = $"  {email}  ", Password = "Test123!@#" };
+        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test1234!@##");
+        var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = $"  {email}  ", Password = "Test1234!@##" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -243,8 +277,8 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
     public async Task Token_ShouldHandleWhitespaceInPassword()
     {
         var email = $"test_{Guid.NewGuid()}@test.com";
-        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
-        var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "  Test123!@#  " };
+        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test1234!@##");
+        var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "  Test1234!@##  " };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
