@@ -250,11 +250,26 @@
   <data name="common.shell.openSettings" xml:space="preserve">
     <value>Otvoriť nastavenia</value>
   </data>
+  <data name="common.language.cz" xml:space="preserve">
+    <value>Čeština</value>
+  </data>
+  <data name="common.language.en" xml:space="preserve">
+    <value>Angličtina</value>
+  </data>
+  <data name="common.language.select" xml:space="preserve">
+    <value>Vyberte jazyk</value>
+  </data>
+  <data name="common.language.sk" xml:space="preserve">
+    <value>Slovenčina</value>
+  </data>
   <data name="common.settings.closePanel" xml:space="preserve">
     <value>Zavrieť nastavenia</value>
   </data>
-  <data name="common.settings.panelBody" xml:space="preserve">
-    <value>Úplné nastavenia účtu (jazyk, profil, messenger, notifikácie) dorovnáme s web portálom v ďalšej fáze. Dnes použite many_faces_portal.</value>
+  <data name="common.settings.language" xml:space="preserve">
+    <value>Jazyk</value>
+  </data>
+  <data name="common.settings.panelHint" xml:space="preserve">
+    <value>Profil, messenger a notifikácie dorovnáme s web portálom v ďalšej fáze.</value>
   </data>
   <data name="common.settings.panelTitle" xml:space="preserve">
     <value>Nastavenia</value>

@@ -250,11 +250,26 @@
   <data name="common.shell.openSettings" xml:space="preserve">
     <value>Open settings</value>
   </data>
+  <data name="common.language.cz" xml:space="preserve">
+    <value>Czech</value>
+  </data>
+  <data name="common.language.en" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="common.language.select" xml:space="preserve">
+    <value>Select language</value>
+  </data>
+  <data name="common.language.sk" xml:space="preserve">
+    <value>Slovak</value>
+  </data>
   <data name="common.settings.closePanel" xml:space="preserve">
     <value>Close settings</value>
   </data>
-  <data name="common.settings.panelBody" xml:space="preserve">
-    <value>Full account settings (language, profile, messenger, notifications) match the web portal in a later slice. Use many_faces_portal for complete settings today.</value>
+  <data name="common.settings.language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="common.settings.panelHint" xml:space="preserve">
+    <value>Profile, messenger, and notification settings will match the web portal in a later slice.</value>
   </data>
   <data name="common.settings.panelTitle" xml:space="preserve">
     <value>Settings</value>
