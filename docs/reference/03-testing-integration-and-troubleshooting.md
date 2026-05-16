@@ -20,6 +20,13 @@ Tests cover:
 - Edge cases and security scenarios
 - SignalR hubs
 - Performance tests
+- **Static localization API** — `LocalizationControllerTests` (200/404, face-prefix exempt path); `LocalizationRateLimit429Tests` (`localization-read` policy → **429** + `Retry-After` via `RateLimitedLocalizationWebApplicationFactory`, serial xUnit collection). Each test host gets a unique `Testing:RateLimitScopeId` so rate-limit counters are not shared across parallel `WebApplicationFactory` instances.
+
+```bash
+dotnet test --filter "FullyQualifiedName~Localization"
+```
+
+See monorepo **[static-localization-and-i18n.md](../../../docs/guides/static-localization-and-i18n.md)**.
 
 **Registration invite tests** use `RegistrationInviteWebApplicationFactory` with a fake **`CapturingMailerWorkerClient`** (`Mail:Enabled=true`). Run:
 

@@ -209,7 +209,7 @@ To perform a clean rebuild of Docker images:
 
 ### Static UI localization
 
-- `GET /api/localization/{app}` — anonymous static UI bundles for **`portal`**, **`admin`**, or **`mobile`** (embedded `.resx`, JSON for i18next). **Face-prefix exempt** (call `/api/localization/...`, not `/{face}/api/localization/...`). Rate limit policy: **`localization-read`**. See monorepo [**static-localization-and-i18n**](../../docs/guides/static-localization-and-i18n.md).
+- `GET /api/localization/{app}` — anonymous static UI bundles for **`portal`**, **`admin`**, or **`mobile`** (embedded `.resx`, JSON for i18next). **Face-prefix exempt** (call `/api/localization/...`, not `/{face}/api/localization/...`). Rate limit policy: **`localization-read`** (IP fixed window; defaults **120 requests / 60 s** via `Localization:RateLimitPermitLimit` and `Localization:RateLimitWindowSeconds`). Over limit: **429** + `Retry-After` + JSON `error: rate_limit`. Tests: `LocalizationRateLimit429Tests`, `LocalizationControllerTests`. See monorepo [**static-localization-and-i18n**](../../docs/guides/static-localization-and-i18n.md).
 
 **Local dev:** after editing `BeDemo.Api/Localization/**/*.resx`, restart the API (`dotnet run` / `dotnet watch run` on `BeDemo.Api`) so embedded resources reload; hard-refresh the SPA or clear the client localization cache (`localStorage` keys `mf-localization-*`) to pick up a new `version` hash.
 

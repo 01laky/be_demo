@@ -11,6 +11,7 @@
  * - Swagger/OpenAPI documentation
  */
 
+using BeDemo.Api.Utils;
 using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
@@ -180,6 +181,9 @@ var registerPermit = isTestingEnv && bypassRateLimitInTesting
     ? 1_000_000
     : builder.Configuration.GetValue("OAuth2:RegisterRateLimitPermitLimit", 30);
 var registerWindowSec = builder.Configuration.GetValue("OAuth2:RegisterRateLimitWindowSeconds", 60);
+// localization-read: anonymous GET /api/localization/{app} on every SPA cold load.
+// Shares OAuth2:BypassRateLimitInTesting in Testing so most integration tests stay unlimited;
+// LocalizationRateLimit429Tests sets BypassRateLimitInTesting=false and low Localization:* limits.
 var localizationPermit = isTestingEnv && bypassRateLimitInTesting
     ? 1_000_000
     : builder.Configuration.GetValue("Localization:RateLimitPermitLimit", 120);
@@ -198,7 +202,7 @@ builder.Services.AddRateLimiter(options =>
     };
     options.AddPolicy("oauth-token", context =>
         RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? context.Connection.Id,
+            partitionKey: RateLimitingPartitionKey.ForHttpContext(context),
             factory: _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = oauthPermit,
@@ -208,7 +212,7 @@ builder.Services.AddRateLimiter(options =>
             }));
     options.AddPolicy("oauth-register", context =>
         RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? context.Connection.Id,
+            partitionKey: RateLimitingPartitionKey.ForHttpContext(context),
             factory: _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = registerPermit,
@@ -216,9 +220,10 @@ builder.Services.AddRateLimiter(options =>
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 QueueLimit = 0,
             }));
+    // Static i18n bundles: separate policy from oauth-* so tuning does not affect login/register.
     options.AddPolicy("localization-read", context =>
         RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? context.Connection.Id,
+            partitionKey: RateLimitingPartitionKey.ForHttpContext(context),
             factory: _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = localizationPermit,

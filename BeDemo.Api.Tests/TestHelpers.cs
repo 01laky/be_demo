@@ -21,6 +21,10 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
         // Set environment to Testing so Program.cs uses InMemory database (see Program.cs)
         builder.UseEnvironment("Testing");
 
+        // Unique scope per factory instance: Program.cs prefixes rate-limit partition keys so parallel
+        // WebApplicationFactory hosts (unlimited vs RateLimited* factories) do not share permit counters.
+        builder.UseSetting("Testing:RateLimitScopeId", Guid.NewGuid().ToString("N"));
+
         builder.UseSetting("Mail:Enabled", "true");
         builder.UseSetting("Mail:WorkerGrpcUrl", "http://localhost:59998");
 
@@ -74,10 +78,8 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
 }
 
 /// <summary>
-/// Same host as <see cref="CustomWebApplicationFactory{TProgram}"/> but disables the Testing rate-limit bypass so
-/// <c>POST /api/oauth2/token</c> and <c>register</c> return <strong>429</strong> after the configured permit count (see Program.cs ACL A21).
+/// Testing host with mail worker disabled (admin mailer test-self should return 400).
 /// </summary>
-/// <summary>Testing host with mail worker disabled (admin mailer test-self should return 400).</summary>
 public sealed class MailDisabledWebApplicationFactory : CustomWebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -92,6 +94,11 @@ public sealed class MailDisabledWebApplicationFactory : CustomWebApplicationFact
     }
 }
 
+/// <summary>
+/// Same in-memory test host as <see cref="CustomWebApplicationFactory{TProgram}"/> but disables the Testing
+/// rate-limit bypass so OAuth endpoints return <strong>429</strong> after the configured permit burst
+/// (see <see cref="OAuthRateLimit429Tests"/> and Program.cs ACL A21).
+/// </summary>
 public sealed class RateLimitedOAuthWebApplicationFactory : CustomWebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -103,6 +110,30 @@ public sealed class RateLimitedOAuthWebApplicationFactory : CustomWebApplication
         builder.UseSetting("OAuth2:TokenRateLimitWindowSeconds", "3");
         builder.UseSetting("OAuth2:RegisterRateLimitPermitLimit", "2");
         builder.UseSetting("OAuth2:RegisterRateLimitWindowSeconds", "3");
+        base.ConfigureWebHost(builder);
+    }
+}
+
+/// <summary>
+/// Test host for <see cref="LocalizationRateLimit429Tests"/>: enables real <c>localization-read</c> limits
+/// with a tiny permit count so bursts return <strong>429</strong> without waiting a full production window.
+/// </summary>
+/// <remarks>
+/// <para>
+/// In <c>Testing</c> environment, <see cref="Program"/> normally sets permit limits to ~1M when
+/// <c>OAuth2:BypassRateLimitInTesting</c> is true (default). Localization shares that bypass flag so
+/// ordinary integration tests are not flaky; this factory sets the flag to <c>false</c> and lowers
+/// <c>Localization:RateLimitPermitLimit</c> / window seconds.
+/// </para>
+/// </remarks>
+public sealed class RateLimitedLocalizationWebApplicationFactory : CustomWebApplicationFactory<Program>
+{
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        builder.UseSetting("OAuth2:BypassRateLimitInTesting", "false");
+        builder.UseSetting("Localization:RateLimitPermitLimit", "2");
+        // Short window so sequential scenarios in LocalizationRateLimit429Tests can reset between phases.
+        builder.UseSetting("Localization:RateLimitWindowSeconds", "3");
         base.ConfigureWebHost(builder);
     }
 }

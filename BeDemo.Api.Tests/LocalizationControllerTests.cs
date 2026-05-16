@@ -3,6 +3,12 @@ using System.Text.Json;
 
 namespace BeDemo.Api.Tests;
 
+/// <summary>
+/// Happy-path and routing tests for <c>GET /api/localization/{app}</c> (face-prefix exempt, anonymous).
+/// </summary>
+/// <remarks>
+/// Rate-limit rejection (429 + <c>Retry-After</c>) is covered by <see cref="LocalizationRateLimit429Tests"/>.
+/// </remarks>
 public class LocalizationControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
 {
     private readonly HttpClient _client;
