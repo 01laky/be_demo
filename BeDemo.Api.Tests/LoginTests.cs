@@ -197,7 +197,7 @@ public class LoginTests : IClassFixture<CustomWebApplicationFactory<Program>>, I
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", loginRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -260,7 +260,7 @@ public class LoginTests : IClassFixture<CustomWebApplicationFactory<Program>>, I
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", loginRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -280,7 +280,7 @@ public class LoginTests : IClassFixture<CustomWebApplicationFactory<Program>>, I
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", loginRequest);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]

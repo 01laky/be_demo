@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BeDemo.Api.Data;
 using BeDemo.Api.Models;
+using BeDemo.Api.Models.Requests.Reels;
 using BeDemo.Api.Services;
 using BeDemo.Api.Utils;
 
@@ -37,11 +38,12 @@ public class ReelsController : ControllerBase
 
     /// <summary>GET /api/reels?faceId= - Optional face filter: no ReelFaces = all faces; else only matching face.</summary>
     [HttpGet]
-    public async Task<IActionResult> GetReels([FromQuery] int? faceId)
+    public async Task<IActionResult> GetReels([FromQuery] ReelListQuery listQuery)
     {
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
 
+        var faceId = listQuery.FaceId;
         var query = _context.Reels
             .Where(r => r.ApprovalStatus == ContentApprovalStatus.Approved)
             .AsQueryable();

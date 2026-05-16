@@ -85,7 +85,7 @@ public class RefreshTokenEdgeCaseTests : IClassFixture<CustomWebApplicationFacto
     {
         var request = new OAuth2TokenRequest { GrantType = "refresh_token", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", RefreshToken = "" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -93,7 +93,7 @@ public class RefreshTokenEdgeCaseTests : IClassFixture<CustomWebApplicationFacto
     {
         var request = new OAuth2TokenRequest { GrantType = "refresh_token", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", RefreshToken = null };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]

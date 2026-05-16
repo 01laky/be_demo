@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BeDemo.Api.Data;
 using BeDemo.Api.Models;
+using BeDemo.Api.Models.Requests.Moderation;
 using BeDemo.Api.Services;
 
 namespace BeDemo.Api.Controllers;
@@ -49,47 +50,33 @@ public sealed class ContentModerationController : ControllerBase
     /// confidence band, submission time window, human reviewer id, and minimum queue age (hours since submit).
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> GetQueue(
-        [FromQuery] ModeratedContentType? contentType,
-        [FromQuery] ContentApprovalStatus? approvalStatus,
-        [FromQuery] AiReviewStatus? aiReviewStatus,
-        [FromQuery] int? faceId,
-        [FromQuery] string? authorId,
-        [FromQuery] AiReviewRiskLevel? riskLevel,
-        [FromQuery] int? moderationVersion,
-        [FromQuery] string? flagContains,
-        [FromQuery] double? minConfidence,
-        [FromQuery] double? maxConfidence,
-        [FromQuery] DateTime? submittedFromUtc,
-        [FromQuery] DateTime? submittedToUtc,
-        [FromQuery] string? reviewedByUserId,
-        [FromQuery] double? minQueueAgeHours)
+    public async Task<IActionResult> GetQueue([FromQuery] GetModerationQueueQuery q)
     {
         if (!CanModerate())
             return Forbid();
 
         var items = new List<ModerationItemDto>();
 
-        if (contentType is null or ModeratedContentType.Album)
+        if (q.ContentType is null or ModeratedContentType.Album)
         {
             var albumRows = await _context.Albums
                 .Include(a => a.Creator)
                 .Include(a => a.AlbumFaces).ThenInclude(af => af.Face)
-                .Where(a => approvalStatus == null || a.ApprovalStatus == approvalStatus)
-                .Where(a => aiReviewStatus == null || a.AiReviewStatus == aiReviewStatus)
-                .Where(a => faceId == null || a.AlbumFaces.Any(af => af.FaceId == faceId))
-                .Where(a => string.IsNullOrWhiteSpace(authorId) || a.CreatorId == authorId)
-                .Where(a => riskLevel == null || a.AiReviewRiskLevel == riskLevel)
-                .Where(a => moderationVersion == null || a.ModerationVersion == moderationVersion)
-                .Where(a => string.IsNullOrWhiteSpace(flagContains) ||
-                    (a.AiReviewFlagsJson != null && a.AiReviewFlagsJson.ToLower().Contains(flagContains.ToLower())))
-                .Where(a => !minConfidence.HasValue || (a.AiReviewConfidence != null && a.AiReviewConfidence >= minConfidence))
-                .Where(a => !maxConfidence.HasValue || (a.AiReviewConfidence != null && a.AiReviewConfidence <= maxConfidence))
-                .Where(a => !submittedFromUtc.HasValue || (a.SubmittedAtUtc != null && a.SubmittedAtUtc >= submittedFromUtc))
-                .Where(a => !submittedToUtc.HasValue || (a.SubmittedAtUtc != null && a.SubmittedAtUtc <= submittedToUtc))
-                .Where(a => string.IsNullOrWhiteSpace(reviewedByUserId) || a.HumanReviewedByUserId == reviewedByUserId)
-                .Where(a => !minQueueAgeHours.HasValue ||
-                    (a.SubmittedAtUtc != null && a.SubmittedAtUtc <= DateTime.UtcNow.AddHours(-minQueueAgeHours.Value)))
+                .Where(a => q.ApprovalStatus == null || a.ApprovalStatus == q.ApprovalStatus)
+                .Where(a => q.AiReviewStatus == null || a.AiReviewStatus == q.AiReviewStatus)
+                .Where(a => q.FaceId == null || a.AlbumFaces.Any(af => af.FaceId == q.FaceId))
+                .Where(a => string.IsNullOrWhiteSpace(q.AuthorId) || a.CreatorId == q.AuthorId)
+                .Where(a => q.RiskLevel == null || a.AiReviewRiskLevel == q.RiskLevel)
+                .Where(a => q.ModerationVersion == null || a.ModerationVersion == q.ModerationVersion)
+                .Where(a => string.IsNullOrWhiteSpace(q.FlagContains) ||
+                    (a.AiReviewFlagsJson != null && a.AiReviewFlagsJson.ToLower().Contains(q.FlagContains.ToLower())))
+                .Where(a => !q.MinConfidence.HasValue || (a.AiReviewConfidence != null && a.AiReviewConfidence >= q.MinConfidence))
+                .Where(a => !q.MaxConfidence.HasValue || (a.AiReviewConfidence != null && a.AiReviewConfidence <= q.MaxConfidence))
+                .Where(a => !q.SubmittedFromUtc.HasValue || (a.SubmittedAtUtc != null && a.SubmittedAtUtc >= q.SubmittedFromUtc))
+                .Where(a => !q.SubmittedToUtc.HasValue || (a.SubmittedAtUtc != null && a.SubmittedAtUtc <= q.SubmittedToUtc))
+                .Where(a => string.IsNullOrWhiteSpace(q.ReviewedByUserId) || a.HumanReviewedByUserId == q.ReviewedByUserId)
+                .Where(a => !q.MinQueueAgeHours.HasValue ||
+                    (a.SubmittedAtUtc != null && a.SubmittedAtUtc <= DateTime.UtcNow.AddHours(-q.MinQueueAgeHours.Value)))
                 .Select(a => new
                 {
                     Entity = a,
@@ -100,50 +87,50 @@ public sealed class ContentModerationController : ControllerBase
             items.AddRange(albumRows.Select(row => MapAlbum(row.Entity, row.FaceId, row.FaceTitle)));
         }
 
-        if (contentType is null or ModeratedContentType.Blog)
+        if (q.ContentType is null or ModeratedContentType.Blog)
         {
             var blogs = await _context.Blogs
                 .Include(b => b.Creator)
                 .Include(b => b.Face)
-                .Where(b => approvalStatus == null || b.ApprovalStatus == approvalStatus)
-                .Where(b => aiReviewStatus == null || b.AiReviewStatus == aiReviewStatus)
-                .Where(b => faceId == null || b.FaceId == faceId)
-                .Where(b => string.IsNullOrWhiteSpace(authorId) || b.CreatorId == authorId)
-                .Where(b => riskLevel == null || b.AiReviewRiskLevel == riskLevel)
-                .Where(b => moderationVersion == null || b.ModerationVersion == moderationVersion)
-                .Where(b => string.IsNullOrWhiteSpace(flagContains) ||
-                    (b.AiReviewFlagsJson != null && b.AiReviewFlagsJson.ToLower().Contains(flagContains.ToLower())))
-                .Where(b => !minConfidence.HasValue || (b.AiReviewConfidence != null && b.AiReviewConfidence >= minConfidence))
-                .Where(b => !maxConfidence.HasValue || (b.AiReviewConfidence != null && b.AiReviewConfidence <= maxConfidence))
-                .Where(b => !submittedFromUtc.HasValue || (b.SubmittedAtUtc != null && b.SubmittedAtUtc >= submittedFromUtc))
-                .Where(b => !submittedToUtc.HasValue || (b.SubmittedAtUtc != null && b.SubmittedAtUtc <= submittedToUtc))
-                .Where(b => string.IsNullOrWhiteSpace(reviewedByUserId) || b.HumanReviewedByUserId == reviewedByUserId)
-                .Where(b => !minQueueAgeHours.HasValue ||
-                    (b.SubmittedAtUtc != null && b.SubmittedAtUtc <= DateTime.UtcNow.AddHours(-minQueueAgeHours.Value)))
+                .Where(b => q.ApprovalStatus == null || b.ApprovalStatus == q.ApprovalStatus)
+                .Where(b => q.AiReviewStatus == null || b.AiReviewStatus == q.AiReviewStatus)
+                .Where(b => q.FaceId == null || b.FaceId == q.FaceId)
+                .Where(b => string.IsNullOrWhiteSpace(q.AuthorId) || b.CreatorId == q.AuthorId)
+                .Where(b => q.RiskLevel == null || b.AiReviewRiskLevel == q.RiskLevel)
+                .Where(b => q.ModerationVersion == null || b.ModerationVersion == q.ModerationVersion)
+                .Where(b => string.IsNullOrWhiteSpace(q.FlagContains) ||
+                    (b.AiReviewFlagsJson != null && b.AiReviewFlagsJson.ToLower().Contains(q.FlagContains.ToLower())))
+                .Where(b => !q.MinConfidence.HasValue || (b.AiReviewConfidence != null && b.AiReviewConfidence >= q.MinConfidence))
+                .Where(b => !q.MaxConfidence.HasValue || (b.AiReviewConfidence != null && b.AiReviewConfidence <= q.MaxConfidence))
+                .Where(b => !q.SubmittedFromUtc.HasValue || (b.SubmittedAtUtc != null && b.SubmittedAtUtc >= q.SubmittedFromUtc))
+                .Where(b => !q.SubmittedToUtc.HasValue || (b.SubmittedAtUtc != null && b.SubmittedAtUtc <= q.SubmittedToUtc))
+                .Where(b => string.IsNullOrWhiteSpace(q.ReviewedByUserId) || b.HumanReviewedByUserId == q.ReviewedByUserId)
+                .Where(b => !q.MinQueueAgeHours.HasValue ||
+                    (b.SubmittedAtUtc != null && b.SubmittedAtUtc <= DateTime.UtcNow.AddHours(-q.MinQueueAgeHours.Value)))
                 .ToListAsync();
             items.AddRange(blogs.Select(MapBlog));
         }
 
-        if (contentType is null or ModeratedContentType.Reel)
+        if (q.ContentType is null or ModeratedContentType.Reel)
         {
             var reelRows = await _context.Reels
                 .Include(r => r.Creator)
                 .Include(r => r.ReelFaces).ThenInclude(rf => rf.Face)
-                .Where(r => approvalStatus == null || r.ApprovalStatus == approvalStatus)
-                .Where(r => aiReviewStatus == null || r.AiReviewStatus == aiReviewStatus)
-                .Where(r => faceId == null || r.ReelFaces.Any(rf => rf.FaceId == faceId))
-                .Where(r => string.IsNullOrWhiteSpace(authorId) || r.CreatorId == authorId)
-                .Where(r => riskLevel == null || r.AiReviewRiskLevel == riskLevel)
-                .Where(r => moderationVersion == null || r.ModerationVersion == moderationVersion)
-                .Where(r => string.IsNullOrWhiteSpace(flagContains) ||
-                    (r.AiReviewFlagsJson != null && r.AiReviewFlagsJson.ToLower().Contains(flagContains.ToLower())))
-                .Where(r => !minConfidence.HasValue || (r.AiReviewConfidence != null && r.AiReviewConfidence >= minConfidence))
-                .Where(r => !maxConfidence.HasValue || (r.AiReviewConfidence != null && r.AiReviewConfidence <= maxConfidence))
-                .Where(r => !submittedFromUtc.HasValue || (r.SubmittedAtUtc != null && r.SubmittedAtUtc >= submittedFromUtc))
-                .Where(r => !submittedToUtc.HasValue || (r.SubmittedAtUtc != null && r.SubmittedAtUtc <= submittedToUtc))
-                .Where(r => string.IsNullOrWhiteSpace(reviewedByUserId) || r.HumanReviewedByUserId == reviewedByUserId)
-                .Where(r => !minQueueAgeHours.HasValue ||
-                    (r.SubmittedAtUtc != null && r.SubmittedAtUtc <= DateTime.UtcNow.AddHours(-minQueueAgeHours.Value)))
+                .Where(r => q.ApprovalStatus == null || r.ApprovalStatus == q.ApprovalStatus)
+                .Where(r => q.AiReviewStatus == null || r.AiReviewStatus == q.AiReviewStatus)
+                .Where(r => q.FaceId == null || r.ReelFaces.Any(rf => rf.FaceId == q.FaceId))
+                .Where(r => string.IsNullOrWhiteSpace(q.AuthorId) || r.CreatorId == q.AuthorId)
+                .Where(r => q.RiskLevel == null || r.AiReviewRiskLevel == q.RiskLevel)
+                .Where(r => q.ModerationVersion == null || r.ModerationVersion == q.ModerationVersion)
+                .Where(r => string.IsNullOrWhiteSpace(q.FlagContains) ||
+                    (r.AiReviewFlagsJson != null && r.AiReviewFlagsJson.ToLower().Contains(q.FlagContains.ToLower())))
+                .Where(r => !q.MinConfidence.HasValue || (r.AiReviewConfidence != null && r.AiReviewConfidence >= q.MinConfidence))
+                .Where(r => !q.MaxConfidence.HasValue || (r.AiReviewConfidence != null && r.AiReviewConfidence <= q.MaxConfidence))
+                .Where(r => !q.SubmittedFromUtc.HasValue || (r.SubmittedAtUtc != null && r.SubmittedAtUtc >= q.SubmittedFromUtc))
+                .Where(r => !q.SubmittedToUtc.HasValue || (r.SubmittedAtUtc != null && r.SubmittedAtUtc <= q.SubmittedToUtc))
+                .Where(r => string.IsNullOrWhiteSpace(q.ReviewedByUserId) || r.HumanReviewedByUserId == q.ReviewedByUserId)
+                .Where(r => !q.MinQueueAgeHours.HasValue ||
+                    (r.SubmittedAtUtc != null && r.SubmittedAtUtc <= DateTime.UtcNow.AddHours(-q.MinQueueAgeHours.Value)))
                 .Select(r => new
                 {
                     Entity = r,

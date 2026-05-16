@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BeDemo.Api.Data;
 using BeDemo.Api.Models;
+using BeDemo.Api.Models.Requests.Social;
 
 namespace BeDemo.Api.Controllers;
 
@@ -110,7 +111,7 @@ public class MessagesController : ControllerBase
 
     /// <summary>GET /api/messages/with/{otherUserId} - Chat history with a user</summary>
     [HttpGet("with/{otherUserId}")]
-    public async Task<IActionResult> GetMessages(string otherUserId, [FromQuery] int limit = 50)
+    public async Task<IActionResult> GetMessages(string otherUserId, [FromQuery] MessageHistoryQuery query)
     {
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
@@ -130,7 +131,7 @@ public class MessagesController : ControllerBase
                 (!m.IsMessageRequest || m.MessageRequestStatus == MessageRequestStatus.Accepted))
             .Include(m => m.Sender)
             .OrderByDescending(m => m.SentAt)
-            .Take(limit)
+            .Take(query.Limit)
             .ToListAsync();
 
         messages.Reverse();

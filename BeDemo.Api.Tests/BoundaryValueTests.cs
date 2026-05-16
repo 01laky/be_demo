@@ -89,7 +89,7 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
     }
 
     [Fact]
-    public async Task Register_ShouldSucceed_WhenPasswordIs255Chars()
+    public async Task Register_ShouldFail_WhenPasswordExceedsSchemaMaxLength()
     {
         // Prefix meets BE-A3 minimum (12); remainder pads to upper boundary.
         var password = IntegrationTestCredentials.DefaultPassword + new string('a', 243);
@@ -98,7 +98,7 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
             _factory,
             $"test_{Guid.NewGuid()}@test.com",
             password);
-        status.Should().Be(HttpStatusCode.OK);
+        status.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -252,7 +252,7 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
     {
         var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = "   ", Password = "Test1234!@##" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -260,7 +260,7 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
     {
         var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = "test@test.com", Password = "   " };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]

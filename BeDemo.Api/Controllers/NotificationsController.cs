@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BeDemo.Api.Data;
 using BeDemo.Api.Models;
+using BeDemo.Api.Models.Requests.Social;
 
 namespace BeDemo.Api.Controllers;
 
@@ -22,7 +23,7 @@ public class NotificationsController : ControllerBase
 
     /// <summary>GET /api/notifications - User's notification history (newest first)</summary>
     [HttpGet]
-    public async Task<IActionResult> GetHistory([FromQuery] int limit = 50)
+    public async Task<IActionResult> GetHistory([FromQuery] NotificationsListQuery query)
     {
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
@@ -30,7 +31,7 @@ public class NotificationsController : ControllerBase
         var items = await _context.Notifications
             .Where(n => n.UserId == UserId)
             .OrderByDescending(n => n.CreatedAt)
-            .Take(limit)
+            .Take(query.Limit)
             .Select(n => new
             {
                 id = n.Id,

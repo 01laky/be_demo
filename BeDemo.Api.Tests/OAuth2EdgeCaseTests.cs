@@ -91,7 +91,7 @@ public class OAuth2EdgeCaseTests : IClassFixture<RegistrationInviteWebApplicatio
     {
         var request = new OAuth2TokenRequest { GrantType = "invalid_grant", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -131,7 +131,7 @@ public class OAuth2EdgeCaseTests : IClassFixture<RegistrationInviteWebApplicatio
     {
         var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Password = "Test1234!@##" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -139,7 +139,7 @@ public class OAuth2EdgeCaseTests : IClassFixture<RegistrationInviteWebApplicatio
     {
         var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = "test@test.com" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -147,7 +147,7 @@ public class OAuth2EdgeCaseTests : IClassFixture<RegistrationInviteWebApplicatio
     {
         var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = "", Password = "Test1234!@##" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -155,7 +155,7 @@ public class OAuth2EdgeCaseTests : IClassFixture<RegistrationInviteWebApplicatio
     {
         var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = "test@test.com", Password = "" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -163,7 +163,7 @@ public class OAuth2EdgeCaseTests : IClassFixture<RegistrationInviteWebApplicatio
     {
         var request = new OAuth2TokenRequest { GrantType = "refresh_token", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]

@@ -80,7 +80,7 @@ public class SecurityEdgeCaseTests : IClassFixture<CustomWebApplicationFactory<P
     {
         var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = "test\0@test.com", Password = "Test1234!@##" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -88,7 +88,7 @@ public class SecurityEdgeCaseTests : IClassFixture<CustomWebApplicationFactory<P
     {
         var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = "test\u0000@test.com", Password = "Test1234!@##" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -120,7 +120,7 @@ public class SecurityEdgeCaseTests : IClassFixture<CustomWebApplicationFactory<P
     {
         var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = "   ", Password = "Test1234!@##" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -128,7 +128,7 @@ public class SecurityEdgeCaseTests : IClassFixture<CustomWebApplicationFactory<P
     {
         var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = "test@test.com", Password = "   " };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]

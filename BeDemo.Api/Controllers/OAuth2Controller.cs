@@ -9,6 +9,7 @@
  */
 
 using Microsoft.AspNetCore.Identity;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +18,9 @@ using BeDemo.Api.Data;
 using BeDemo.Api.Models;
 using BeDemo.Api.Models.DTOs;
 using BeDemo.Api.Services;
+using BeDemo.Api.Validation.OAuth;
+using FluentValidation;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace BeDemo.Api.Controllers;
 
@@ -31,17 +35,20 @@ public class OAuth2Controller : ControllerBase
     private readonly UserManager<ApplicationUser> _userManager;   // ASP.NET Core Identity UserManager for user management
     private readonly ApplicationDbContext _context;               // DbContext for explicit save operations
     private readonly ILogger<OAuth2Controller> _logger;          // Logger for logging
+    private readonly IValidator<OAuth2TokenRequest> _tokenRequestValidator;
 
     public OAuth2Controller(
         IOAuth2Service oauth2Service,
         UserManager<ApplicationUser> userManager,
         ApplicationDbContext context,
-        ILogger<OAuth2Controller> logger)
+        ILogger<OAuth2Controller> logger,
+        IValidator<OAuth2TokenRequest> tokenRequestValidator)
     {
         _oauth2Service = oauth2Service;
         _userManager = userManager;
         _context = context;
         _logger = logger;
+        _tokenRequestValidator = tokenRequestValidator;
     }
 
     /// <summary>
@@ -61,38 +68,18 @@ public class OAuth2Controller : ControllerBase
     /// <summary>ACL A21: fixed-window rate limit per client IP (relaxed in <c>Testing</c> environment).</summary>
     [HttpPost("token")]
     [EnableRateLimiting("oauth-token")]
-    public async Task<IActionResult> Token([FromBody] OAuth2TokenRequest request)
+    public async Task<IActionResult> Token(
+        [FromBody][CustomizeValidator(Skip = true)] OAuth2TokenRequest request,
+        CancellationToken cancellationToken)
     {
-        // Validates ModelState - checks if request satisfies data annotations (e.g., [Required])
-        if (!ModelState.IsValid)
+        var validation = await _tokenRequestValidator.ValidateAsync(request, cancellationToken);
+        if (!validation.IsValid)
         {
-            _logger.LogWarning("Invalid model state for token request");
+            var description = string.Join("; ", validation.Errors.Select(e => e.ErrorMessage));
             return BadRequest(new OAuth2ErrorResponse
             {
                 Error = "invalid_request",
-                ErrorDescription = "Invalid request parameters"
-            });
-        }
-
-        // Validates that grant_type is provided (it's a required parameter)
-        if (string.IsNullOrEmpty(request.GrantType))
-        {
-            _logger.LogWarning("Token request missing grant_type");
-            return BadRequest(new OAuth2ErrorResponse
-            {
-                Error = "invalid_request",
-                ErrorDescription = "grant_type is required"
-            });
-        }
-
-        // Validates that username/password don't contain null bytes (PostgreSQL doesn't support them)
-        if (!string.IsNullOrEmpty(request.Username) && request.Username.Contains('\0'))
-        {
-            _logger.LogWarning("Username contains null byte");
-            return Unauthorized(new OAuth2ErrorResponse
-            {
-                Error = "invalid_grant",
-                ErrorDescription = "Invalid credentials"
+                ErrorDescription = string.IsNullOrWhiteSpace(description) ? "Validation failed." : description,
             });
         }
 

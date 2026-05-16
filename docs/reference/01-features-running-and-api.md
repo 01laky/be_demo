@@ -179,6 +179,10 @@ To perform a clean rebuild of Docker images:
 
 ## API Endpoints
 
+### Request validation
+
+`BeDemo.Api` uses **FluentValidation** for input shape on REST actions. Invalid body/query/form input returns **400** with `ValidationProblemDetails` (`errors` keyed by camelCase property paths). **`POST /api/oauth2/token`** is excluded from auto-validation and maps schema failures to **`OAuth2ErrorResponse`** (`invalid_request`). See monorepo [`api-request-validation.md`](../../docs/guides/api-request-validation.md).
+
 ### Authentication
 
 - `POST /api/auth/register` - Register a new user

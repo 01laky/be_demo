@@ -19,12 +19,9 @@ namespace BeDemo.Api.Models.DTOs;
 public class OAuth2TokenRequest
 {
     /// <summary>
-    /// Grant type - type of OAuth2 flow
-    /// Required field
+    /// Grant type - type of OAuth2 flow (validated manually on token endpoint — OAuth2 error JSON, not ProblemDetails).
     /// Possible values: "password", "refresh_token"
-    /// Accepts camelCase (grantType) via PropertyNameCaseInsensitive
     /// </summary>
-    [Required]
     public string GrantType { get; set; } = string.Empty;
 
     /// <summary>

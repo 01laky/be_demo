@@ -196,7 +196,7 @@ public class ProfileController : ControllerBase
             return (null, "Invalid file type. Allowed: " + string.Join(", ", AllowedExtensions));
 
         if (file.Length > MaxFileSizeBytes)
-            return (null, "File too large. Max 5 MB.");
+            return (null, "File too large. Max 30 MB.");
 
         var webRoot = _env.WebRootPath;
         if (string.IsNullOrEmpty(webRoot))

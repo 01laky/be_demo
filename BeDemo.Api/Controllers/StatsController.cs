@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BeDemo.Api.Data;
 using BeDemo.Api.Models.DTOs;
+using BeDemo.Api.Models.Requests.Stats;
 using BeDemo.Api.Services;
 
 namespace BeDemo.Api.Controllers;
@@ -17,8 +18,6 @@ namespace BeDemo.Api.Controllers;
 [Authorize]
 public sealed class StatsController : ControllerBase
 {
-    private const int MaxTimeseriesRangeDays = 366;
-
     private readonly ApplicationDbContext _context;
     private readonly IAccessEvaluator _access;
     private readonly ILogger<StatsController> _logger;
@@ -67,10 +66,7 @@ public sealed class StatsController : ControllerBase
     /// </summary>
     [HttpGet("timeseries")]
     public async Task<ActionResult<StatsTimeseriesResponseDto>> GetTimeseries(
-        [FromQuery] string metric,
-        [FromQuery] DateTime fromUtc,
-        [FromQuery] DateTime toUtc,
-        [FromQuery] string bucket = "day",
+        [FromQuery] StatsTimeseriesQuery query,
         CancellationToken cancellationToken = default)
     {
         if (!_access.CanManageAllFaces(User))
@@ -79,23 +75,10 @@ public sealed class StatsController : ControllerBase
             return Forbid();
         }
 
-        if (string.IsNullOrWhiteSpace(metric))
-            return BadRequest(new { error = "metric is required." });
-
-        var m = metric.Trim().ToLowerInvariant();
-        var allowed = new[] { "users", "messages", "stories", "blogs", "reels", "albums", "friendrequests", "walltickets" };
-        if (!allowed.Contains(m))
-            return BadRequest(new { error = $"Unknown metric '{metric}'." });
-
-        if (fromUtc > toUtc)
-            return BadRequest(new { error = "fromUtc must be less than or equal to toUtc." });
-
-        if ((toUtc - fromUtc).TotalDays > MaxTimeseriesRangeDays)
-            return BadRequest(new { error = $"Range must not exceed {MaxTimeseriesRangeDays} days." });
-
-        var b = bucket.Trim().ToLowerInvariant();
-        if (b is not ("day" or "week"))
-            return BadRequest(new { error = "bucket must be 'day' or 'week'." });
+        var m = query.Metric.Trim().ToLowerInvariant();
+        var fromUtc = query.FromUtc;
+        var toUtc = query.ToUtc;
+        var b = query.Bucket.Trim().ToLowerInvariant();
 
         List<DateTime> timestamps = m switch
         {

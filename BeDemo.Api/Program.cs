@@ -12,6 +12,8 @@
  */
 
 using BeDemo.Api.Utils;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
@@ -150,6 +152,16 @@ builder.Services.AddControllers()
     {
         o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
+
+// Endpoint schema validation: FluentValidation auto 400 ProblemDetails (§6); validators in BeDemo.Api/Validation.
+builder.Services.AddFluentValidationAutoValidation(options =>
+{
+    // Token endpoint maps failures to OAuth2ErrorResponse via manual ValidateAsync (§6).
+    options.Filter = type => type != typeof(BeDemo.Api.Models.DTOs.OAuth2TokenRequest);
+});
+builder.Services.AddFluentValidationClientsideAdapters();
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+builder.Services.AddScoped<BeDemo.Api.Validation.Files.IFileValidator, BeDemo.Api.Validation.Files.FileValidator>();
 
 // Adds support for OpenAPI/Swagger - automatic API documentation
 builder.Services.AddEndpointsApiExplorer();
