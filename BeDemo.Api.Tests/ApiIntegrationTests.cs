@@ -32,11 +32,13 @@ public class ApiIntegrationTests : IClassFixture<RegistrationInviteWebApplicatio
 {
     private readonly RegistrationInviteWebApplicationFactory _factory;
     private readonly HttpClient _client;
+    private readonly HttpClient _faceClient;
 
     public ApiIntegrationTests(RegistrationInviteWebApplicationFactory factory)
     {
         _factory = factory;
         _client = _factory.CreateUnscopedClient();
+        _faceClient = _factory.CreateFaceClient("public");
     }
 
     #region OAuth2 Endpoints
@@ -176,7 +178,7 @@ public class ApiIntegrationTests : IClassFixture<RegistrationInviteWebApplicatio
     public async Task Faces_GetAll_ShouldRespond()
     {
         // Act - without authentication
-        var response = await _client.GetAsync("/api/faces");
+        var response = await _faceClient.GetAsync("/api/faces");
 
         // Assert - should return 401 (unauthorized) or 200, not 500
         response.StatusCode.Should().NotBe(HttpStatusCode.InternalServerError);
@@ -187,7 +189,7 @@ public class ApiIntegrationTests : IClassFixture<RegistrationInviteWebApplicatio
     public async Task Faces_GetConfig_ShouldRespond()
     {
         // Act - this is a public endpoint
-        var response = await _client.GetAsync("/api/faces/config");
+        var response = await _faceClient.GetAsync("/api/faces/config");
 
         // Assert - should return 200 (public endpoint)
         response.StatusCode.Should().NotBe(HttpStatusCode.InternalServerError);
@@ -203,7 +205,7 @@ public class ApiIntegrationTests : IClassFixture<RegistrationInviteWebApplicatio
     public async Task Faces_GetById_ShouldRespond()
     {
         // Act - without authentication, trying to get face by ID
-        var response = await _client.GetAsync("/api/faces/1");
+        var response = await _faceClient.GetAsync("/api/faces/1");
 
         // Assert - should return 401 (unauthorized) or 200, not 500
         response.StatusCode.Should().NotBe(HttpStatusCode.InternalServerError);
@@ -218,7 +220,7 @@ public class ApiIntegrationTests : IClassFixture<RegistrationInviteWebApplicatio
     public async Task Users_GetMe_ShouldRespond()
     {
         // Act - without authentication
-        var response = await _client.GetAsync("/api/users/me");
+        var response = await _faceClient.GetAsync("/api/users/me");
 
         // Assert - should return 401 (unauthorized), not 500
         response.StatusCode.Should().NotBe(HttpStatusCode.InternalServerError);
@@ -289,7 +291,7 @@ public class ApiIntegrationTests : IClassFixture<RegistrationInviteWebApplicatio
     public async Task Pages_GetAll_ShouldRespond()
     {
         // Act - without authentication
-        var response = await _client.GetAsync("/api/pages");
+        var response = await _faceClient.GetAsync("/api/pages");
 
         // Assert
         response.StatusCode.Should().NotBe(HttpStatusCode.InternalServerError);
@@ -300,7 +302,7 @@ public class ApiIntegrationTests : IClassFixture<RegistrationInviteWebApplicatio
     public async Task Pages_GetById_ShouldRespond()
     {
         // Act
-        var response = await _client.GetAsync("/api/pages/1");
+        var response = await _faceClient.GetAsync("/api/pages/1");
 
         // Assert
         response.StatusCode.Should().NotBe(HttpStatusCode.InternalServerError);
@@ -315,7 +317,7 @@ public class ApiIntegrationTests : IClassFixture<RegistrationInviteWebApplicatio
     public async Task PageTypes_GetAll_ShouldRespond()
     {
         // Act - without authentication
-        var response = await _client.GetAsync("/api/pagetypes");
+        var response = await _faceClient.GetAsync("/api/pagetypes");
 
         // Assert
         response.StatusCode.Should().NotBe(HttpStatusCode.InternalServerError);
@@ -326,7 +328,7 @@ public class ApiIntegrationTests : IClassFixture<RegistrationInviteWebApplicatio
     public async Task PageTypes_GetById_ShouldRespond()
     {
         // Act
-        var response = await _client.GetAsync("/api/pagetypes/1");
+        var response = await _faceClient.GetAsync("/api/pagetypes/1");
 
         // Assert
         response.StatusCode.Should().NotBe(HttpStatusCode.InternalServerError);
@@ -437,6 +439,7 @@ public class ApiIntegrationTests : IClassFixture<RegistrationInviteWebApplicatio
 
     public void Dispose()
     {
+        _faceClient?.Dispose();
         _client?.Dispose();
     }
 }

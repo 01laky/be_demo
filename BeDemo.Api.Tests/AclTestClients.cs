@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using BeDemo.Api.Models.DTOs;
 
@@ -20,41 +19,18 @@ public static class AclTestClients
     public static HttpClient CreateAdminFaceClient(CustomWebApplicationFactory<Program> factory) =>
         factory.CreateFaceClient("admin");
 
-    public static async Task<string> RegisterAndGetTokenAsync(HttpClient oauthClient, string? email = null, string password = "Test123!@#")
-    {
-        email ??= $"acl_{Guid.NewGuid():N}@test.com";
-        var reg = await oauthClient.PostAsJsonAsync("/api/oauth2/register", new
-        {
+    public static Task<string> RegisterAndGetTokenAsync(
+        CustomWebApplicationFactory<Program> factory,
+        HttpClient oauthClient,
+        string? email = null,
+        string password = "Test123!@#") =>
+        IntegrationTestRegistration.RegisterAndGetAccessTokenViaPasswordGrantAsync(
+            oauthClient,
+            factory,
             email,
             password,
-            firstName = "Acl",
-            lastName = "User",
-        });
-        reg.EnsureSuccessStatusCode();
-
-        var tokenRequest = new OAuth2TokenRequest
-        {
-            GrantType = "password",
-            ClientId = "be-demo-client",
-            ClientSecret = "be-demo-secret-very-strong-key",
-            Username = email,
-            Password = password,
-        };
-
-        for (var i = 0; i < 15; i++)
-        {
-            await Task.Delay(150 * (i + 1));
-            var response = await oauthClient.PostAsJsonAsync("/api/oauth2/token", tokenRequest);
-            if (response.IsSuccessStatusCode)
-            {
-                var body = await response.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
-                if (!string.IsNullOrEmpty(body?.AccessToken))
-                    return body.AccessToken;
-            }
-        }
-
-        throw new InvalidOperationException("Failed to obtain token for " + email);
-    }
+            "Acl",
+            "User");
 
     public static async Task<string> GetPlatformAdminTokenAsync(HttpClient oauthClient) =>
         await IntegrationTestSeed.GetAdminAccessTokenAsync(oauthClient);

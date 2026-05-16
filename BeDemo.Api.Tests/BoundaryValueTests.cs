@@ -27,44 +27,48 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
         // Minimum password length is 4, so 3 chars should fail
         // Password "Te1!" has 4 chars, so we need something with 3 chars that meets other requirements
         // But we can't have 3 chars with all requirements, so test with just 3 chars
-        var response = await _client.PostAsJsonAsync("/api/oauth2/register", new { email = $"test_{Guid.NewGuid()}@test.com", password = "Te1" });
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(_client, _factory, $"test_{Guid.NewGuid()}@test.com", "Te1");
+        status.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
     public async Task Register_ShouldSucceed_WhenPasswordIs4Chars()
     {
-        var response = await _client.PostAsJsonAsync("/api/oauth2/register", new { email = $"test_{Guid.NewGuid()}@test.com", password = "Test1!@" });
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(_client, _factory, $"test_{Guid.NewGuid()}@test.com", "Test1!@");
+        status.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
     public async Task Register_ShouldSucceed_WhenPasswordIs7Chars()
     {
-        var response = await _client.PostAsJsonAsync("/api/oauth2/register", new { email = $"test_{Guid.NewGuid()}@test.com", password = "Test12!" });
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(_client, _factory, $"test_{Guid.NewGuid()}@test.com", "Test12!");
+        status.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
     public async Task Register_ShouldSucceed_WhenPasswordIs8Chars()
     {
-        var response = await _client.PostAsJsonAsync("/api/oauth2/register", new { email = $"test_{Guid.NewGuid()}@test.com", password = "Test1!@#" });
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(_client, _factory, $"test_{Guid.NewGuid()}@test.com", "Test1!@#");
+        status.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
     public async Task Register_ShouldSucceed_WhenPasswordIs9Chars()
     {
-        var response = await _client.PostAsJsonAsync("/api/oauth2/register", new { email = $"test_{Guid.NewGuid()}@test.com", password = "Test12!@#" });
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(_client, _factory, $"test_{Guid.NewGuid()}@test.com", "Test12!@#");
+        status.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
     public async Task Register_ShouldSucceed_WhenPasswordIs255Chars()
     {
         var password = "Test1!@#" + new string('a', 247);
-        var response = await _client.PostAsJsonAsync("/api/oauth2/register", new { email = $"test_{Guid.NewGuid()}@test.com", password });
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(
+            _client,
+            _factory,
+            $"test_{Guid.NewGuid()}@test.com",
+            password);
+        status.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
@@ -72,24 +76,27 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
     {
         // Use unique email to avoid conflicts from previous tests
         var uniqueEmail = $"a{Guid.NewGuid().ToString("N")[..8]}@b.c";
-        var response = await _client.PostAsJsonAsync("/api/oauth2/register", new { email = uniqueEmail, password = "Test123!@#" });
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(_client, _factory, uniqueEmail, "Test123!@#");
+        status.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
     public async Task Register_ShouldSucceed_WhenEmailIsMaxLength()
     {
         var longEmail = new string('a', 240) + "@test.com";
-        var response = await _client.PostAsJsonAsync("/api/oauth2/register", new { email = longEmail, password = "Test123!@#" });
-        response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.BadRequest);
+        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(
+            _client,
+            _factory,
+            longEmail,
+            "Test123!@#");
+        status.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.BadRequest);
     }
 
     [Fact]
     public async Task Token_ShouldSucceed_WithMinimalValidRequest()
     {
         var email = $"test_{Guid.NewGuid()}@test.com";
-        var registerResponse = await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#", firstName = "Test", lastName = "User" });
-        registerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#", "Test", "User");
 
         var request = new OAuth2TokenRequest
         {
@@ -118,7 +125,7 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
     // public async Task Token_ShouldSucceed_WithAllOptionalFields()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
+    //     await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
     //     var request = new OAuth2TokenRequest 
     //     { 
     //         GrantType = "password", 
@@ -138,7 +145,7 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
     // public async Task Token_ShouldHandleEmptyScope()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
+    //     await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
     //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#", Scope = "" };
     //     var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
     //     response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -148,7 +155,7 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
     // public async Task Token_ShouldHandleNullScope()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
+    //     await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
     //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#", Scope = null };
     //     var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
     //     response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -157,31 +164,53 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
     [Fact]
     public async Task Register_ShouldHandleNullFirstName()
     {
-        var response = await _client.PostAsJsonAsync("/api/oauth2/register", new { email = $"test_{Guid.NewGuid()}@test.com", password = "Test123!@#", firstName = (string?)null, lastName = "Doe" });
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(
+            _client,
+            _factory,
+            $"test_{Guid.NewGuid()}@test.com",
+            "Test123!@#",
+            firstName: "",
+            lastName: "Doe");
+        status.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
     public async Task Register_ShouldHandleNullLastName()
     {
-        var response = await _client.PostAsJsonAsync("/api/oauth2/register", new { email = $"test_{Guid.NewGuid()}@test.com", password = "Test123!@#", firstName = "John", lastName = (string?)null });
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(
+            _client,
+            _factory,
+            $"test_{Guid.NewGuid()}@test.com",
+            "Test123!@#",
+            firstName: "John",
+            lastName: "");
+        status.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
     public async Task Register_ShouldHandleVeryLongFirstName()
     {
         var longName = new string('a', 1000);
-        var response = await _client.PostAsJsonAsync("/api/oauth2/register", new { email = $"test_{Guid.NewGuid()}@test.com", password = "Test123!@#", firstName = longName });
-        response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.BadRequest);
+        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(
+            _client,
+            _factory,
+            $"test_{Guid.NewGuid()}@test.com",
+            "Test123!@#",
+            firstName: longName);
+        status.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.BadRequest);
     }
 
     [Fact]
     public async Task Register_ShouldHandleVeryLongLastName()
     {
         var longName = new string('a', 1000);
-        var response = await _client.PostAsJsonAsync("/api/oauth2/register", new { email = $"test_{Guid.NewGuid()}@test.com", password = "Test123!@#", lastName = longName });
-        response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.BadRequest);
+        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(
+            _client,
+            _factory,
+            $"test_{Guid.NewGuid()}@test.com",
+            "Test123!@#",
+            lastName: longName);
+        status.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -204,7 +233,7 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
     public async Task Token_ShouldHandleWhitespaceInUsername()
     {
         var email = $"test_{Guid.NewGuid()}@test.com";
-        await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
+        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
         var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = $"  {email}  ", Password = "Test123!@#" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -214,7 +243,7 @@ public class BoundaryValueTests : IClassFixture<CustomWebApplicationFactory<Prog
     public async Task Token_ShouldHandleWhitespaceInPassword()
     {
         var email = $"test_{Guid.NewGuid()}@test.com";
-        await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
+        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
         var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "  Test123!@#  " };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);

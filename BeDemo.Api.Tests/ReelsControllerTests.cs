@@ -26,38 +26,13 @@ public class ReelsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         if (_authToken != null)
             return _authToken;
 
-        var email = $"reel_test_{Guid.NewGuid()}@test.com";
-        const string password = "Test123!@#";
-
-        await _client.PostAsJsonAsync("/api/oauth2/register", new
-        {
-            email,
-            password,
-            firstName = "Reel",
-            lastName = "Tester",
-        });
-
-        var tokenRequest = new OAuth2TokenRequest
-        {
-            GrantType = "password",
-            ClientId = "be-demo-client",
-            ClientSecret = "be-demo-secret-very-strong-key",
-            Username = email,
-            Password = password,
-        };
-
-        HttpResponseMessage? response = null;
-        for (var i = 0; i < 15; i++)
-        {
-            await Task.Delay(150 * (i + 1));
-            response = await _client.PostAsJsonAsync("/api/oauth2/token", tokenRequest);
-            if (response.StatusCode == HttpStatusCode.OK)
-                break;
-        }
-
-        response!.StatusCode.Should().Be(HttpStatusCode.OK);
-        var tokenResponse = await response.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
-        _authToken = tokenResponse!.AccessToken;
+        _authToken = await IntegrationTestRegistration.RegisterAndGetAccessTokenViaPasswordGrantAsync(
+            _client,
+            _factory,
+            $"reel_test_{Guid.NewGuid()}@test.com",
+            "Test123!@#",
+            "Reel",
+            "Tester");
         return _authToken;
     }
 

@@ -23,7 +23,7 @@ public class AlbumsControllerTests : IClassFixture<RegistrationInviteWebApplicat
     public AlbumsControllerTests(RegistrationInviteWebApplicationFactory factory)
     {
         _factory = factory;
-        _client = _factory.CreateUnscopedClient();
+        _client = _factory.CreateFaceClient("public");
     }
 
     private async Task<string> GetAuthTokenAsync()

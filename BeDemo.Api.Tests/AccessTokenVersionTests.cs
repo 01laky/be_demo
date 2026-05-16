@@ -25,22 +25,7 @@ public class AccessTokenVersionTests : IClassFixture<CustomWebApplicationFactory
     {
         var client = _factory.CreateClient();
         var email = $"atv_{Guid.NewGuid():N}@test.com";
-        var reg = await client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
-        reg.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        var tokenReq = new OAuth2TokenRequest
-        {
-            GrantType = "password",
-            ClientId = "be-demo-client",
-            ClientSecret = "be-demo-secret-very-strong-key",
-            Username = email,
-            Password = "Test123!@#",
-        };
-        var tokenRes = await client.PostAsJsonAsync("/api/oauth2/token", tokenReq);
-        tokenRes.EnsureSuccessStatusCode();
-        var tokenDto = await tokenRes.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
-        tokenDto.Should().NotBeNull();
-        var access = tokenDto!.AccessToken;
+        var access = await IntegrationTestRegistration.RegisterAndGetAccessTokenViaPasswordGrantAsync(client, _factory, email, "Test123!@#");
         access.Should().NotBeNullOrEmpty();
 
         var faceClient = _factory.CreateFaceClient("public");
@@ -67,20 +52,7 @@ public class AccessTokenVersionTests : IClassFixture<CustomWebApplicationFactory
     {
         var client = _factory.CreateClient();
         var email = $"atv_role_{Guid.NewGuid():N}@test.com";
-        var reg = await client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
-        reg.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        var tokenReq = new OAuth2TokenRequest
-        {
-            GrantType = "password",
-            ClientId = "be-demo-client",
-            ClientSecret = "be-demo-secret-very-strong-key",
-            Username = email,
-            Password = "Test123!@#",
-        };
-        var tokenRes = await client.PostAsJsonAsync("/api/oauth2/token", tokenReq);
-        tokenRes.EnsureSuccessStatusCode();
-        var access = (await tokenRes.Content.ReadFromJsonAsync<OAuth2TokenResponse>())!.AccessToken!;
+        var access = await IntegrationTestRegistration.RegisterAndGetAccessTokenViaPasswordGrantAsync(client, _factory, email, "Test123!@#");
 
         var faceClient = _factory.CreateFaceClient("public");
         faceClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", access);

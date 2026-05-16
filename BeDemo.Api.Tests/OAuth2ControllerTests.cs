@@ -112,31 +112,8 @@ public class OAuth2ControllerTests : IClassFixture<RegistrationInviteWebApplicat
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
-    private async Task RegisterViaInviteFlowAsync(string email, string password)
-    {
-        _factory.CapturingMailer.Reset();
-        var requestResponse = await _client.PostAsJsonAsync("/api/oauth2/register/request", new RegisterRequestDto
-        {
-            Email = email,
-            FirstName = "Test",
-            LastName = "User",
-            Locale = "en",
-        });
-        requestResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var code = _factory.CapturingMailer.LastRequest!.Params["registration_code"];
-        using var scope = _factory.Services.CreateScope();
-        var ctx = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        var invite = ctx.RegistrationInvites.OrderByDescending(i => i.CreatedAtUtc).First(i => i.Email == email);
-        var completeResponse = await _client.PostAsJsonAsync("/api/oauth2/register/complete", new RegisterCompleteDto
-        {
-            Hash = invite.LinkHash,
-            Code = code,
-            Password = password,
-            ClientId = "be-demo-client",
-            ClientSecret = "be-demo-secret-very-strong-key",
-        });
-        completeResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-    }
+    private Task RegisterViaInviteFlowAsync(string email, string password) =>
+        IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, password);
 
     public void Dispose()
     {

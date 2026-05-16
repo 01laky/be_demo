@@ -15,10 +15,14 @@ public sealed class OAuthErrorPolicyIntegrationTests : IClassFixture<CustomWebAp
 {
     private static readonly JsonSerializerOptions JsonRelaxed = new() { PropertyNameCaseInsensitive = true };
 
+    private readonly CustomWebApplicationFactory<Program> _factory;
     private readonly HttpClient _client;
 
-    public OAuthErrorPolicyIntegrationTests(CustomWebApplicationFactory<Program> factory) =>
+    public OAuthErrorPolicyIntegrationTests(CustomWebApplicationFactory<Program> factory)
+    {
+        _factory = factory;
         _client = factory.CreateUnscopedClient();
+    }
 
     [Fact]
     public async Task Token_Returns401_InvalidClient_WithOAuthErrorBody()
@@ -41,7 +45,7 @@ public sealed class OAuthErrorPolicyIntegrationTests : IClassFixture<CustomWebAp
     public async Task Token_Returns401_InvalidGrant_WrongPassword_WithOAuthErrorBody()
     {
         var email = $"pol_{Guid.NewGuid():N}@test.com";
-        await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
+        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
         var req = new OAuth2TokenRequest
         {
             GrantType = "password",

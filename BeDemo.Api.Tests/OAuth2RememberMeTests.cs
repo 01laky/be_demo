@@ -39,21 +39,12 @@ public class OAuth2RememberMeTests
         }
     }
 
-    private static HttpClient CreateClientWithJwtDurations(int sessionMinutes, int rememberMinutes) =>
-        new JwtDurationFactory(sessionMinutes, rememberMinutes).CreateClient();
-
-    private static async Task<string> RegisterUniqueUserAsync(HttpClient client)
+    private static async Task<string> RegisterUniqueUserAsync(
+        HttpClient client,
+        CustomWebApplicationFactory<Program> factory)
     {
         var email = $"remember_{Guid.NewGuid():N}@test.com";
-        const string password = "Test123!@#";
-        var registerResponse = await client.PostAsJsonAsync("/api/oauth2/register", new
-        {
-            email,
-            password,
-            firstName = "R",
-            lastName = "M"
-        });
-        registerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        await IntegrationTestRegistration.CompleteRegistrationAsync(client, factory, email, "Test123!@#", "R", "M");
         return email;
     }
 
@@ -85,8 +76,9 @@ public class OAuth2RememberMeTests
     {
         const int sessionMin = 13;
         const int rememberMin = 777;
-        using var client = CreateClientWithJwtDurations(sessionMin, rememberMin);
-        var email = await RegisterUniqueUserAsync(client);
+        using var factory = new JwtDurationFactory(sessionMin, rememberMin);
+        using var client = factory.CreateClient();
+        var email = await RegisterUniqueUserAsync(client, factory);
 
         var token = await LoginAsync(client, email, "Test123!@#", rememberMe: null);
 
@@ -99,8 +91,9 @@ public class OAuth2RememberMeTests
     {
         const int sessionMin = 14;
         const int rememberMin = 888;
-        using var client = CreateClientWithJwtDurations(sessionMin, rememberMin);
-        var email = await RegisterUniqueUserAsync(client);
+        using var factory = new JwtDurationFactory(sessionMin, rememberMin);
+        using var client = factory.CreateClient();
+        var email = await RegisterUniqueUserAsync(client, factory);
 
         var token = await LoginAsync(client, email, "Test123!@#", rememberMe: false);
 
@@ -113,8 +106,9 @@ public class OAuth2RememberMeTests
     {
         const int sessionMin = 15;
         const int rememberMin = 999;
-        using var client = CreateClientWithJwtDurations(sessionMin, rememberMin);
-        var email = await RegisterUniqueUserAsync(client);
+        using var factory = new JwtDurationFactory(sessionMin, rememberMin);
+        using var client = factory.CreateClient();
+        var email = await RegisterUniqueUserAsync(client, factory);
 
         var token = await LoginAsync(client, email, "Test123!@#", rememberMe: true);
 
@@ -127,8 +121,9 @@ public class OAuth2RememberMeTests
     {
         const int sessionMin = 3;
         const int rememberMin = 400;
-        using var client = CreateClientWithJwtDurations(sessionMin, rememberMin);
-        var email = await RegisterUniqueUserAsync(client);
+        using var factory = new JwtDurationFactory(sessionMin, rememberMin);
+        using var client = factory.CreateClient();
+        var email = await RegisterUniqueUserAsync(client, factory);
 
         OAuth2TokenResponse? token = null;
         for (var i = 0; i < 15; i++)

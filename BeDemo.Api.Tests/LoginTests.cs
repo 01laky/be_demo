@@ -29,14 +29,7 @@ public class LoginTests : IClassFixture<CustomWebApplicationFactory<Program>>, I
         var password = "Test123!@#";
 
         // Register user first
-        var registerResponse = await _client.PostAsJsonAsync("/api/oauth2/register", new
-        {
-            email,
-            password,
-            firstName = "Test",
-            lastName = "User"
-        });
-        registerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, password, "Test", "User");
 
         var loginRequest = new OAuth2TokenRequest
         {
@@ -97,14 +90,7 @@ public class LoginTests : IClassFixture<CustomWebApplicationFactory<Program>>, I
         var email = $"test_{Guid.NewGuid()}@test.com";
         var password = "Test123!@#";
 
-        // Register user first
-        await _client.PostAsJsonAsync("/api/oauth2/register", new
-        {
-            email,
-            password,
-            firstName = "Test",
-            lastName = "User"
-        });
+        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, password, "Test", "User");
 
         var loginRequest = new OAuth2TokenRequest
         {
@@ -132,14 +118,7 @@ public class LoginTests : IClassFixture<CustomWebApplicationFactory<Program>>, I
         var email = $"test_{Guid.NewGuid()}@test.com";
         var password = "Test123!@#";
 
-        // Register user first
-        await _client.PostAsJsonAsync("/api/oauth2/register", new
-        {
-            email,
-            password,
-            firstName = "Test",
-            lastName = "User"
-        });
+        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, password, "Test", "User");
 
         var loginRequest = new OAuth2TokenRequest
         {
@@ -164,14 +143,7 @@ public class LoginTests : IClassFixture<CustomWebApplicationFactory<Program>>, I
         var email = $"test_{Guid.NewGuid()}@test.com";
         var password = "Test123!@#";
 
-        // Register user first
-        await _client.PostAsJsonAsync("/api/oauth2/register", new
-        {
-            email,
-            password,
-            firstName = "Test",
-            lastName = "User"
-        });
+        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, password, "Test", "User");
 
         var loginRequest = new OAuth2TokenRequest
         {
@@ -235,15 +207,13 @@ public class LoginTests : IClassFixture<CustomWebApplicationFactory<Program>>, I
         var email = $"test_{Guid.NewGuid()}@test.com";
         var password = "Test123!@#";
 
-        // Register user with lowercase email
-        var registerResponse = await _client.PostAsJsonAsync("/api/oauth2/register", new
-        {
-            email = email.ToLower(),
+        await IntegrationTestRegistration.CompleteRegistrationAsync(
+            _client,
+            _factory,
+            email.ToLower(),
             password,
-            firstName = "Test",
-            lastName = "User"
-        });
-        registerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+            "Test",
+            "User");
 
         // Try to login with lowercase email (Identity normalizes emails, so case doesn't matter)
         var loginRequest = new OAuth2TokenRequest
@@ -321,14 +291,7 @@ public class LoginTests : IClassFixture<CustomWebApplicationFactory<Program>>, I
         var password = "Test123!@#";
 
         // Register user first
-        var registerResponse = await _client.PostAsJsonAsync("/api/oauth2/register", new
-        {
-            email,
-            password,
-            firstName = "Test",
-            lastName = "User"
-        });
-        registerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, password, "Test", "User");
 
         var loginRequest = new OAuth2TokenRequest
         {

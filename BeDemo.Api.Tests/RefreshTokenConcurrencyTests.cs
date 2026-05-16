@@ -21,7 +21,7 @@ public sealed class RefreshTokenConcurrencyTests : IClassFixture<CustomWebApplic
     {
         using var client = _factory.CreateUnscopedClient();
         var email = $"conc_{Guid.NewGuid():N}@test.com";
-        await client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
+        await IntegrationTestRegistration.CompleteRegistrationAsync(client, _factory, email, "Test123!@#");
         var tokenReq = new OAuth2TokenRequest
         {
             GrantType = "password",

@@ -37,7 +37,7 @@ public class PageTypesControllerTests : IClassFixture<CustomWebApplicationFactor
     [Fact]
     public async Task GetPageTypes_ShouldReturnPageTypesList_WhenAuthenticatedTenantUser()
     {
-        var token = await AclTestClients.RegisterAndGetTokenAsync(_oauth);
+        var token = await AclTestClients.RegisterAndGetTokenAsync(_factory, _oauth);
         _publicFace.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var response = await _publicFace.GetAsync("/api/pagetypes");
@@ -49,7 +49,7 @@ public class PageTypesControllerTests : IClassFixture<CustomWebApplicationFactor
     [Fact]
     public async Task CreatePageType_ShouldForbid_WhenTenantUserOnPublicFace()
     {
-        var token = await AclTestClients.RegisterAndGetTokenAsync(_oauth);
+        var token = await AclTestClients.RegisterAndGetTokenAsync(_factory, _oauth);
         _publicFace.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var response = await _publicFace.PostAsJsonAsync("/api/pagetypes", new { index = $"deny_{Guid.NewGuid():N}" });
@@ -84,7 +84,7 @@ public class PageTypesControllerTests : IClassFixture<CustomWebApplicationFactor
         var created = await createResponse.Content.ReadFromJsonAsync<JsonElement>();
         var id = created.GetProperty("id").GetInt32();
 
-        var userToken = await AclTestClients.RegisterAndGetTokenAsync(_oauth);
+        var userToken = await AclTestClients.RegisterAndGetTokenAsync(_factory, _oauth);
         _publicFace.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
         var getResponse = await _publicFace.GetAsync($"/api/pagetypes/{id}");
         getResponse.StatusCode.Should().Be(HttpStatusCode.OK);

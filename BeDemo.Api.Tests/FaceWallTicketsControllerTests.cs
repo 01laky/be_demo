@@ -54,20 +54,14 @@ public class FaceWallTicketsControllerTests : IClassFixture<CustomWebApplication
         return (token, userId!);
     }
 
-    private static async Task<(string Token, string UserId, string Email)> RegisterAndLoginAsync(HttpClient client)
-    {
-        var email = $"wt_{Guid.NewGuid():N}@test.com";
-        await client.PostAsJsonAsync("/api/oauth2/register", new
-        {
-            email,
-            password = WallTicketsTestPassword,
-            firstName = "Wall",
-            lastName = "Tester",
-        });
-
-        var (token, userId) = await LoginWithPasswordAsync(client, email, WallTicketsTestPassword);
-        return (token, userId, email);
-    }
+    private Task<(string Token, string UserId, string Email)> RegisterAndLoginAsync(HttpClient client) =>
+        IntegrationTestRegistration.RegisterLoginWithUserIdAsync(
+            client,
+            _factory,
+            $"wt_{Guid.NewGuid():N}@test.com",
+            WallTicketsTestPassword,
+            "Wall",
+            "Tester");
 
     private static async Task<int> GetAnyFaceIdAsync(HttpClient client, string token)
     {

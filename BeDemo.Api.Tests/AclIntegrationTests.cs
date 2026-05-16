@@ -67,7 +67,7 @@ public class AclIntegrationTests : IClassFixture<CustomWebApplicationFactory<Pro
     [Fact]
     public async Task GetFaceRoles_AuthenticatedTenant_OnPublicFace_StillExcludesFaceAdmin()
     {
-        var tenantToken = await AclTestClients.RegisterAndGetTokenAsync(_oauth);
+        var tenantToken = await AclTestClients.RegisterAndGetTokenAsync(_factory, _oauth);
         _publicFace.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tenantToken);
         var response = await _publicFace.GetAsync("/api/faces/face-roles");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -78,7 +78,7 @@ public class AclIntegrationTests : IClassFixture<CustomWebApplicationFactory<Pro
     [Fact]
     public async Task PostPageTypes_Tenant_OnPublicFace_IsForbidden()
     {
-        var tenantToken = await AclTestClients.RegisterAndGetTokenAsync(_oauth);
+        var tenantToken = await AclTestClients.RegisterAndGetTokenAsync(_factory, _oauth);
         _publicFace.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tenantToken);
         var response = await _publicFace.PostAsJsonAsync("/api/pagetypes", new { index = $"tenant_pt_{Guid.NewGuid():N}" });
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -112,7 +112,7 @@ public class AclIntegrationTests : IClassFixture<CustomWebApplicationFactory<Pro
     [Fact]
     public async Task SetMyFaceRole_Tenant_SelectingFaceAdmin_IsForbidden()
     {
-        var tenantToken = await AclTestClients.RegisterAndGetTokenAsync(_oauth);
+        var tenantToken = await AclTestClients.RegisterAndGetTokenAsync(_factory, _oauth);
         _publicFace.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tenantToken);
 
         var adminToken = await AclTestClients.GetPlatformAdminTokenAsync(_oauth);
@@ -136,7 +136,7 @@ public class AclIntegrationTests : IClassFixture<CustomWebApplicationFactory<Pro
     [Fact]
     public async Task SetMyFaceRole_Tenant_SelectingFaceUser_IsOk()
     {
-        var tenantToken = await AclTestClients.RegisterAndGetTokenAsync(_oauth);
+        var tenantToken = await AclTestClients.RegisterAndGetTokenAsync(_factory, _oauth);
         _publicFace.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tenantToken);
 
         var rolesResponse = await _publicFace.GetAsync("/api/faces/face-roles");
@@ -156,7 +156,7 @@ public class AclIntegrationTests : IClassFixture<CustomWebApplicationFactory<Pro
     [Fact]
     public async Task MeCapabilities_BareApi_ReturnsBadRequest()
     {
-        var token = await AclTestClients.RegisterAndGetTokenAsync(_oauth);
+        var token = await AclTestClients.RegisterAndGetTokenAsync(_factory, _oauth);
         _unscoped.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var response = await _unscoped.GetAsync("/api/me/capabilities");
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -167,7 +167,7 @@ public class AclIntegrationTests : IClassFixture<CustomWebApplicationFactory<Pro
     [Fact]
     public async Task MeCapabilities_PublicFace_NewTenant_HasSessionSelfServiceAndFaceMember_FromRegistrationDefaultHost()
     {
-        var tenantToken = await AclTestClients.RegisterAndGetTokenAsync(_oauth);
+        var tenantToken = await AclTestClients.RegisterAndGetTokenAsync(_factory, _oauth);
         _publicFace.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tenantToken);
 
         var response = await _publicFace.GetAsync("/api/me/capabilities");
@@ -187,7 +187,7 @@ public class AclIntegrationTests : IClassFixture<CustomWebApplicationFactory<Pro
     [Fact]
     public async Task MeCapabilities_PublicFace_AfterFaceUserAssignment_IncludesFaceMember()
     {
-        var tenantToken = await AclTestClients.RegisterAndGetTokenAsync(_oauth);
+        var tenantToken = await AclTestClients.RegisterAndGetTokenAsync(_factory, _oauth);
         _publicFace.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tenantToken);
 
         var rolesResponse = await _publicFace.GetAsync("/api/faces/face-roles");
@@ -261,7 +261,7 @@ public class AclIntegrationTests : IClassFixture<CustomWebApplicationFactory<Pro
     [Fact]
     public async Task GetFaces_TenantUser_OnAdminFace_IsForbidden()
     {
-        var tenantToken = await AclTestClients.RegisterAndGetTokenAsync(_oauth);
+        var tenantToken = await AclTestClients.RegisterAndGetTokenAsync(_factory, _oauth);
         _adminFace.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tenantToken);
         var response = await _adminFace.GetAsync("/api/faces");
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -270,7 +270,7 @@ public class AclIntegrationTests : IClassFixture<CustomWebApplicationFactory<Pro
     [Fact]
     public async Task SetMyFaceRole_BadRequest_WhenUserRoleIdMissingOrZero()
     {
-        var tenantToken = await AclTestClients.RegisterAndGetTokenAsync(_oauth);
+        var tenantToken = await AclTestClients.RegisterAndGetTokenAsync(_factory, _oauth);
         _publicFace.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tenantToken);
         var cfg = await _publicFace.GetFromJsonAsync<JsonElement[]>("/api/faces/config");
         var faceId = cfg![0].GetProperty("id").GetInt32();
@@ -285,7 +285,7 @@ public class AclIntegrationTests : IClassFixture<CustomWebApplicationFactory<Pro
     [Fact]
     public async Task SetMyFaceRole_BadRequest_WhenRoleIsGlobalNotFaceScoped()
     {
-        var tenantToken = await AclTestClients.RegisterAndGetTokenAsync(_oauth);
+        var tenantToken = await AclTestClients.RegisterAndGetTokenAsync(_factory, _oauth);
         _publicFace.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tenantToken);
         var cfg = await _publicFace.GetFromJsonAsync<JsonElement[]>("/api/faces/config");
         var faceId = cfg![0].GetProperty("id").GetInt32();
@@ -306,7 +306,7 @@ public class AclIntegrationTests : IClassFixture<CustomWebApplicationFactory<Pro
     [Fact]
     public async Task SetMyFaceRole_NotFound_WhenTargetFaceIdNotScopedFace()
     {
-        var tenantToken = await AclTestClients.RegisterAndGetTokenAsync(_oauth);
+        var tenantToken = await AclTestClients.RegisterAndGetTokenAsync(_factory, _oauth);
         _publicFace.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tenantToken);
         var put = await _publicFace.PutAsJsonAsync("/api/faces/999997/my-role", new { userRoleId = 1 });
         put.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -318,7 +318,7 @@ public class AclIntegrationTests : IClassFixture<CustomWebApplicationFactory<Pro
     [InlineData(UserRole.FaceRoleNames.FaceHost)]
     public async Task SetMyFaceRole_AllowsOtherSelfServiceRoles(string roleName)
     {
-        var tenantToken = await AclTestClients.RegisterAndGetTokenAsync(_oauth);
+        var tenantToken = await AclTestClients.RegisterAndGetTokenAsync(_factory, _oauth);
         _publicFace.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tenantToken);
         var rolesResponse = await _publicFace.GetAsync("/api/faces/face-roles");
         var arr = await rolesResponse.Content.ReadFromJsonAsync<JsonElement>();

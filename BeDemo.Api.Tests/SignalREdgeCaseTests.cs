@@ -23,21 +23,8 @@ public class SignalREdgeCaseTests : IClassFixture<CustomWebApplicationFactory<Pr
         _client = _factory.CreateClient();
     }
 
-    private async Task<string> GetTokenAsync(string email, string password)
-    {
-        await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password, firstName = "Test", lastName = "User" });
-        var tokenRequest = new OAuth2TokenRequest
-        {
-            GrantType = "password",
-            ClientId = "be-demo-client",
-            ClientSecret = "be-demo-secret-very-strong-key",
-            Username = email,
-            Password = password
-        };
-        var tokenResponse = await _client.PostAsJsonAsync("/api/oauth2/token", tokenRequest);
-        var tokenData = await tokenResponse.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
-        return tokenData!.AccessToken;
-    }
+    private Task<string> GetTokenAsync(string email, string password) =>
+        IntegrationTestRegistration.RegisterAndGetAccessTokenViaPasswordGrantAsync(_client, _factory, email, password);
 
     // [Fact] // Temporarily disabled - database conflict
     // public async Task SignalR_ShouldReject_WhenTokenIsExpired()

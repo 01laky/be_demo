@@ -21,3 +21,16 @@ public sealed class CapturingMailerWorkerClient : IMailerWorkerClient
     {
     }
 }
+
+/// <summary>Simulates mail worker disabled — <see cref="SendTemplatedEmailAsync"/> returns null.</summary>
+public sealed class DisabledMailerWorkerClient : IMailerWorkerClient
+{
+    public Task<SendTemplatedEmailResponse?> SendTemplatedEmailAsync(
+        SendTemplatedEmailRequest request,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult<SendTemplatedEmailResponse?>(null);
+
+    public void Dispose()
+    {
+    }
+}

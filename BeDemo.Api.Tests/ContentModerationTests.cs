@@ -1095,35 +1095,13 @@ public class ContentModerationTests : IClassFixture<CustomWebApplicationFactory<
     {
         var email = $"{prefix}_{Guid.NewGuid()}@test.com";
         const string password = "Test123!@#";
-        await _client.PostAsJsonAsync("/api/oauth2/register", new
-        {
+        return await IntegrationTestRegistration.RegisterAndGetAccessTokenViaPasswordGrantAsync(
+            _client,
+            _factory,
             email,
             password,
-            firstName = "Moderation",
-            lastName = "Tester"
-        });
-
-        var tokenRequest = new OAuth2TokenRequest
-        {
-            GrantType = "password",
-            ClientId = "be-demo-client",
-            ClientSecret = "be-demo-secret-very-strong-key",
-            Username = email,
-            Password = password
-        };
-
-        HttpResponseMessage? response = null;
-        for (int i = 0; i < 15; i++)
-        {
-            await Task.Delay(150 * (i + 1));
-            response = await _client.PostAsJsonAsync("/api/oauth2/token", tokenRequest);
-            if (response.StatusCode == HttpStatusCode.OK)
-                break;
-        }
-
-        response!.StatusCode.Should().Be(HttpStatusCode.OK);
-        var tokenResponse = await response.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
-        return tokenResponse!.AccessToken;
+            "Moderation",
+            "Tester");
     }
 
     private static async Task<int> GetPublicFaceIdAsync(HttpClient client)

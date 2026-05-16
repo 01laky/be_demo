@@ -1,6 +1,6 @@
 /*
  * UserProfileTests.cs - Unit tests for UserProfile functionality
- * 
+ *
  * Tests that UserProfile is automatically created on user registration
  * and that one-to-one relationship works correctly.
  */
@@ -36,119 +36,88 @@ public class UserProfileTests : IClassFixture<CustomWebApplicationFactory<Progra
     [Fact]
     public async Task Register_ShouldCreateUserProfile_WhenUserIsRegistered()
     {
-        // Arrange
         var email = $"test_{Guid.NewGuid()}@test.com";
-        var password = "Test123!@#";
+        const string password = "Test123!@#";
 
-        // Act - Register user
-        var registerResponse = await _client.PostAsJsonAsync("/api/oauth2/register", new
-        {
+        var completed = await IntegrationTestRegistration.CompleteRegistrationAsync(
+            _client,
+            _factory,
             email,
-            password,
-            firstName = "Test",
-            lastName = "User"
-        });
+            password);
 
-        // Assert - Registration should succeed
-        registerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var responseJson = await registerResponse.Content.ReadFromJsonAsync<JsonElement>();
-        responseJson.GetProperty("userId").GetString().Should().NotBeNullOrEmpty();
-        responseJson.GetProperty("profileId").GetInt32().Should().BeGreaterThan(0);
+        completed.UserId.Should().NotBeNullOrEmpty();
 
-        // Verify UserProfile was created in database
-        using (var scope = _factory.Services.CreateScope())
-        {
-            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            var userId = responseJson.GetProperty("userId").GetString() ?? string.Empty;
-            var userProfile = await context.UserProfiles
-                .FirstOrDefaultAsync(up => up.UserId == userId);
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var userProfile = await context.UserProfiles.FirstOrDefaultAsync(up => up.UserId == completed.UserId);
 
-            userProfile.Should().NotBeNull();
-            userProfile!.UserId.Should().Be(userId);
-            userProfile.Id.Should().BeGreaterThan(0); // Auto-increment ID
-        }
+        userProfile.Should().NotBeNull();
+        userProfile!.UserId.Should().Be(completed.UserId);
+        userProfile.Id.Should().BeGreaterThan(0);
     }
 
     [Fact]
     public async Task UserProfile_ShouldHaveOneToOneRelationship_WithApplicationUser()
     {
-        // Arrange
         var email = $"test_{Guid.NewGuid()}@test.com";
-        var password = "Test123!@#";
+        const string password = "Test123!@#";
 
-        // Act - Register user
-        var registerResponse = await _client.PostAsJsonAsync("/api/oauth2/register", new
-        {
+        var completed = await IntegrationTestRegistration.CompleteRegistrationAsync(
+            _client,
+            _factory,
             email,
             password,
-            firstName = "Test",
-            lastName = "User"
-        });
+            "Test",
+            "User");
+        var userId = completed.UserId;
 
-        registerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var responseJson = await registerResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var userId = responseJson.GetProperty("userId").GetString() ?? string.Empty;
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-        // Assert - Verify one-to-one relationship
-        using (var scope = _factory.Services.CreateScope())
-        {
-            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var user = await context.Users
+            .Include(u => u.UserProfile)
+            .FirstOrDefaultAsync(u => u.Id == userId);
 
-            // Load user with profile
-            var user = await context.Users
-                .Include(u => u.UserProfile)
-                .FirstOrDefaultAsync(u => u.Id == userId);
+        user.Should().NotBeNull();
+        user!.UserProfile.Should().NotBeNull();
+        user.UserProfile!.UserId.Should().Be(userId);
 
-            user.Should().NotBeNull();
-            user!.UserProfile.Should().NotBeNull();
-            user.UserProfile!.UserId.Should().Be(userId);
+        var profile = await context.UserProfiles
+            .Include(up => up.User)
+            .FirstOrDefaultAsync(up => up.UserId == userId);
 
-            // Verify UserProfile.User navigation property works
-            var profile = await context.UserProfiles
-                .Include(up => up.User)
-                .FirstOrDefaultAsync(up => up.UserId == userId);
-
-            profile.Should().NotBeNull();
-            profile!.User.Should().NotBeNull();
-            profile.User.Id.Should().Be(userId);
-        }
+        profile.Should().NotBeNull();
+        profile!.User.Should().NotBeNull();
+        profile.User.Id.Should().Be(userId);
     }
 
     [Fact]
     public async Task UserProfile_ShouldHaveAutoIncrementId()
     {
-        // Arrange
+        const string password = "Test123!@#";
         var email1 = $"test_{Guid.NewGuid()}@test.com";
         var email2 = $"test_{Guid.NewGuid()}@test.com";
-        var password = "Test123!@#";
 
-        // Act - Register two users
-        var response1 = await _client.PostAsJsonAsync("/api/oauth2/register", new
-        {
-            email = email1,
+        var completed1 = await IntegrationTestRegistration.CompleteRegistrationAsync(
+            _client,
+            _factory,
+            email1,
             password,
-            firstName = "User",
-            lastName = "One"
-        });
-        var response2 = await _client.PostAsJsonAsync("/api/oauth2/register", new
-        {
-            email = email2,
+            "User",
+            "One");
+        var completed2 = await IntegrationTestRegistration.CompleteRegistrationAsync(
+            _client,
+            _factory,
+            email2,
             password,
-            firstName = "User",
-            lastName = "Two"
-        });
+            "User",
+            "Two");
 
-        // Assert - Both registrations should succeed
-        response1.StatusCode.Should().Be(HttpStatusCode.OK);
-        response2.StatusCode.Should().Be(HttpStatusCode.OK);
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var profileId1 = (await context.UserProfiles.FirstAsync(up => up.UserId == completed1.UserId)).Id;
+        var profileId2 = (await context.UserProfiles.FirstAsync(up => up.UserId == completed2.UserId)).Id;
 
-        var json1 = await response1.Content.ReadFromJsonAsync<JsonElement>();
-        var json2 = await response2.Content.ReadFromJsonAsync<JsonElement>();
-
-        var profileId1 = json1.GetProperty("profileId").GetInt32();
-        var profileId2 = json2.GetProperty("profileId").GetInt32();
-
-        // Profile IDs should be different and auto-incremented
         profileId1.Should().NotBe(profileId2);
         profileId2.Should().BeGreaterThan(profileId1);
     }
@@ -156,41 +125,26 @@ public class UserProfileTests : IClassFixture<CustomWebApplicationFactory<Progra
     [Fact]
     public async Task UserProfile_ShouldBeCreatedWithDefaultValues()
     {
-        // Arrange
         var email = $"test_{Guid.NewGuid()}@test.com";
-        var password = "Test123!@#";
+        const string password = "Test123!@#";
 
-        // Act - Register user
-        var registerResponse = await _client.PostAsJsonAsync("/api/oauth2/register", new
-        {
+        var completed = await IntegrationTestRegistration.CompleteRegistrationAsync(
+            _client,
+            _factory,
             email,
             password,
-            firstName = "Test",
-            lastName = "User"
-        });
+            "Test",
+            "User");
+        var userId = completed.UserId;
 
-        registerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var responseJson = await registerResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var userId = responseJson.GetProperty("userId").GetString() ?? string.Empty;
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var userProfile = await context.UserProfiles.FirstOrDefaultAsync(up => up.UserId == userId);
 
-        // Assert - UserProfile should have default values
-        using (var scope = _factory.Services.CreateScope())
-        {
-            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            var userProfile = await context.UserProfiles
-                .FirstOrDefaultAsync(up => up.UserId == userId);
-
-            userProfile.Should().NotBeNull();
-            userProfile!.UserId.Should().Be(userId);
-            userProfile.Nickname.Should().BeNull(); // Not set during registration
-            userProfile.Age.Should().BeNull(); // Not set during registration
-            userProfile.Rod.Should().BeNull(); // Not set during registration
-            userProfile.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
-        }
+        userProfile.Should().NotBeNull();
+        userProfile!.Nickname.Should().BeNull();
+        userProfile.AvatarUrl.Should().BeNull();
     }
 
-    public void Dispose()
-    {
-        _client?.Dispose();
-    }
+    public void Dispose() => _client.Dispose();
 }

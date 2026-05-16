@@ -25,7 +25,7 @@ public class RefreshTokenEdgeCaseTests : IClassFixture<CustomWebApplicationFacto
     public async Task Token_ShouldSucceed_WithValidRefreshToken()
     {
         var email = $"test_{Guid.NewGuid()}@test.com";
-        await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
+        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
         var tokenRequest = new OAuth2TokenRequest
         {
             GrantType = "password",
@@ -54,7 +54,7 @@ public class RefreshTokenEdgeCaseTests : IClassFixture<CustomWebApplicationFacto
     public async Task Token_ShouldReturnNewAccessAndRefresh_WhenRefreshing()
     {
         var email = $"test_{Guid.NewGuid()}@test.com";
-        await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
+        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
         var tokenRequest = new OAuth2TokenRequest
         {
             GrantType = "password",
@@ -108,7 +108,7 @@ public class RefreshTokenEdgeCaseTests : IClassFixture<CustomWebApplicationFacto
     public async Task Token_ShouldFail_WhenRefreshTokenIsAccessToken()
     {
         var email = $"test_{Guid.NewGuid()}@test.com";
-        await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
+        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
         var tokenRequest = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#" };
         var tokenResponse = await _client.PostAsJsonAsync("/api/oauth2/token", tokenRequest);
         var tokenData = await tokenResponse.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
@@ -122,7 +122,7 @@ public class RefreshTokenEdgeCaseTests : IClassFixture<CustomWebApplicationFacto
     public async Task Token_ShouldFail_WhenRefreshTokenIsUsedTwice()
     {
         var email = $"test_{Guid.NewGuid()}@test.com";
-        await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
+        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
         var tokenRequest = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#" };
         var tokenResponse = await _client.PostAsJsonAsync("/api/oauth2/token", tokenRequest);
         var tokenData = await tokenResponse.Content.ReadFromJsonAsync<OAuth2TokenResponse>();

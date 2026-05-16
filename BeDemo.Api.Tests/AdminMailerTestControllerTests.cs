@@ -8,11 +8,11 @@ namespace BeDemo.Api.Tests;
 /// <summary>
 /// Integration coverage for <see cref="Controllers.AdminMailerTestController"/> (pilot flow §5.5).
 /// </summary>
-public sealed class AdminMailerTestControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>, IDisposable
+public sealed class AdminMailerTestControllerTests : IClassFixture<MailDisabledWebApplicationFactory>, IDisposable
 {
-    private readonly CustomWebApplicationFactory<Program> _factory;
+    private readonly MailDisabledWebApplicationFactory _factory;
 
-    public AdminMailerTestControllerTests(CustomWebApplicationFactory<Program> factory) => _factory = factory;
+    public AdminMailerTestControllerTests(MailDisabledWebApplicationFactory factory) => _factory = factory;
 
     public void Dispose() { }
 

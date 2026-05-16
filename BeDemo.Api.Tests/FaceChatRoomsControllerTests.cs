@@ -56,20 +56,14 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
         return (token, userId!);
     }
 
-    private static async Task<(string Token, string UserId, string Email)> RegisterAndLoginAsync(HttpClient client)
-    {
-        var email = $"cr_{Guid.NewGuid():N}@test.com";
-        await client.PostAsJsonAsync("/api/oauth2/register", new
-        {
-            email,
-            password = ChatRoomsTestPassword,
-            firstName = "Chat",
-            lastName = "Tester",
-        });
-
-        var (token, userId) = await LoginWithPasswordAsync(client, email, ChatRoomsTestPassword);
-        return (token, userId, email);
-    }
+    private Task<(string Token, string UserId, string Email)> RegisterAndLoginAsync(HttpClient client) =>
+        IntegrationTestRegistration.RegisterLoginWithUserIdAsync(
+            client,
+            _factory,
+            $"cr_{Guid.NewGuid():N}@test.com",
+            ChatRoomsTestPassword,
+            "Chat",
+            "Tester");
 
     /// <summary>
     /// Promotes user to global Admin in DB (API checks DB for system-room actions). J6: changing <see cref="ApplicationUser.UserRoleId"/> bumps

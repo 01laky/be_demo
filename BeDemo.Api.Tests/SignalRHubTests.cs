@@ -49,33 +49,14 @@ public class SignalRHubTests : IClassFixture<CustomWebApplicationFactory<Program
         var email = $"sr_{Guid.NewGuid():N}@test.com";
         const string password = "Test123!@#";
 
-        var reg = await _client.PostAsJsonAsync(
-            "/api/oauth2/register",
-            new { email, password, firstName = "S", lastName = "R" });
-        reg.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        HttpResponseMessage? tokResp = null;
-        for (var i = 0; i < 15; i++)
-        {
-            await Task.Delay(150 * (i + 1));
-            tokResp = await _client.PostAsJsonAsync(
-                "/api/oauth2/token",
-                new OAuth2TokenRequest
-                {
-                    GrantType = "password",
-                    ClientId = "be-demo-client",
-                    ClientSecret = "be-demo-secret-very-strong-key",
-                    Username = email,
-                    Password = password,
-                });
-            if (tokResp.StatusCode == HttpStatusCode.OK)
-                break;
-        }
-
-        tokResp.Should().NotBeNull();
-        tokResp!.StatusCode.Should().Be(HttpStatusCode.OK);
-        var tokenData = await tokResp.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
-        tokenData!.AccessToken.Should().NotBeNullOrEmpty();
+                var tokenData = await IntegrationTestRegistration.CompleteRegistrationAsync(
+            _client,
+            _factory,
+            email,
+            password,
+            "S",
+            "R");
+        tokenData.AccessToken.Should().NotBeNullOrEmpty();
 
         var hubUrl = new Uri(
             _client.BaseAddress!,

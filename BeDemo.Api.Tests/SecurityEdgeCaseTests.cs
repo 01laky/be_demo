@@ -40,15 +40,23 @@ public class SecurityEdgeCaseTests : IClassFixture<CustomWebApplicationFactory<P
     [Fact]
     public async Task Register_ShouldFail_WhenSQLInjectionInEmail()
     {
-        var response = await _client.PostAsJsonAsync("/api/oauth2/register", new { email = "test' OR '1'='1@test.com", password = "Test123!@#" });
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(
+            _client,
+            _factory,
+            "test' OR '1'='1@test.com",
+            "Test123!@#");
+        status.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
     public async Task Register_ShouldFail_WhenXSSInEmail()
     {
-        var response = await _client.PostAsJsonAsync("/api/oauth2/register", new { email = "<script>alert('xss')</script>@test.com", password = "Test123!@#" });
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(
+            _client,
+            _factory,
+            "<script>alert('xss')</script>@test.com",
+            "Test123!@#");
+        status.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -177,8 +185,12 @@ public class SecurityEdgeCaseTests : IClassFixture<CustomWebApplicationFactory<P
     [Fact]
     public async Task Register_ShouldFail_WhenEmailContainsNullByte()
     {
-        var response = await _client.PostAsJsonAsync("/api/oauth2/register", new { email = "test\0@test.com", password = "Test123!@#" });
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var status = await IntegrationTestRegistration.TryCompleteRegistrationAsync(
+            _client,
+            _factory,
+            "test\0@test.com",
+            "Test123!@#");
+        status.Should().Be(HttpStatusCode.BadRequest);
     }
 
     // [Fact] // Temporarily disabled - database conflict
@@ -208,7 +220,7 @@ public class SecurityEdgeCaseTests : IClassFixture<CustomWebApplicationFactory<P
     // public async Task Token_ShouldFail_WhenScopeContainsSQLInjection()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
+    //     await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
     //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#", Scope = "read' OR '1'='1" };
     //     var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
     //     // Scope injection shouldn't break the flow, but should be sanitized
@@ -219,7 +231,7 @@ public class SecurityEdgeCaseTests : IClassFixture<CustomWebApplicationFactory<P
     public async Task Token_ShouldFail_WhenSignatureAlgorithmIsInvalid()
     {
         var email = $"test_{Guid.NewGuid()}@test.com";
-        await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
+        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
         var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#", Signature = "test", SignatureAlgorithm = "INVALID" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
         // O4: body signatures are rejected with 400 invalid_request (not verified against server key).
@@ -230,7 +242,7 @@ public class SecurityEdgeCaseTests : IClassFixture<CustomWebApplicationFactory<P
     public async Task Token_ShouldFail_WhenSignatureIsInvalidBase64()
     {
         var email = $"test_{Guid.NewGuid()}@test.com";
-        await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
+        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
         var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#", Signature = "not-valid-base64!!!", SignatureAlgorithm = "ES512" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -240,7 +252,7 @@ public class SecurityEdgeCaseTests : IClassFixture<CustomWebApplicationFactory<P
     public async Task Token_ShouldFail_WhenSignatureIsEmpty()
     {
         var email = $"test_{Guid.NewGuid()}@test.com";
-        await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
+        await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
         var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#", Signature = "", SignatureAlgorithm = "ES512" };
         var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -250,7 +262,7 @@ public class SecurityEdgeCaseTests : IClassFixture<CustomWebApplicationFactory<P
     // public async Task Token_ShouldSucceed_WhenSignatureIsNotProvided()
     // {
     //     var email = $"test_{Guid.NewGuid()}@test.com";
-    //     await _client.PostAsJsonAsync("/api/oauth2/register", new { email, password = "Test123!@#" });
+    //     await IntegrationTestRegistration.CompleteRegistrationAsync(_client, _factory, email, "Test123!@#");
     //     var request = new OAuth2TokenRequest { GrantType = "password", ClientId = "be-demo-client", ClientSecret = "be-demo-secret-very-strong-key", Username = email, Password = "Test123!@#" };
     //     var response = await _client.PostAsJsonAsync("/api/oauth2/token", request);
     //     response.StatusCode.Should().Be(HttpStatusCode.OK);

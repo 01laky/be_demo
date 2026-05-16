@@ -36,37 +36,13 @@ public class FacesControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         var email = $"faces_tenant_{Guid.NewGuid()}@test.com";
         const string password = "Test123!@#";
 
-        await _client.PostAsJsonAsync("/api/oauth2/register", new
-        {
+        _tenantToken = await IntegrationTestRegistration.RegisterAndGetAccessTokenViaPasswordGrantAsync(
+            _client,
+            _factory,
             email,
             password,
-            firstName = "Face",
-            lastName = "Tenant",
-        });
-
-        var tokenRequest = new OAuth2TokenRequest
-        {
-            GrantType = "password",
-            ClientId = "be-demo-client",
-            ClientSecret = "be-demo-secret-very-strong-key",
-            Username = email,
-            Password = password,
-        };
-
-        HttpResponseMessage? response = null;
-        for (var i = 0; i < 15; i++)
-        {
-            await Task.Delay(150 * (i + 1));
-            response = await _client.PostAsJsonAsync("/api/oauth2/token", tokenRequest);
-            if (response.StatusCode == HttpStatusCode.OK)
-                break;
-        }
-
-        response.Should().NotBeNull();
-        response!.StatusCode.Should().Be(HttpStatusCode.OK);
-        var tokenResponse = await response.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
-        tokenResponse.Should().NotBeNull();
-        _tenantToken = tokenResponse!.AccessToken;
+            "Face",
+            "Tenant");
         return _tenantToken;
     }
 

@@ -171,11 +171,13 @@ public sealed class SearchWorkerGrpcProbeOptionsTests
         using var caKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
         var caReq = new CertificateRequest("CN=test-ca", caKey, HashAlgorithmName.SHA256);
         caReq.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, false, 0, true));
-        using var ca = caReq.CreateSelfSigned(DateTimeOffset.UtcNow.AddHours(-1), DateTimeOffset.UtcNow.AddHours(1));
+        var notBefore = DateTimeOffset.UtcNow.AddHours(-1);
+        var notAfter = DateTimeOffset.UtcNow.AddHours(2);
+        using var ca = caReq.CreateSelfSigned(notBefore, notAfter);
 
         using var leafKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
         var leafReq = new CertificateRequest("CN=wrong-host", leafKey, HashAlgorithmName.SHA256);
-        using var leaf = leafReq.Create(ca, DateTimeOffset.UtcNow.AddHours(-1), DateTimeOffset.UtcNow.AddHours(1), RandomNumberGenerator.GetBytes(8));
+        using var leaf = leafReq.Create(ca, notBefore, notAfter, RandomNumberGenerator.GetBytes(8));
 
         var roots = new X509Certificate2Collection { ca };
         var err = SslPolicyErrors.RemoteCertificateNameMismatch | SslPolicyErrors.RemoteCertificateChainErrors;

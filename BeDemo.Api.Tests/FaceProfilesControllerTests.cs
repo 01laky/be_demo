@@ -13,46 +13,16 @@ public class FaceProfilesControllerTests : IClassFixture<CustomWebApplicationFac
 
     public FaceProfilesControllerTests(CustomWebApplicationFactory<Program> factory) => _factory = factory;
 
-    private static async Task<(string Token, string UserId)> RegisterAndLoginAsync(HttpClient client)
+    private async Task<(string Token, string UserId)> RegisterAndLoginAsync(HttpClient client)
     {
-        var email = $"fp_{Guid.NewGuid()}@test.com";
-        const string password = "Test123!@#";
-        await client.PostAsJsonAsync("/api/oauth2/register", new
-        {
-            email,
-            password,
-            firstName = "Fp",
-            lastName = "Test"
-        });
-
-        var tokenRequest = new OAuth2TokenRequest
-        {
-            GrantType = "password",
-            ClientId = "be-demo-client",
-            ClientSecret = "be-demo-secret-very-strong-key",
-            Username = email,
-            Password = password
-        };
-
-        HttpResponseMessage? response = null;
-        for (var i = 0; i < 15; i++)
-        {
-            await Task.Delay(150 * (i + 1));
-            response = await client.PostAsJsonAsync("/api/oauth2/token", tokenRequest);
-            if (response.StatusCode == HttpStatusCode.OK)
-                break;
-        }
-
-        response!.StatusCode.Should().Be(HttpStatusCode.OK);
-        var tokenResponse = await response.Content.ReadFromJsonAsync<OAuth2TokenResponse>();
-        var token = tokenResponse!.AccessToken;
-        var payload = token.Split('.')[1];
-        var pad = payload.Length % 4 == 0 ? "" : new string('=', 4 - payload.Length % 4);
-        var json = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(payload + pad));
-        var doc = JsonDocument.Parse(json);
-        var userId = doc.RootElement.TryGetProperty("nameid", out var n) ? n.GetString() : doc.RootElement.GetProperty("sub").GetString();
-        userId.Should().NotBeNullOrEmpty();
-        return (token, userId!);
+        var (token, userId, _) = await IntegrationTestRegistration.RegisterLoginWithUserIdAsync(
+            client,
+            _factory,
+            $"fp_{Guid.NewGuid()}@test.com",
+            "Test123!@#",
+            "Fp",
+            "Test");
+        return (token, userId);
     }
 
     private static async Task<int> GetAnyFaceIdAsync(HttpClient client, string token)
