@@ -32,6 +32,7 @@
   <ItemGroup>
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Fixtures\prompt_injection_corpus.txt" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Fixtures\portal-auth-flow-golden.en.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

@@ -6,6 +6,10 @@ using BeDemo.Api.Localization.Portal;
 
 namespace BeDemo.Api.Tests;
 
+/// <summary>
+/// Ensures <c>en</c>, <c>sk</c>, and <c>cs</c> satellite files share identical key sets per app.
+/// Complements <see cref="LocalizationPortalGoldenTests"/> which locks English JSON subtree values for portal auth flows.
+/// </summary>
 public class LocalizationKeyParityTests
 {
     public static IEnumerable<object[]> AppResourceTypes() =>

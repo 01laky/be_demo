@@ -1,0 +1,58 @@
+{
+  "pages": {
+    "login": {
+      "success": "Login successful!",
+      "email": "Email",
+      "error": "Login failed. Please check your credentials.",
+      "title": "Login",
+      "validation": {
+        "passwordMinLength": "Password must be at least 4 characters",
+        "emailInvalid": "Please enter a valid email address",
+        "emailRequired": "Email is required",
+        "passwordRequired": "Password is required"
+      },
+      "submit": "Sign In",
+      "password": "Password",
+      "submitting": "Logging in...",
+      "rememberMe": "Stay signed in"
+    },
+    "register": {
+      "validation": {
+        "lastNameRequired": "Last name is required",
+        "firstNameMinLength": "First name must be at least 2 characters",
+        "passwordMinLength": "Password must be at least 4 characters",
+        "firstNameRequired": "First name is required",
+        "emailInvalid": "Please enter a valid email address",
+        "passwordMismatch": "Passwords must match",
+        "lastNameMinLength": "Last name must be at least 2 characters",
+        "codeRequired": "Verification code is required",
+        "emailRequired": "Email is required",
+        "passwordRequired": "Password is required",
+        "passwordPattern": "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+      },
+      "submitting": "Registering...",
+      "invalidLink": "This registration link is invalid or expired.",
+      "requestSuccess": "If this email can be used, check your inbox for a code and link.",
+      "lastName": "Last Name",
+      "submit": "Sign Up",
+      "missingHash": "Registration link is invalid. Request a new email from the register page.",
+      "requestSubmit": "Send registration email",
+      "codeLabel": "Verification code",
+      "completeSubmit": "Create account",
+      "completeSuccess": "Welcome! You are signed in.",
+      "email": "Email",
+      "title": "Register",
+      "firstName": "First Name",
+      "completeError": "Could not complete registration. Check the code and try again.",
+      "completeTitle": "Finish registration",
+      "confirmPassword": "Confirm password",
+      "requestHint": "We will email you a code and link to finish signup.",
+      "password": "Password"
+    }
+  },
+  "routes": {
+    "login": "login",
+    "register": "register",
+    "homepage": "homepage"
+  }
+}

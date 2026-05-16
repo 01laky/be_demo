@@ -21,6 +21,10 @@ public interface ILocalizationBundleService
 /// Loads embedded .resx satellites, unflattens to nested JSON for i18next, caches per app.
 /// API language code <c>cz</c> maps to .NET culture <c>cs</c>.
 /// </summary>
+/// <remarks>
+/// Portal export shape is locked by <c>BeDemo.Api.Tests/Fixtures/portal-auth-flow-golden.en.json</c>
+/// via <c>LocalizationPortalGoldenTests</c> (login/register pages + core route slugs).
+/// </remarks>
 public sealed class LocalizationBundleService : ILocalizationBundleService
 {
     private static readonly string[] ApiLanguages = ["en", "sk", "cz"];

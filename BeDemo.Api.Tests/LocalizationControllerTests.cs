@@ -8,6 +8,7 @@ namespace BeDemo.Api.Tests;
 /// </summary>
 /// <remarks>
 /// Rate-limit rejection (429 + <c>Retry-After</c>) is covered by <see cref="LocalizationRateLimit429Tests"/>.
+/// Golden-file regression for portal auth copy (legacy <c>en.json</c> subtree) is in <see cref="LocalizationPortalGoldenTests"/>.
 /// </remarks>
 public class LocalizationControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
 {

@@ -26,9 +26,14 @@ Tests cover:
 dotnet test --filter "FullyQualifiedName~ContentModeration"
 ```
 - **Static localization API** — `LocalizationControllerTests` (200/404, face-prefix exempt path); `LocalizationRateLimit429Tests` (`localization-read` policy → **429** + `Retry-After` via `RateLimitedLocalizationWebApplicationFactory`, serial xUnit collection). Each test host gets a unique `Testing:RateLimitScopeId` so rate-limit counters are not shared across parallel `WebApplicationFactory` instances.
+- **Portal golden subtree (§11.1)** — `LocalizationPortalGoldenTests` compares `resources.en.common` auth-flow paths (`pages.login`, `pages.register`, `routes.login|register|homepage`) against `BeDemo.Api.Tests/Fixtures/portal-auth-flow-golden.en.json`. Regenerate intentionally changed copy with `REGENERATE_LOCALIZATION_GOLDEN=1 dotnet test --filter RegeneratePortalAuthFlowGolden`.
 
 ```bash
 dotnet test --filter "FullyQualifiedName~Localization"
+```
+
+```bash
+dotnet test --filter "FullyQualifiedName~LocalizationPortalGolden"
 ```
 
 See monorepo **[static-localization-and-i18n.md](../../../docs/guides/static-localization-and-i18n.md)**.
