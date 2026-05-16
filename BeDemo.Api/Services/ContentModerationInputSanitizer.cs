@@ -63,7 +63,17 @@ public static class ContentModerationInputSanitizer
         return sb.ToString().Trim();
     }
 
-    /// <summary>Bidi / format characters often used to spoof delimiters or confuse parsers (also used by heuristic scans).</summary>
+    /// <summary>
+    /// Bidi / format characters often used to spoof delimiters or confuse parsers (SHV2 PI-6).
+    /// </summary>
+    /// <remarks>
+    /// Shared with <see cref="ContentModerationTextNormalization.BuildHeuristicScanBlob"/> and
+    /// <see cref="TrimAndStripControls"/> so wire sanitization and heuristic scans agree on stripped runes.
+    /// </remarks>
+    /// <summary>Test and heuristic helper — maps a scalar value without requiring callers to construct <see cref="Rune"/>.</summary>
+    internal static bool ShouldStripCodePointForMatching(int codePoint) =>
+        ShouldStripRuneForMatching(new Rune(codePoint));
+
     internal static bool ShouldStripRuneForMatching(Rune rune)
     {
         var v = rune.Value;

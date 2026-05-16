@@ -6,6 +6,11 @@ namespace BeDemo.Api.Services;
 /// <summary>
 /// Shared text normalization for moderation security (heuristic scans only — does not mutate stored user content).
 /// </summary>
+/// <remarks>
+/// Security hardening v2 <b>PI-6</b>: combines bidi/zero-width stripping, percent-decoding, and
+/// <see cref="ContentModerationUnicodeHomoglyphFold"/> so mixed-script and homoglyph smuggling still matches
+/// instruction-like patterns.
+/// </remarks>
 public static class ContentModerationTextNormalization
 {
     /// <summary>
@@ -33,7 +38,11 @@ public static class ContentModerationTextNormalization
             if (rune.Value is >= 0 and < 32 && rune.Value is not ('\n' or '\r' or '\t'))
                 continue;
 
-            sb.Append(rune);
+            // PI-6: fold Latin lookalikes (Cyrillic/Greek) before lowercasing so "ignоre" still matches "ignore".
+            if (ContentModerationUnicodeHomoglyphFold.TryMapToLatinAscii(rune.Value, out var latin))
+                sb.Append(latin);
+            else
+                sb.Append(rune);
         }
 
         return sb.ToString().ToLowerInvariant();
