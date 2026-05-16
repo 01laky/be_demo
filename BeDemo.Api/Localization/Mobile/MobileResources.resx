@@ -250,6 +250,12 @@
   <data name="common.shell.openSettings" xml:space="preserve">
     <value>Open settings</value>
   </data>
+  <data name="common.shell.signOut" xml:space="preserve">
+    <value>Sign out</value>
+  </data>
+  <data name="common.shell.signOutShort" xml:space="preserve">
+    <value>Out</value>
+  </data>
   <data name="common.language.cz" xml:space="preserve">
     <value>Czech</value>
   </data>
@@ -267,6 +273,9 @@
   </data>
   <data name="common.settings.language" xml:space="preserve">
     <value>Language</value>
+  </data>
+  <data name="common.settings.signOut" xml:space="preserve">
+    <value>Sign out</value>
   </data>
   <data name="common.settings.panelHint" xml:space="preserve">
     <value>Profile, messenger, and notification settings will match the web portal in a later slice.</value>

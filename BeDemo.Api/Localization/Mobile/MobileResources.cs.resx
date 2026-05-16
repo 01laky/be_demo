@@ -250,6 +250,12 @@
   <data name="common.shell.openSettings" xml:space="preserve">
     <value>Otevřít nastavení</value>
   </data>
+  <data name="common.shell.signOut" xml:space="preserve">
+    <value>Odhlásit se</value>
+  </data>
+  <data name="common.shell.signOutShort" xml:space="preserve">
+    <value>Out</value>
+  </data>
   <data name="common.language.cz" xml:space="preserve">
     <value>Čeština</value>
   </data>
@@ -267,6 +273,9 @@
   </data>
   <data name="common.settings.language" xml:space="preserve">
     <value>Jazyk</value>
+  </data>
+  <data name="common.settings.signOut" xml:space="preserve">
+    <value>Odhlásit se</value>
   </data>
   <data name="common.settings.panelHint" xml:space="preserve">
     <value>Profil, messenger a oznámení sladíme s web portálem v další fázi.</value>
