@@ -412,6 +412,120 @@
   <data name="gridBlocks.createUnsupported.userProfile" xml:space="preserve">
     <value>Vytváranie profilov nie je dostupné z grid dlaždíc.</value>
   </data>
+  <data name="gridBlocks.empty.albums" xml:space="preserve">
+    <value>Zatiaľ žiadne albumy.</value>
+  </data>
+  <data name="gridBlocks.empty.albumsFace" xml:space="preserve">
+    <value>Pre túto tvár zatiaľ nie sú žiadne albumy.</value>
+  </data>
+  <data name="gridBlocks.empty.blogs" xml:space="preserve">
+    <value>Zatiaľ žiadne blogové príspevky.</value>
+  </data>
+  <data name="gridBlocks.empty.blogsFace" xml:space="preserve">
+    <value>Pre túto tvár zatiaľ nie sú žiadne blogové príspevky.</value>
+  </data>
+  <data name="gridBlocks.empty.chatRooms" xml:space="preserve">
+    <value>Zatiaľ žiadne chatovacie miestnosti.</value>
+  </data>
+  <data name="gridBlocks.empty.listings" xml:space="preserve">
+    <value>Zatiaľ žiadne inzeráty.</value>
+  </data>
+  <data name="gridBlocks.empty.listingsWall" xml:space="preserve">
+    <value>Na nástenke zatiaľ nie sú žiadne inzeráty.</value>
+  </data>
+  <data name="gridBlocks.empty.profilesDirectory" xml:space="preserve">
+    <value>V adresári nie sú žiadne profily.</value>
+  </data>
+  <data name="gridBlocks.empty.profilesFace" xml:space="preserve">
+    <value>V adresári tejto tváre zatiaľ nie sú žiadne profily.</value>
+  </data>
+  <data name="gridBlocks.empty.reels" xml:space="preserve">
+    <value>Zatiaľ žiadne reels.</value>
+  </data>
+  <data name="gridBlocks.empty.reelsAdd" xml:space="preserve">
+    <value>Zatiaľ žiadne reels. Pridajte ich tlačidlom +.</value>
+  </data>
+  <data name="gridBlocks.empty.reelsCreate" xml:space="preserve">
+    <value>Zatiaľ žiadne reels. Vytvorte ich tlačidlom +.</value>
+  </data>
+  <data name="gridBlocks.empty.storiesActive" xml:space="preserve">
+    <value>Žiadne aktívne príbehy.</value>
+  </data>
+  <data name="gridBlocks.form.facesLegend" xml:space="preserve">
+    <value>Tváre</value>
+  </data>
+  <data name="gridBlocks.form.noFaces" xml:space="preserve">
+    <value>Žiadne dostupné tváre</value>
+  </data>
+  <data name="gridBlocks.guest.albums" xml:space="preserve">
+    <value>Pre zobrazenie albumov sa prihláste.</value>
+  </data>
+  <data name="gridBlocks.guest.blogs" xml:space="preserve">
+    <value>Pre zobrazenie blogových príspevkov sa prihláste.</value>
+  </data>
+  <data name="gridBlocks.guest.chatRooms" xml:space="preserve">
+    <value>Pre zobrazenie chatovacích miestností sa prihláste.</value>
+  </data>
+  <data name="gridBlocks.guest.listings" xml:space="preserve">
+    <value>Pre zobrazenie inzerátov sa prihláste.</value>
+  </data>
+  <data name="gridBlocks.guest.profiles" xml:space="preserve">
+    <value>Pre zobrazenie profilov sa prihláste.</value>
+  </data>
+  <data name="gridBlocks.guest.reels" xml:space="preserve">
+    <value>Pre zobrazenie reels sa prihláste.</value>
+  </data>
+  <data name="gridBlocks.guest.stories" xml:space="preserve">
+    <value>Pre zobrazenie príbehov sa prihláste.</value>
+  </data>
+  <data name="gridBlocks.loadError.albums" xml:space="preserve">
+    <value>Albumy sa nepodarilo načítať.</value>
+  </data>
+  <data name="gridBlocks.loadError.blogs" xml:space="preserve">
+    <value>Blogové príspevky sa nepodarilo načítať.</value>
+  </data>
+  <data name="gridBlocks.loadError.chatRooms" xml:space="preserve">
+    <value>Chatovacie miestnosti sa nepodarilo načítať.</value>
+  </data>
+  <data name="gridBlocks.loadError.listings" xml:space="preserve">
+    <value>Inzeráty sa nepodarilo načítať.</value>
+  </data>
+  <data name="gridBlocks.loadError.profiles" xml:space="preserve">
+    <value>Profily sa nepodarilo načítať.</value>
+  </data>
+  <data name="gridBlocks.loadError.reels" xml:space="preserve">
+    <value>Reels sa nepodarilo načítať.</value>
+  </data>
+  <data name="gridBlocks.loadError.stories" xml:space="preserve">
+    <value>Príbehy sa nepodarilo načítať.</value>
+  </data>
+  <data name="gridBlocks.loadError.wallListings" xml:space="preserve">
+    <value>Inzeráty na nástenke sa nepodarilo načítať.</value>
+  </data>
+  <data name="gridBlocks.loadingAria" xml:space="preserve">
+    <value>Načítava sa</value>
+  </data>
+  <data name="gridBlocks.loadingEditor" xml:space="preserve">
+    <value>Načítava sa editor…</value>
+  </data>
+  <data name="gridBlocks.profile.bioHint" xml:space="preserve">
+    <value>Otvorte profil pre podrobnosti.</value>
+  </data>
+  <data name="gridBlocks.profile.cardRoleMember" xml:space="preserve">
+    <value>Člen</value>
+  </data>
+  <data name="gridBlocks.profile.roleMember" xml:space="preserve">
+    <value>Člen tváre</value>
+  </data>
+  <data name="gridBlocks.selectFace" xml:space="preserve">
+    <value>Vyberte tvár.</value>
+  </data>
+  <data name="gridBlocks.selectFaceProfiles" xml:space="preserve">
+    <value>Vyberte tvár pre zobrazenie profilov.</value>
+  </data>
+  <data name="gridBlocks.wallLabel" xml:space="preserve">
+    <value>Nástenka</value>
+  </data>
   <data name="header.guest" xml:space="preserve">
     <value>Hosť</value>
   </data>

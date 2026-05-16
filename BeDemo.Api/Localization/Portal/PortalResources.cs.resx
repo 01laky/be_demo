@@ -412,6 +412,120 @@
   <data name="gridBlocks.createUnsupported.userProfile" xml:space="preserve">
     <value>Vytváření profilů není dostupné z grid dlaždic.</value>
   </data>
+  <data name="gridBlocks.empty.albums" xml:space="preserve">
+    <value>Zatím žádná alba.</value>
+  </data>
+  <data name="gridBlocks.empty.albumsFace" xml:space="preserve">
+    <value>Pro tuto tvář zatím nejsou žádná alba.</value>
+  </data>
+  <data name="gridBlocks.empty.blogs" xml:space="preserve">
+    <value>Zatím žádné blogové příspěvky.</value>
+  </data>
+  <data name="gridBlocks.empty.blogsFace" xml:space="preserve">
+    <value>Pro tuto tvář zatím nejsou žádné blogové příspěvky.</value>
+  </data>
+  <data name="gridBlocks.empty.chatRooms" xml:space="preserve">
+    <value>Zatím žádné chatovací místnosti.</value>
+  </data>
+  <data name="gridBlocks.empty.listings" xml:space="preserve">
+    <value>Zatím žádné inzeráty.</value>
+  </data>
+  <data name="gridBlocks.empty.listingsWall" xml:space="preserve">
+    <value>Na nástěnce zatím nejsou žádné inzeráty.</value>
+  </data>
+  <data name="gridBlocks.empty.profilesDirectory" xml:space="preserve">
+    <value>V adresáři nejsou žádné profily.</value>
+  </data>
+  <data name="gridBlocks.empty.profilesFace" xml:space="preserve">
+    <value>V adresáři této tváře zatím nejsou žádné profily.</value>
+  </data>
+  <data name="gridBlocks.empty.reels" xml:space="preserve">
+    <value>Zatím žádné reels.</value>
+  </data>
+  <data name="gridBlocks.empty.reelsAdd" xml:space="preserve">
+    <value>Zatím žádné reels. Přidejte je tlačítkem +.</value>
+  </data>
+  <data name="gridBlocks.empty.reelsCreate" xml:space="preserve">
+    <value>Zatím žádné reels. Vytvořte je tlačítkem +.</value>
+  </data>
+  <data name="gridBlocks.empty.storiesActive" xml:space="preserve">
+    <value>Žádné aktivní příběhy.</value>
+  </data>
+  <data name="gridBlocks.form.facesLegend" xml:space="preserve">
+    <value>Tváře</value>
+  </data>
+  <data name="gridBlocks.form.noFaces" xml:space="preserve">
+    <value>Žádné dostupné tváře</value>
+  </data>
+  <data name="gridBlocks.guest.albums" xml:space="preserve">
+    <value>Pro zobrazení alb se přihlaste.</value>
+  </data>
+  <data name="gridBlocks.guest.blogs" xml:space="preserve">
+    <value>Pro zobrazení blogových příspěvků se přihlaste.</value>
+  </data>
+  <data name="gridBlocks.guest.chatRooms" xml:space="preserve">
+    <value>Pro zobrazení chatovacích místností se přihlaste.</value>
+  </data>
+  <data name="gridBlocks.guest.listings" xml:space="preserve">
+    <value>Pro zobrazení inzerátů se přihlaste.</value>
+  </data>
+  <data name="gridBlocks.guest.profiles" xml:space="preserve">
+    <value>Pro zobrazení profilů se přihlaste.</value>
+  </data>
+  <data name="gridBlocks.guest.reels" xml:space="preserve">
+    <value>Pro zobrazení reels se přihlaste.</value>
+  </data>
+  <data name="gridBlocks.guest.stories" xml:space="preserve">
+    <value>Pro zobrazení příběhů se přihlaste.</value>
+  </data>
+  <data name="gridBlocks.loadError.albums" xml:space="preserve">
+    <value>Alba se nepodařilo načíst.</value>
+  </data>
+  <data name="gridBlocks.loadError.blogs" xml:space="preserve">
+    <value>Blogové příspěvky se nepodařilo načíst.</value>
+  </data>
+  <data name="gridBlocks.loadError.chatRooms" xml:space="preserve">
+    <value>Chatovací místnosti se nepodařilo načíst.</value>
+  </data>
+  <data name="gridBlocks.loadError.listings" xml:space="preserve">
+    <value>Inzeráty se nepodařilo načíst.</value>
+  </data>
+  <data name="gridBlocks.loadError.profiles" xml:space="preserve">
+    <value>Profily se nepodařilo načíst.</value>
+  </data>
+  <data name="gridBlocks.loadError.reels" xml:space="preserve">
+    <value>Reels se nepodařilo načíst.</value>
+  </data>
+  <data name="gridBlocks.loadError.stories" xml:space="preserve">
+    <value>Příběhy se nepodařilo načíst.</value>
+  </data>
+  <data name="gridBlocks.loadError.wallListings" xml:space="preserve">
+    <value>Inzeráty na nástěnce se nepodařilo načíst.</value>
+  </data>
+  <data name="gridBlocks.loadingAria" xml:space="preserve">
+    <value>Načítání</value>
+  </data>
+  <data name="gridBlocks.loadingEditor" xml:space="preserve">
+    <value>Načítání editoru…</value>
+  </data>
+  <data name="gridBlocks.profile.bioHint" xml:space="preserve">
+    <value>Otevřete profil pro podrobnosti.</value>
+  </data>
+  <data name="gridBlocks.profile.cardRoleMember" xml:space="preserve">
+    <value>Člen</value>
+  </data>
+  <data name="gridBlocks.profile.roleMember" xml:space="preserve">
+    <value>Člen tváře</value>
+  </data>
+  <data name="gridBlocks.selectFace" xml:space="preserve">
+    <value>Vyberte tvář.</value>
+  </data>
+  <data name="gridBlocks.selectFaceProfiles" xml:space="preserve">
+    <value>Vyberte tvář pro zobrazení profilů.</value>
+  </data>
+  <data name="gridBlocks.wallLabel" xml:space="preserve">
+    <value>Nástěnka</value>
+  </data>
   <data name="header.guest" xml:space="preserve">
     <value>Host</value>
   </data>

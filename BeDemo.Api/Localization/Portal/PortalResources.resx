@@ -412,6 +412,120 @@
   <data name="gridBlocks.createUnsupported.userProfile" xml:space="preserve">
     <value>Profile creation is not available from grid tiles.</value>
   </data>
+  <data name="gridBlocks.empty.albums" xml:space="preserve">
+    <value>No albums for this face yet.</value>
+  </data>
+  <data name="gridBlocks.empty.albumsFace" xml:space="preserve">
+    <value>No albums for this face yet.</value>
+  </data>
+  <data name="gridBlocks.empty.blogs" xml:space="preserve">
+    <value>No blog posts yet.</value>
+  </data>
+  <data name="gridBlocks.empty.blogsFace" xml:space="preserve">
+    <value>No blog posts for this face yet.</value>
+  </data>
+  <data name="gridBlocks.empty.chatRooms" xml:space="preserve">
+    <value>No chat rooms yet.</value>
+  </data>
+  <data name="gridBlocks.empty.listings" xml:space="preserve">
+    <value>No listings yet.</value>
+  </data>
+  <data name="gridBlocks.empty.listingsWall" xml:space="preserve">
+    <value>No listings on the wall yet.</value>
+  </data>
+  <data name="gridBlocks.empty.profilesDirectory" xml:space="preserve">
+    <value>No profiles in directory.</value>
+  </data>
+  <data name="gridBlocks.empty.profilesFace" xml:space="preserve">
+    <value>No profiles in this face directory yet.</value>
+  </data>
+  <data name="gridBlocks.empty.reels" xml:space="preserve">
+    <value>No reels yet.</value>
+  </data>
+  <data name="gridBlocks.empty.reelsAdd" xml:space="preserve">
+    <value>No reels yet. Use + to add one.</value>
+  </data>
+  <data name="gridBlocks.empty.reelsCreate" xml:space="preserve">
+    <value>No reels yet. Use + to create one.</value>
+  </data>
+  <data name="gridBlocks.empty.storiesActive" xml:space="preserve">
+    <value>No active stories.</value>
+  </data>
+  <data name="gridBlocks.form.facesLegend" xml:space="preserve">
+    <value>Faces</value>
+  </data>
+  <data name="gridBlocks.form.noFaces" xml:space="preserve">
+    <value>No faces available</value>
+  </data>
+  <data name="gridBlocks.guest.albums" xml:space="preserve">
+    <value>Sign in to see albums.</value>
+  </data>
+  <data name="gridBlocks.guest.blogs" xml:space="preserve">
+    <value>Sign in to see blog posts.</value>
+  </data>
+  <data name="gridBlocks.guest.chatRooms" xml:space="preserve">
+    <value>Sign in to see chat rooms.</value>
+  </data>
+  <data name="gridBlocks.guest.listings" xml:space="preserve">
+    <value>Sign in to see listings.</value>
+  </data>
+  <data name="gridBlocks.guest.profiles" xml:space="preserve">
+    <value>Sign in to see profiles.</value>
+  </data>
+  <data name="gridBlocks.guest.reels" xml:space="preserve">
+    <value>Sign in to see reels.</value>
+  </data>
+  <data name="gridBlocks.guest.stories" xml:space="preserve">
+    <value>Sign in to see stories.</value>
+  </data>
+  <data name="gridBlocks.loadError.albums" xml:space="preserve">
+    <value>Could not load albums.</value>
+  </data>
+  <data name="gridBlocks.loadError.blogs" xml:space="preserve">
+    <value>Could not load blog posts.</value>
+  </data>
+  <data name="gridBlocks.loadError.chatRooms" xml:space="preserve">
+    <value>Could not load chat rooms.</value>
+  </data>
+  <data name="gridBlocks.loadError.listings" xml:space="preserve">
+    <value>Could not load listings.</value>
+  </data>
+  <data name="gridBlocks.loadError.profiles" xml:space="preserve">
+    <value>Could not load profiles.</value>
+  </data>
+  <data name="gridBlocks.loadError.reels" xml:space="preserve">
+    <value>Could not load reels.</value>
+  </data>
+  <data name="gridBlocks.loadError.stories" xml:space="preserve">
+    <value>Could not load stories.</value>
+  </data>
+  <data name="gridBlocks.loadError.wallListings" xml:space="preserve">
+    <value>Could not load wall listings.</value>
+  </data>
+  <data name="gridBlocks.loadingAria" xml:space="preserve">
+    <value>Loading</value>
+  </data>
+  <data name="gridBlocks.loadingEditor" xml:space="preserve">
+    <value>Loading editor…</value>
+  </data>
+  <data name="gridBlocks.profile.bioHint" xml:space="preserve">
+    <value>Open profile for details.</value>
+  </data>
+  <data name="gridBlocks.profile.cardRoleMember" xml:space="preserve">
+    <value>Member</value>
+  </data>
+  <data name="gridBlocks.profile.roleMember" xml:space="preserve">
+    <value>Face member</value>
+  </data>
+  <data name="gridBlocks.selectFace" xml:space="preserve">
+    <value>Select a face.</value>
+  </data>
+  <data name="gridBlocks.selectFaceProfiles" xml:space="preserve">
+    <value>Select a face to see profiles.</value>
+  </data>
+  <data name="gridBlocks.wallLabel" xml:space="preserve">
+    <value>Wall</value>
+  </data>
   <data name="header.guest" xml:space="preserve">
     <value>Guest</value>
   </data>
