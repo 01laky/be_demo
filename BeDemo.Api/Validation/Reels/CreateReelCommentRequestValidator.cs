@@ -4,8 +4,8 @@ using BeDemo.Api.Validation.Rules;
 
 namespace BeDemo.Api.Validation.Reels;
 
-/// <summary>FluentValidation for <see cref="BeDemo.Api.Controllers.CreateReelCommentDto"/> (endpoint-schema-validation §12.1).</summary>
-public sealed class CreateReelCommentRequestValidator : AbstractValidator<BeDemo.Api.Controllers.CreateReelCommentDto>
+/// <summary>FluentValidation for <see cref="BeDemo.Api.Models.Requests.Reels.CreateReelCommentDto"/> (endpoint-schema-validation §12.1).</summary>
+public sealed class CreateReelCommentRequestValidator : AbstractValidator<BeDemo.Api.Models.Requests.Reels.CreateReelCommentDto>
 {
     public CreateReelCommentRequestValidator()
     {

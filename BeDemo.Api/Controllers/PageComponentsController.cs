@@ -212,35 +212,3 @@ public class PageComponentsController : ControllerBase
         return Ok(new { success = true });
     }
 }
-
-public class CreatePageComponentDto
-{
-    public int PageId { get; set; }
-    public int ComponentTypeId { get; set; }
-    public int DisplayModeId { get; set; }
-    public string? GridKey { get; set; }
-    public int X { get; set; }
-    public int Y { get; set; }
-    public int W { get; set; }
-    public int H { get; set; }
-    public int MinW { get; set; }
-    public int MinH { get; set; }
-    public string? Label { get; set; }
-    public string? Title { get; set; }
-    public string? Icon { get; set; }
-}
-
-public class UpdatePageComponentDto
-{
-    public int? ComponentTypeId { get; set; }
-    public int? DisplayModeId { get; set; }
-    public int? X { get; set; }
-    public int? Y { get; set; }
-    public int? W { get; set; }
-    public int? H { get; set; }
-    public int? MinW { get; set; }
-    public int? MinH { get; set; }
-    public string? Label { get; set; }
-    public string? Title { get; set; }
-    public string? Icon { get; set; }
-}

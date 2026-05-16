@@ -173,8 +173,3 @@ public class FriendRequestsController : ControllerBase
         _context.Friendships.Add(new Friendship { UserId = senderId, FriendId = receiverId });
     }
 }
-
-public class SendFriendRequestDto
-{
-    public string? ReceiverId { get; set; }
-}

@@ -177,14 +177,3 @@ public class OAuth2Controller : ControllerBase
         });
     }
 }
-
-/// <summary>
-/// Model for user registration
-/// </summary>
-public class OAuth2RegisterModel
-{
-    public string Email { get; set; } = string.Empty;      // Email address (required)
-    public string Password { get; set; } = string.Empty;    // Password (required)
-    public string? FirstName { get; set; }                 // First name (optional)
-    public string? LastName { get; set; }                 // Last name (optional)
-}

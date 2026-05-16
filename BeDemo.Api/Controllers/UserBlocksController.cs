@@ -107,8 +107,3 @@ public class UserBlocksController : ControllerBase
         return Ok(new { success = true });
     }
 }
-
-public class BlockUserDto
-{
-    public string? BlockedId { get; set; }
-}

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BeDemo.Api.Data;
 using BeDemo.Api.Models;
+using BeDemo.Api.Models.Requests.Reels;
 using BeDemo.Api.Utils;
 
 namespace BeDemo.Api.Controllers;
@@ -24,11 +25,12 @@ public class ReelCommentsController : ControllerBase
     private string? UserId => User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
     [HttpGet]
-    public async Task<IActionResult> GetComments(int reelId, [FromQuery] int? faceId)
+    public async Task<IActionResult> GetComments(int reelId, [FromQuery] ReelCommentCreateQuery commentQuery)
     {
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
 
+        var faceId = commentQuery.FaceId;
         var reel = await _context.Reels
             .Include(r => r.ReelFaces)
             .FirstOrDefaultAsync(r => r.Id == reelId);
@@ -56,20 +58,18 @@ public class ReelCommentsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateComment(int reelId, [FromQuery] int? faceId, [FromBody] CreateReelCommentDto dto)
+    public async Task<IActionResult> CreateComment(int reelId, [FromQuery] ReelCommentCreateQuery commentQuery, [FromBody] CreateReelCommentDto dto)
     {
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
 
+        var faceId = commentQuery.FaceId;
         var reel = await _context.Reels
             .Include(r => r.ReelFaces)
             .FirstOrDefaultAsync(r => r.Id == reelId);
 
         if (reel == null || !ReelVisibility.IsVisibleForFace(reel, faceId))
             return NotFound(new { error = "Reel not found" });
-
-        if (string.IsNullOrWhiteSpace(dto.Content))
-            return BadRequest(new { error = "Content is required" });
 
         var comment = new ReelComment
         {
@@ -145,14 +145,4 @@ public class ReelCommentsController : ControllerBase
 
         return NoContent();
     }
-}
-
-public class CreateReelCommentDto
-{
-    public string Content { get; set; } = string.Empty;
-}
-
-public class UpdateReelCommentDto
-{
-    public string Content { get; set; } = string.Empty;
 }

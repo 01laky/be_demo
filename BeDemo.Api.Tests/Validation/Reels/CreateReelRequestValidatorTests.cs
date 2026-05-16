@@ -1,7 +1,6 @@
 using FluentValidation.TestHelper;
 using BeDemo.Api.Validation.Reels;
 
-using BeDemo.Api.Controllers;
 
 namespace BeDemo.Api.Tests.Validation.Reels;
 

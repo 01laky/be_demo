@@ -1,4 +1,5 @@
 using BeDemo.Api.Models.DTOs;
+using BeDemo.Api.Models.Requests.OAuth;
 using BeDemo.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -56,14 +57,9 @@ public sealed class OAuth2RegistrationController : ControllerBase
 
     /// <summary>Read-only prefill for complete-registration UI; never returns the verification code.</summary>
     [HttpGet("prefill")]
-    public async Task<IActionResult> Prefill([FromQuery] string? hash, CancellationToken cancellationToken)
+    public async Task<IActionResult> Prefill([FromQuery] RegisterPrefillQuery query, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(hash))
-        {
-            return BadRequest(new { error = "hash query parameter is required" });
-        }
-
-        var prefill = await _invites.GetPrefillAsync(hash, cancellationToken).ConfigureAwait(false);
+        var prefill = await _invites.GetPrefillAsync(query.Hash!, cancellationToken).ConfigureAwait(false);
         if (prefill == null)
         {
             return BadRequest(new { error = "Invalid request" });

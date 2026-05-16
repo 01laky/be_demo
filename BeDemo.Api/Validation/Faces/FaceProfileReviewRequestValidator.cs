@@ -4,8 +4,8 @@ using BeDemo.Api.Validation.Rules;
 
 namespace BeDemo.Api.Validation.Faces;
 
-/// <summary>FluentValidation for <see cref="BeDemo.Api.Controllers.FaceProfileReviewDto"/> (endpoint-schema-validation §12.1).</summary>
-public sealed class FaceProfileReviewRequestValidator : AbstractValidator<BeDemo.Api.Controllers.FaceProfileReviewDto>
+/// <summary>FluentValidation for <see cref="BeDemo.Api.Models.Requests.Faces.FaceProfileReviewDto"/> (endpoint-schema-validation §12.1).</summary>
+public sealed class FaceProfileReviewRequestValidator : AbstractValidator<BeDemo.Api.Models.Requests.Faces.FaceProfileReviewDto>
 {
     public FaceProfileReviewRequestValidator()
     {

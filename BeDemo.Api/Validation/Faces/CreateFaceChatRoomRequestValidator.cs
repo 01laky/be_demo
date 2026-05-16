@@ -4,8 +4,8 @@ using BeDemo.Api.Validation.Rules;
 
 namespace BeDemo.Api.Validation.Faces;
 
-/// <summary>FluentValidation for <see cref="BeDemo.Api.Controllers.CreateFaceChatRoomDto"/> (endpoint-schema-validation §12.1).</summary>
-public sealed class CreateFaceChatRoomRequestValidator : AbstractValidator<BeDemo.Api.Controllers.CreateFaceChatRoomDto>
+/// <summary>FluentValidation for <see cref="BeDemo.Api.Models.Requests.Faces.CreateFaceChatRoomDto"/> (endpoint-schema-validation §12.1).</summary>
+public sealed class CreateFaceChatRoomRequestValidator : AbstractValidator<BeDemo.Api.Models.Requests.Faces.CreateFaceChatRoomDto>
 {
     public CreateFaceChatRoomRequestValidator()
     {

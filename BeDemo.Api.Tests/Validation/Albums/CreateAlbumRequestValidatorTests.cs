@@ -1,7 +1,6 @@
 using FluentValidation.TestHelper;
 using BeDemo.Api.Validation.Albums;
 
-using BeDemo.Api.Controllers;
 
 namespace BeDemo.Api.Tests.Validation.Albums;
 

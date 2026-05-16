@@ -4,8 +4,8 @@ using BeDemo.Api.Validation.Rules;
 
 namespace BeDemo.Api.Validation.Blogs;
 
-/// <summary>FluentValidation for <see cref="BeDemo.Api.Controllers.UpdateBlogDto"/> (endpoint-schema-validation §12.1).</summary>
-public sealed class UpdateBlogRequestValidator : AbstractValidator<BeDemo.Api.Controllers.UpdateBlogDto>
+/// <summary>FluentValidation for <see cref="BeDemo.Api.Models.Requests.Blogs.UpdateBlogDto"/> (endpoint-schema-validation §12.1).</summary>
+public sealed class UpdateBlogRequestValidator : AbstractValidator<BeDemo.Api.Models.Requests.Blogs.UpdateBlogDto>
 {
     public UpdateBlogRequestValidator()
     {

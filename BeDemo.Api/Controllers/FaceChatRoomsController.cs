@@ -415,11 +415,13 @@ public class FaceChatRoomsController : ControllerBase
     }
 
     [HttpGet("{roomId:int}/messages")]
-    public async Task<IActionResult> Messages(int faceId, int roomId, [FromQuery] int pageSize = 50, [FromQuery] int? beforeId = null, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Messages(int faceId, int roomId, [FromQuery] ChatMessagesQuery messagesQuery, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
 
+        var pageSize = messagesQuery.PageSize;
+        var beforeId = messagesQuery.BeforeId;
         var room = await _context.FaceChatRooms.AsNoTracking().FirstOrDefaultAsync(r => r.Id == roomId && r.FaceId == faceId, cancellationToken);
         if (room == null)
             return NotFound();
@@ -435,7 +437,7 @@ public class FaceChatRoomsController : ControllerBase
 
         var items = await q
             .OrderByDescending(m => m.Id)
-            .Take(Math.Clamp(pageSize, 1, 100))
+            .Take(pageSize)
             .Select(m => new
             {
                 m.Id,
@@ -448,24 +450,4 @@ public class FaceChatRoomsController : ControllerBase
         items.Reverse();
         return Ok(items);
     }
-}
-
-public class CreateFaceChatRoomDto
-{
-    public string Title { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public bool IsPublic { get; set; } = true;
-}
-
-public class CreateSystemFaceChatRoomDto
-{
-    public string Title { get; set; } = string.Empty;
-    public string? Description { get; set; }
-}
-
-public class UpdateFaceChatRoomDto
-{
-    public string? Title { get; set; }
-    public string? Description { get; set; }
-    public bool? IsPublic { get; set; }
 }

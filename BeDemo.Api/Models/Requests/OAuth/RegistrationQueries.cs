@@ -10,7 +10,7 @@ public sealed class RegisterPrefillQuery
 public sealed class AdminInviteListQuery
 {
     public int Skip { get; set; }
-    public int Take { get; set; } = 20;
+    public int Take { get; set; } = 50;
 }
 
 /// <summary>GET /api/localization/{app} bundle query.</summary>

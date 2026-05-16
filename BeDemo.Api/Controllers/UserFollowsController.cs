@@ -131,8 +131,3 @@ public class UserFollowsController : ControllerBase
         return Ok(new { success = true });
     }
 }
-
-public class FollowUserDto
-{
-    public string? FollowedId { get; set; }
-}

@@ -252,22 +252,3 @@ public class PageTypesController : ControllerBase
         }
     }
 }
-
-/// <summary>
-/// Model for creating a new page type
-/// </summary>
-public class CreatePageTypeModel
-{
-    [Required(ErrorMessage = "Index is required")]
-    [StringLength(100, ErrorMessage = "Index must be at most 100 characters")]
-    public string Index { get; set; } = string.Empty;
-}
-
-/// <summary>
-/// Model for updating a page type
-/// </summary>
-public class UpdatePageTypeModel
-{
-    [StringLength(100, ErrorMessage = "Index must be at most 100 characters")]
-    public string? Index { get; set; }
-}

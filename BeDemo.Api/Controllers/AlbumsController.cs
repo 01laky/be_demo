@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BeDemo.Api.Data;
 using BeDemo.Api.Models;
+using BeDemo.Api.Models.Requests.Albums;
 using BeDemo.Api.Services;
 
 namespace BeDemo.Api.Controllers;
@@ -43,11 +44,12 @@ public class AlbumsController : ControllerBase
 
     /// <summary>GET /api/albums?faceId= - Optional face filter (album must be linked via AlbumFaces).</summary>
     [HttpGet]
-    public async Task<IActionResult> GetAlbums([FromQuery] int? faceId)
+    public async Task<IActionResult> GetAlbums([FromQuery] AlbumListQuery listQuery)
     {
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
 
+        var faceId = listQuery.FaceId;
         var query = _context.Albums
             .Where(a => a.ApprovalStatus == ContentApprovalStatus.Approved)
             .Where(a => a.AlbumType == AlbumTypeEnum.Public || a.CreatorId == UserId);
@@ -434,22 +436,4 @@ public class AlbumsController : ControllerBase
             _logger.LogWarning(ex, "Failed to enqueue AI review for {ContentType} {ContentId}", contentType, contentId);
         }
     }
-}
-
-public class CreateAlbumDto
-{
-    public string Title { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public AlbumTypeEnum AlbumType { get; set; } = AlbumTypeEnum.Public;
-    public MediaTypeEnum MediaType { get; set; } = MediaTypeEnum.Image;
-    public List<int>? FaceIds { get; set; }
-}
-
-public class UpdateAlbumDto
-{
-    public string? Title { get; set; }
-    public string? Description { get; set; }
-    public AlbumTypeEnum? AlbumType { get; set; }
-    public MediaTypeEnum? MediaType { get; set; }
-    public List<int>? FaceIds { get; set; }
 }

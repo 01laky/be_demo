@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BeDemo.Api.Data;
 using BeDemo.Api.Models;
+using BeDemo.Api.Models.Requests.Faces;
 using BeDemo.Api.Utils;
 
 namespace BeDemo.Api.Controllers;
@@ -59,8 +60,7 @@ public class FaceProfilesController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> ListProfiles(
         int faceId,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20,
+        [FromQuery] FaceProfileListQuery listQuery,
         CancellationToken ct = default)
     {
         var face = await GetFaceAsync(faceId, ct);
@@ -70,8 +70,8 @@ public class FaceProfilesController : ControllerBase
         if (!await FaceVisibilityAccess.CanViewFaceProfileContentAsync(_context, face, CurrentUserId, ct))
             return VisibilityDenied();
 
-        page = Math.Max(1, page);
-        pageSize = Math.Clamp(pageSize, 1, 100);
+        var page = listQuery.Page;
+        var pageSize = listQuery.PageSize;
 
         var hostName = UserRole.FaceRoleNames.FaceHost;
         var eligibleUserIds = await (
@@ -448,25 +448,4 @@ public class FaceProfilesController : ControllerBase
         await _context.SaveChangesAsync(ct);
         return NoContent();
     }
-}
-
-public class FaceProfileCommentDto
-{
-    [Required]
-    [MaxLength(4000)]
-    public string Body { get; set; } = string.Empty;
-}
-
-public class FaceProfileReviewDto
-{
-    [Required]
-    [MaxLength(200)]
-    public string Title { get; set; } = string.Empty;
-
-    [Required]
-    [MaxLength(8000)]
-    public string Text { get; set; } = string.Empty;
-
-    [Range(1, 6)]
-    public int? Stars { get; set; }
 }

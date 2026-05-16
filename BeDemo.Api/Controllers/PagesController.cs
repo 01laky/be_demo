@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BeDemo.Api.Data;
 using BeDemo.Api.Models;
+using BeDemo.Api.Models.Requests.Pages;
 using BeDemo.Api.Services;
 
 namespace BeDemo.Api.Controllers;
@@ -48,10 +49,11 @@ public class PagesController : ControllerBase
     /// Get list of pages for a specific face
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> GetPages([FromQuery] int? faceId)
+    public async Task<IActionResult> GetPages([FromQuery] GetPagesQuery pagesQuery)
     {
         try
         {
+            var faceId = pagesQuery.FaceId;
             IQueryable<Page> query = _context.Pages;
 
             if (CanManageAllFaces())
@@ -456,66 +458,4 @@ public class PagesController : ControllerBase
             return StatusCode(500, new { error = "An error occurred while updating page translations" });
         }
     }
-}
-
-/// <summary>
-/// Model for creating a new page
-/// </summary>
-public class CreatePageModel
-{
-    [Required(ErrorMessage = "FaceId is required")]
-    public int FaceId { get; set; }
-
-    [Required(ErrorMessage = "PageTypeId is required")]
-    public int PageTypeId { get; set; }
-
-    [Required(ErrorMessage = "Name is required")]
-    [StringLength(200, ErrorMessage = "Name must be at most 200 characters")]
-    public string Name { get; set; } = string.Empty;
-
-    [StringLength(1000, ErrorMessage = "Description must be at most 1000 characters")]
-    public string? Description { get; set; }
-
-    [Required(ErrorMessage = "Path is required")]
-    [StringLength(500, ErrorMessage = "Path must be at most 500 characters")]
-    public string Path { get; set; } = string.Empty;
-
-    public int Index { get; set; } = 0;
-}
-
-/// <summary>
-/// Model for updating a page
-/// </summary>
-public class UpdatePageModel
-{
-    public int? FaceId { get; set; }
-
-    public int? PageTypeId { get; set; }
-
-    [StringLength(200, ErrorMessage = "Name must be at most 200 characters")]
-    public string? Name { get; set; }
-
-    [StringLength(1000, ErrorMessage = "Description must be at most 1000 characters")]
-    public string? Description { get; set; }
-
-    [StringLength(500, ErrorMessage = "Path must be at most 500 characters")]
-    public string? Path { get; set; }
-
-    public int? Index { get; set; }
-
-    public string? GridSchema { get; set; }
-}
-
-/// <summary>
-/// Model for page route translation
-/// </summary>
-public class PageRouteTranslationModel
-{
-    [Required(ErrorMessage = "LanguageCode is required")]
-    [StringLength(10, ErrorMessage = "LanguageCode must be at most 10 characters")]
-    public string LanguageCode { get; set; } = string.Empty;
-
-    [Required(ErrorMessage = "TranslatedRoute is required")]
-    [StringLength(200, ErrorMessage = "TranslatedRoute must be at most 200 characters")]
-    public string TranslatedRoute { get; set; } = string.Empty;
 }

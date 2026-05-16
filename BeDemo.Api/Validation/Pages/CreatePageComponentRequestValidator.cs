@@ -4,8 +4,8 @@ using BeDemo.Api.Validation.Rules;
 
 namespace BeDemo.Api.Validation.Pages;
 
-/// <summary>FluentValidation for <see cref="BeDemo.Api.Controllers.CreatePageComponentDto"/> (endpoint-schema-validation §12.1).</summary>
-public sealed class CreatePageComponentRequestValidator : AbstractValidator<BeDemo.Api.Controllers.CreatePageComponentDto>
+/// <summary>FluentValidation for <see cref="BeDemo.Api.Models.Requests.Pages.CreatePageComponentDto"/> (endpoint-schema-validation §12.1).</summary>
+public sealed class CreatePageComponentRequestValidator : AbstractValidator<BeDemo.Api.Models.Requests.Pages.CreatePageComponentDto>
 {
     public CreatePageComponentRequestValidator()
     {

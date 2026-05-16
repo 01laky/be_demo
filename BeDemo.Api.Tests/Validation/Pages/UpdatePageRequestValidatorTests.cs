@@ -10,7 +10,7 @@ public sealed class UpdatePageRequestValidatorTests
     [Fact]
     public void Valid_minimal_instance_has_no_errors()
     {
-        var model = new BeDemo.Api.Controllers.UpdatePageModel();
+        var model = new UpdatePageModel();
         var result = _sut.TestValidate(model);
         // Refine per §4 T1–T12 as rules are added.
         _ = result;

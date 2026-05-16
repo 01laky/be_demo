@@ -4,8 +4,8 @@ using FluentValidation;
 
 namespace BeDemo.Api.Validation.Stories;
 
-/// <summary>FluentValidation for <see cref="BeDemo.Api.Controllers.CreateStoryDto"/> (endpoint-schema-validation §12.1).</summary>
-public sealed class CreateStoryRequestValidator : AbstractValidator<BeDemo.Api.Controllers.CreateStoryDto>
+/// <summary>FluentValidation for <see cref="BeDemo.Api.Models.Requests.Stories.CreateStoryDto"/> (endpoint-schema-validation §12.1).</summary>
+public sealed class CreateStoryRequestValidator : AbstractValidator<BeDemo.Api.Models.Requests.Stories.CreateStoryDto>
 {
     public CreateStoryRequestValidator()
     {

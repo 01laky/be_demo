@@ -1,4 +1,5 @@
 using BeDemo.Api.Models.DTOs;
+using BeDemo.Api.Models.Requests.OAuth;
 using BeDemo.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,14 +24,14 @@ public sealed class AdminRegistrationInvitesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> List([FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> List([FromQuery] AdminInviteListQuery query, CancellationToken cancellationToken = default)
     {
         if (!_access.CanManageAllFaces(User))
         {
             return Forbid();
         }
 
-        var items = await _invites.ListAdminInvitesAsync(skip, take, cancellationToken).ConfigureAwait(false);
+        var items = await _invites.ListAdminInvitesAsync(query.Skip, query.Take, cancellationToken).ConfigureAwait(false);
         return Ok(items);
     }
 

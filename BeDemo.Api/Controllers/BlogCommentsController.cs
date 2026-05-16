@@ -147,13 +147,3 @@ public class BlogCommentsController : ControllerBase
         return NoContent();
     }
 }
-
-public class CreateBlogCommentDto
-{
-    public string Content { get; set; } = string.Empty;
-}
-
-public class UpdateBlogCommentDto
-{
-    public string Content { get; set; } = string.Empty;
-}

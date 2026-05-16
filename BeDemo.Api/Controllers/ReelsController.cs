@@ -84,11 +84,12 @@ public class ReelsController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetReel(int id, [FromQuery] int? faceId)
+    public async Task<IActionResult> GetReel(int id, [FromQuery] ReelDetailQuery detailQuery)
     {
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
 
+        var faceId = detailQuery.FaceId;
         var reel = await _context.Reels
             .Include(r => r.Creator)
             .Include(r => r.ReelFaces).ThenInclude(rf => rf.Face)
@@ -129,11 +130,12 @@ public class ReelsController : ControllerBase
     }
 
     [HttpGet("user/{userId}")]
-    public async Task<IActionResult> GetReelsByUser(string userId, [FromQuery] int? faceId)
+    public async Task<IActionResult> GetReelsByUser(string userId, [FromQuery] ReelByUserQuery byUserQuery)
     {
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
 
+        var faceId = byUserQuery.FaceId;
         var query = _context.Reels.Where(r => r.CreatorId == userId);
         if (userId != UserId)
             query = query.Where(r => r.ApprovalStatus == ContentApprovalStatus.Approved);
@@ -406,20 +408,4 @@ public class ReelsController : ControllerBase
         };
     }
 
-}
-
-public class CreateReelDto
-{
-    public string Title { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public string VideoUrl { get; set; } = string.Empty;
-    public List<int>? FaceIds { get; set; }
-}
-
-public class UpdateReelDto
-{
-    public string? Title { get; set; }
-    public string? Description { get; set; }
-    public string? VideoUrl { get; set; }
-    public List<int>? FaceIds { get; set; }
 }

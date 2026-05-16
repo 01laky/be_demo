@@ -4,8 +4,8 @@ using FluentValidation;
 
 namespace BeDemo.Api.Validation.Blogs;
 
-/// <summary>FluentValidation for <see cref="BeDemo.Api.Controllers.CreateBlogCommentDto"/> (endpoint-schema-validation §12.1).</summary>
-public sealed class CreateBlogCommentRequestValidator : AbstractValidator<BeDemo.Api.Controllers.CreateBlogCommentDto>
+/// <summary>FluentValidation for <see cref="BeDemo.Api.Models.Requests.Blogs.CreateBlogCommentDto"/> (endpoint-schema-validation §12.1).</summary>
+public sealed class CreateBlogCommentRequestValidator : AbstractValidator<BeDemo.Api.Models.Requests.Blogs.CreateBlogCommentDto>
 {
     public CreateBlogCommentRequestValidator()
     {

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BeDemo.Api.Models;
 using BeDemo.Api.Data;
+using BeDemo.Api.Models.Requests.Users;
 using BeDemo.Api.Services;
 
 namespace BeDemo.Api.Controllers;
@@ -47,16 +48,14 @@ public class UsersController : ControllerBase
     /// <c>CanManageAllFaces</c> only see users who have <see cref="UserFaceProfile"/> for the scoped face — no cross-face directory leakage.
     /// </remarks>
     [HttpGet]
-    public async Task<IActionResult> GetUsers(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10,
-        [FromQuery] string? search = null,
-        [FromQuery] bool forAddFriend = false)
+    public async Task<IActionResult> GetUsers([FromQuery] GetUsersQuery listQuery)
     {
         try
         {
-            page = Math.Max(1, page);
-            pageSize = Math.Clamp(pageSize, 1, 100);
+            var page = listQuery.Page;
+            var pageSize = listQuery.PageSize;
+            var search = listQuery.Search;
+            var forAddFriend = listQuery.ForAddFriend;
 
             var currentUserId = _userManager.GetUserId(User);
             if (string.IsNullOrEmpty(currentUserId))
@@ -344,38 +343,4 @@ public class UsersController : ControllerBase
             return StatusCode(500, new { error = "An error occurred while updating user" });
         }
     }
-}
-
-/// <summary>
-/// Model for creating a new user
-/// </summary>
-public class CreateUserModel
-{
-    [Required(ErrorMessage = "Email is required")]
-    [EmailAddress(ErrorMessage = "Invalid email address")]
-    public string Email { get; set; } = string.Empty;
-
-    [Required(ErrorMessage = "Password is required")]
-    [MinLength(BeDemo.Api.Configuration.IdentityPasswordPolicyOptions.RecommendedMinimumLength, ErrorMessage = "Password must be at least 12 characters")]
-    public string Password { get; set; } = string.Empty;
-
-    public string? FirstName { get; set; }
-
-    public string? LastName { get; set; }
-}
-
-/// <summary>
-/// Model for updating a user
-/// </summary>
-public class UpdateUserModel
-{
-    [EmailAddress(ErrorMessage = "Invalid email address")]
-    public string? Email { get; set; }
-
-    [MinLength(BeDemo.Api.Configuration.IdentityPasswordPolicyOptions.RecommendedMinimumLength, ErrorMessage = "Password must be at least 12 characters")]
-    public string? Password { get; set; }
-
-    public string? FirstName { get; set; }
-
-    public string? LastName { get; set; }
 }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BeDemo.Api.Data;
 using BeDemo.Api.Models;
+using BeDemo.Api.Models.Requests.Blogs;
 using BeDemo.Api.Services;
 
 namespace BeDemo.Api.Controllers;
@@ -35,7 +36,7 @@ public class BlogsController : ControllerBase
 
     /// <summary>GET /api/blogs?faceId={faceId} - Get blogs for a face</summary>
     [HttpGet]
-    public async Task<IActionResult> GetBlogs([FromQuery] int? faceId)
+    public async Task<IActionResult> GetBlogs([FromQuery] BlogListQuery listQuery)
     {
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
@@ -44,8 +45,8 @@ public class BlogsController : ControllerBase
             .Where(b => b.ApprovalStatus == ContentApprovalStatus.Approved)
             .AsQueryable();
 
-        if (faceId.HasValue)
-            query = query.Where(b => b.FaceId == faceId.Value);
+        if (listQuery.FaceId.HasValue)
+            query = query.Where(b => b.FaceId == listQuery.FaceId.Value);
 
         var blogs = await query
             .Include(b => b.Creator)
@@ -353,20 +354,4 @@ public class BlogsController : ControllerBase
             _logger.LogWarning(ex, "Failed to enqueue AI review for {ContentType} {ContentId}", contentType, contentId);
         }
     }
-}
-
-public class CreateBlogDto
-{
-    public string Title { get; set; } = string.Empty;
-    public string Content { get; set; } = string.Empty;
-    public int FaceId { get; set; }
-    public List<string>? ImageUrls { get; set; }
-}
-
-public class UpdateBlogDto
-{
-    public string? Title { get; set; }
-    public string? Content { get; set; }
-    public int? FaceId { get; set; }
-    public List<string>? ImageUrls { get; set; }
 }

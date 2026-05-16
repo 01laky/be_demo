@@ -1,5 +1,4 @@
 using BeDemo.Api.Configuration;
-using BeDemo.Api.Controllers;
 using BeDemo.Api.Validation.Rules;
 using FluentValidation;
 

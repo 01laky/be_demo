@@ -4,7 +4,7 @@ using Xunit;
 namespace BeDemo.Api.Tests;
 
 /// <summary>
-/// Regression anchor for <see cref="BeDemo.Api.Controllers.StoriesController"/> authorization policy.
+/// Regression anchor for <see cref="StoriesController"/> authorization policy.
 /// The suite intentionally starts with a **401-without-auth** check so refactors to `[AllowAnonymous]`
 /// do not silently widen read access to story content. Expand with happy-path CRUD once fixtures exist.
 /// </summary>

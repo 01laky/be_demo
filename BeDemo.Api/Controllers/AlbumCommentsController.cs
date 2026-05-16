@@ -154,13 +154,3 @@ public class AlbumCommentsController : ControllerBase
         return NoContent();
     }
 }
-
-public class CreateAlbumCommentDto
-{
-    public string Content { get; set; } = string.Empty;
-}
-
-public class UpdateAlbumCommentDto
-{
-    public string Content { get; set; } = string.Empty;
-}

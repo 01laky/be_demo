@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BeDemo.Api.Models;
 using BeDemo.Api.Data;
+using BeDemo.Api.Models.Requests.Profile;
+using BeDemo.Api.Validation.Files;
 
 namespace BeDemo.Api.Controllers;
 
@@ -17,6 +19,7 @@ public class ProfileController : ControllerBase
     private readonly ApplicationDbContext _context;
     private readonly IWebHostEnvironment _env;
     private readonly ILogger<ProfileController> _logger;
+    private readonly IFileValidator _fileValidator;
 
     private const string AvatarSubDir = "uploads/avatars";
     private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
@@ -26,12 +29,14 @@ public class ProfileController : ControllerBase
         UserManager<ApplicationUser> userManager,
         ApplicationDbContext context,
         IWebHostEnvironment env,
-        ILogger<ProfileController> logger)
+        ILogger<ProfileController> logger,
+        IFileValidator fileValidator)
     {
         _userManager = userManager;
         _context = context;
         _env = env;
         _logger = logger;
+        _fileValidator = fileValidator;
     }
 
     /// <summary>
@@ -39,12 +44,13 @@ public class ProfileController : ControllerBase
     /// Returns current user profile. Optional ?faceId= for resolved avatar (local for that face, else global).
     /// </summary>
     [HttpGet("me")]
-    public async Task<IActionResult> GetMyProfile([FromQuery] int? faceId = null)
+    public async Task<IActionResult> GetMyProfile([FromQuery] ProfileMeQuery query)
     {
         var userId = _userManager.GetUserId(User);
         if (string.IsNullOrEmpty(userId))
             return Unauthorized();
 
+        var faceId = query.FaceId;
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null)
             return Unauthorized();
@@ -106,15 +112,13 @@ public class ProfileController : ControllerBase
     /// POST /api/profile/me/avatar - upload global avatar
     /// </summary>
     [HttpPost("me/avatar")]
-    public async Task<IActionResult> UploadMyAvatar(IFormFile? file)
+    public async Task<IActionResult> UploadMyAvatar([FromForm] AvatarUploadRequest request)
     {
         var userId = _userManager.GetUserId(User);
         if (string.IsNullOrEmpty(userId))
             return Unauthorized();
 
-        if (file == null || file.Length == 0)
-            return BadRequest(new { error = "No file uploaded" });
-
+        var file = request.File!;
         var (path, error) = await SaveAvatarFile(file, userId, null);
         if (error != null)
             return BadRequest(new { error });
@@ -139,15 +143,13 @@ public class ProfileController : ControllerBase
     /// POST /api/profile/me/faces/{faceId}/avatar - upload face-specific avatar
     /// </summary>
     [HttpPost("me/faces/{faceId:int}/avatar")]
-    public async Task<IActionResult> UploadMyFaceAvatar(int faceId, IFormFile? file)
+    public async Task<IActionResult> UploadMyFaceAvatar(int faceId, [FromForm] AvatarUploadRequest request)
     {
         var userId = _userManager.GetUserId(User);
         if (string.IsNullOrEmpty(userId))
             return Unauthorized();
 
-        if (file == null || file.Length == 0)
-            return BadRequest(new { error = "No file uploaded" });
-
+        var file = request.File!;
         var profile = await _context.UserProfiles.FirstOrDefaultAsync(p => p.UserId == userId);
         if (profile == null)
         {
@@ -198,6 +200,13 @@ public class ProfileController : ControllerBase
         if (file.Length > MaxFileSizeBytes)
             return (null, "File too large. Max 30 MB.");
 
+        await using (var peek = file.OpenReadStream())
+        {
+            var (ok, errorCode) = await _fileValidator.ValidateImageAsync(peek, file.FileName);
+            if (!ok)
+                return (null, errorCode ?? "val_file_format");
+        }
+
         var webRoot = _env.WebRootPath;
         if (string.IsNullOrEmpty(webRoot))
             webRoot = Path.Combine(_env.ContentRootPath, "wwwroot");
@@ -229,10 +238,4 @@ public class ProfileController : ControllerBase
         var relativePath = "/" + AvatarSubDir.Replace('\\', '/') + "/" + userId + "/" + fileName;
         return (relativePath, null);
     }
-}
-
-public class UpdateProfileRequest
-{
-    public string? FirstName { get; set; }
-    public string? LastName { get; set; }
 }

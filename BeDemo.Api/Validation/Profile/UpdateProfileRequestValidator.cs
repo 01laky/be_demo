@@ -4,8 +4,8 @@ using FluentValidation;
 
 namespace BeDemo.Api.Validation.Profile;
 
-/// <summary>FluentValidation for <see cref="BeDemo.Api.Controllers.UpdateProfileRequest"/> (endpoint-schema-validation §12.1).</summary>
-public sealed class UpdateProfileRequestValidator : AbstractValidator<BeDemo.Api.Controllers.UpdateProfileRequest>
+/// <summary>FluentValidation for <see cref="BeDemo.Api.Models.Requests.Profile.UpdateProfileRequest"/> (endpoint-schema-validation §12.1).</summary>
+public sealed class UpdateProfileRequestValidator : AbstractValidator<BeDemo.Api.Models.Requests.Profile.UpdateProfileRequest>
 {
     public UpdateProfileRequestValidator()
     {

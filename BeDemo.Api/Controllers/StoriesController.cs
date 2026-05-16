@@ -4,8 +4,10 @@ using Microsoft.EntityFrameworkCore;
 using BeDemo.Api.Data;
 using BeDemo.Api.Models;
 using BeDemo.Api.Models.DTOs;
+using BeDemo.Api.Models.Requests.Stories;
 using BeDemo.Api.Services;
 using BeDemo.Api.Utils;
+using BeDemo.Api.Validation.Files;
 
 namespace BeDemo.Api.Controllers;
 
@@ -20,6 +22,7 @@ public class StoriesController : ControllerBase
     private readonly ILogger<StoriesController> _logger;
     private readonly IFaceScopeContext _faceScope;
     private readonly IAccessEvaluator _access;
+    private readonly IFileValidator _fileValidator;
 
     public StoriesController(
         ApplicationDbContext context,
@@ -27,7 +30,8 @@ public class StoriesController : ControllerBase
         IWebHostEnvironment env,
         ILogger<StoriesController> logger,
         IFaceScopeContext faceScope,
-        IAccessEvaluator access)
+        IAccessEvaluator access,
+        IFileValidator fileValidator)
     {
         _context = context;
         _lifecycle = lifecycle;
@@ -35,6 +39,7 @@ public class StoriesController : ControllerBase
         _logger = logger;
         _faceScope = faceScope;
         _access = access;
+        _fileValidator = fileValidator;
     }
 
     private string? UserId => User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -58,12 +63,12 @@ public class StoriesController : ControllerBase
 
     /// <summary>Published stories for the current face (non-host viewers only).</summary>
     [HttpGet]
-    public async Task<IActionResult> ListForFace([FromQuery] int faceId, CancellationToken cancellationToken)
+    public async Task<IActionResult> ListForFace([FromQuery] StoryListQuery query, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
 
-        var effectiveFaceId = _faceScope.ResolveDataFaceId(faceId);
+        var effectiveFaceId = _faceScope.ResolveDataFaceId(query.FaceId);
         if (!await StoryViewerRules.ViewerHasFaceMembershipAsync(_context, UserId, effectiveFaceId, cancellationToken))
             return Ok(Array.Empty<object>());
 
@@ -103,7 +108,7 @@ public class StoriesController : ControllerBase
 
     /// <summary>Current user's stories (all states), optional face targeting filter.</summary>
     [HttpGet("me")]
-    public async Task<IActionResult> ListMine([FromQuery] int? faceId, CancellationToken cancellationToken)
+    public async Task<IActionResult> ListMine([FromQuery] StoryMineQuery listQuery, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
@@ -114,8 +119,8 @@ public class StoriesController : ControllerBase
             .Include(s => s.Images)
             .Where(s => s.CreatorId == UserId);
 
-        var filterFace = _faceScope.ResolveDataFaceId(faceId);
-        if (faceId.HasValue || !_faceScope.IsAdminFaceScope)
+        var filterFace = _faceScope.ResolveDataFaceId(listQuery.FaceId);
+        if (listQuery.FaceId.HasValue || !_faceScope.IsAdminFaceScope)
         {
             query = query.Where(s =>
                 !s.StoryFaces.Any() ||
@@ -142,12 +147,12 @@ public class StoriesController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetDetail(int id, [FromQuery] int faceId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetDetail(int id, [FromQuery] StoryDetailQuery detailQuery, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
 
-        var effectiveFaceId = _faceScope.ResolveDataFaceId(faceId);
+        var effectiveFaceId = _faceScope.ResolveDataFaceId(detailQuery.FaceId);
 
         var story = await _context.Stories
             .Include(s => s.Creator)
@@ -244,9 +249,6 @@ public class StoriesController : ControllerBase
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
 
-        if (string.IsNullOrWhiteSpace(dto.Title))
-            return BadRequest(new { error = "Title is required" });
-
         var faceTargets = dto.FaceIds;
         if (faceTargets == null || faceTargets.Count == 0)
             faceTargets = new List<int> { _faceScope.FaceId };
@@ -332,12 +334,12 @@ public class StoriesController : ControllerBase
 
     /// <summary>Record a view (idempotent per viewer).</summary>
     [HttpPost("{id:int}/view")]
-    public async Task<IActionResult> RecordView(int id, [FromQuery] int faceId, CancellationToken cancellationToken)
+    public async Task<IActionResult> RecordView(int id, [FromQuery] StoryViewQuery viewQuery, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
 
-        var effectiveFaceId = _faceScope.ResolveDataFaceId(faceId);
+        var effectiveFaceId = _faceScope.ResolveDataFaceId(viewQuery.FaceId);
 
         if (!await StoryViewerRules.ViewerIsActiveNonHostInFaceAsync(_context, UserId, effectiveFaceId, cancellationToken))
             return Forbid();
@@ -400,21 +402,23 @@ public class StoriesController : ControllerBase
         }
 
         var file = form.File;
-        if (file == null || file.Length == 0)
-            return BadRequest(new { error = "File is required" });
-
-        if (!file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
-            return BadRequest(new { error = "Only image uploads are allowed" });
-
         var sortOrder = form.SortOrder;
-        if (sortOrder < 0 || sortOrder > 9)
-            return BadRequest(new { error = "sortOrder must be 0–9" });
 
         if (story.Images.Count >= 10)
             return BadRequest(new { error = "Maximum 10 images per story" });
 
         if (story.Images.Any(i => i.SortOrder == sortOrder))
             return BadRequest(new { error = "sortOrder already used" });
+
+        await using (var peek = file.OpenReadStream())
+        {
+            var (ok, errorCode) = await _fileValidator.ValidateImageAsync(peek, file.FileName, cancellationToken);
+            if (!ok)
+                return ValidationProblem(new ValidationProblemDetails(new Dictionary<string, string[]>
+                {
+                    ["file"] = [errorCode ?? "val_file_format"],
+                }));
+        }
 
         var webRoot = string.IsNullOrEmpty(_env.WebRootPath)
             ? Path.Combine(_env.ContentRootPath, "wwwroot")
@@ -446,16 +450,4 @@ public class StoriesController : ControllerBase
 
         return Ok(new { img.Id, imageUrl = url, img.SortOrder });
     }
-}
-
-public class CreateStoryDto
-{
-    public string Title { get; set; } = string.Empty;
-    public List<int>? FaceIds { get; set; }
-}
-
-public class PublishStoryDto
-{
-    /// <summary>When set and in the future, story stays <see cref="StoryState.Scheduled"/> until then.</summary>
-    public DateTime? ScheduledPublishAt { get; set; }
 }

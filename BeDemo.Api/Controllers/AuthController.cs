@@ -92,18 +92,3 @@ public class AuthController : ControllerBase
         return Ok(new { message = "Logout successful" });
     }
 }
-
-public class RegisterModel
-{
-    public string Email { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
-    public string? FirstName { get; set; }
-    public string? LastName { get; set; }
-}
-
-public class LoginModel
-{
-    public string Email { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
-    public bool RememberMe { get; set; }
-}
