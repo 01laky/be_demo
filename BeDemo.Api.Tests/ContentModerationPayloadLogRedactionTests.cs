@@ -12,6 +12,8 @@ namespace BeDemo.Api.Tests;
 /// <summary>
 /// Security hardening v2 <b>PI-7</b>: invalid Redis AI review payloads must not leak creator text into logs.
 /// </summary>
+/// <remarks>SHV2 PI-10: included in CI via <see cref="ContentModerationCiGate.XunitFilterExpression"/>.</remarks>
+[Trait(ContentModerationCiGate.XunitTraitName, ContentModerationCiGate.XunitTraitCategory)]
 public class ContentModerationPayloadLogRedactionTests
 {
     private const string SecretMarker = "PI7_DO_NOT_LOG_THIS_USER_CONTENT_9f3c2a";

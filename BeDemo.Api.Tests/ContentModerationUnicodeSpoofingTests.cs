@@ -13,6 +13,8 @@ namespace BeDemo.Api.Tests;
 /// <see cref="ContentModerationHelpers.ValidateRecommendation"/> still block <see cref="AiReviewStatus.RecommendedApprove"/>
 /// when the AI returns a malicious high-confidence approve.
 /// </remarks>
+/// <remarks>SHV2 PI-10: included in CI via <see cref="ContentModerationCiGate.XunitFilterExpression"/>.</remarks>
+[Trait(ContentModerationCiGate.XunitTraitName, ContentModerationCiGate.XunitTraitCategory)]
 public sealed class ContentModerationUnicodeSpoofingTests
 {
     private static readonly AiReviewRecommendation MaliciousApprove = new(

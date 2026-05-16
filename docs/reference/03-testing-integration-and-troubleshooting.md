@@ -23,6 +23,7 @@ Tests cover:
 - **Content moderation security** — `ContentModerationTests`, `ContentModerationAlertEvaluatorTests`, `ContentModerationSecurityEdgeTests` (red-team corpus in `BeDemo.Api.Tests/Fixtures/prompt_injection_corpus.txt`), `ContentModerationUnicodeSpoofingTests` (SHV2 **PI-6** — bidi, zero-width, homoglyph, mixed-script), `ContentModerationTrustBoundaryTests` (SHV2 **PI-9** — untrusted `ReviewContent` vs trusted operator AI / public stats JSON), `ContentModerationPayloadLogRedactionTests` (SHV2 **PI-7** — invalid queue payload must not leak user text into logs)
 
 ```bash
+dotnet test --filter "Category=ModerationSecurity"
 dotnet test --filter "FullyQualifiedName~ContentModeration"
 ```
 

@@ -12,6 +12,8 @@ namespace BeDemo.Api.Tests;
 /// These tests document architectural boundaries; they do not invoke SignalR or live gRPC. See
 /// <see cref="ContentModerationTrustBoundary"/> and monorepo <c>docs/guides/ai-assisted-content-approval.md</c>.
 /// </remarks>
+/// <remarks>SHV2 PI-10: included in CI via <see cref="ContentModerationCiGate.XunitFilterExpression"/>.</remarks>
+[Trait(ContentModerationCiGate.XunitTraitName, ContentModerationCiGate.XunitTraitCategory)]
 public sealed class ContentModerationTrustBoundaryTests
 {
     [Fact]

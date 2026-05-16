@@ -4,10 +4,16 @@ namespace BeDemo.Api.Services;
 /// Parser for the red-team <c>prompt_injection_corpus.txt</c> file (shipped with <c>BeDemo.Api.Tests</c>).
 /// </summary>
 /// <remarks>
+/// <para>
 /// Each non-comment line is a synthetic attack string. Tests assert that
 /// <see cref="ContentModerationUntrustedContentEvaluator"/> never yields
 /// <see cref="AiReviewStatus.RecommendedApprove"/> when the AI returns high-confidence
 /// <see cref="AiReviewDecision.Approve"/> for content containing that line.
+/// </para>
+/// <para>
+/// SHV2 PI-10: corpus regressions run in CI through <see cref="ContentModerationSecurityEdgeTests"/>
+/// (<see cref="ContentModerationCiGate.XunitFilterExpression"/>).
+/// </para>
 /// </remarks>
 public static class ContentModerationPromptInjectionCorpus
 {

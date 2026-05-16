@@ -12,6 +12,8 @@ namespace BeDemo.Api.Tests;
 /// Red-team and policy edge tests for untrusted creator content on the <c>ReviewContent</c> path.
 /// Complements <see cref="ContentModerationTests"/> with corpus-driven guarantees.
 /// </summary>
+/// <remarks>SHV2 PI-10: included in CI via <see cref="ContentModerationCiGate.XunitFilterExpression"/>.</remarks>
+[Trait(ContentModerationCiGate.XunitTraitName, ContentModerationCiGate.XunitTraitCategory)]
 public sealed class ContentModerationSecurityEdgeTests
 {
     /// <summary>Simulated malicious AI output: high-confidence approve with no risk flags.</summary>
