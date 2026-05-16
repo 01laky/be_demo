@@ -32,7 +32,7 @@ public static class ContentModerationCiGate
     /// <summary>
     /// Human-readable list of test fixture types that must carry the PI-10 trait (enforced by unit test).
     /// </summary>
-  public static readonly IReadOnlyList<string> RequiredSecurityTestClassNames =
+    public static readonly IReadOnlyList<string> RequiredSecurityTestClassNames =
     [
         "ContentModerationSecurityEdgeTests",
         "ContentModerationUnicodeSpoofingTests",
