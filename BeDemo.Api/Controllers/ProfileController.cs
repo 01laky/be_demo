@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using BeDemo.Api.Models;
 using BeDemo.Api.Data;
 using BeDemo.Api.Models.Requests.Profile;
+using BeDemo.Api.Utils;
 using BeDemo.Api.Validation.Files;
 
 namespace BeDemo.Api.Controllers;
@@ -21,9 +22,8 @@ public class ProfileController : ControllerBase
     private readonly ILogger<ProfileController> _logger;
     private readonly IFileValidator _fileValidator;
 
-    private const string AvatarSubDir = "uploads/avatars";
+    private static readonly string[] AvatarDirSegments = ["uploads", "avatars"];
     private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
-    private const int MaxFileSizeBytes = 30 * 1024 * 1024; // 30 MB (high‑quality / large photos)
 
     public ProfileController(
         UserManager<ApplicationUser> userManager,
@@ -191,14 +191,20 @@ public class ProfileController : ControllerBase
         return Ok(new { avatarUrl = baseUrl + path });
     }
 
+    /// <summary>
+    /// Persists avatar bytes under <c>wwwroot/uploads/avatars/{userId}/</c> with SHV2 path containment (BE-U4) and size cap (BE-U2).
+    /// </summary>
     private async Task<(string? relativePath, string? error)> SaveAvatarFile(IFormFile file, string userId, int? faceId)
     {
+        if (!UploadPathSecurity.IsSafePathSegment(userId))
+            return (null, "Invalid upload path");
+
         var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (string.IsNullOrEmpty(ext) || !AllowedExtensions.Contains(ext))
             return (null, "Invalid file type. Allowed: " + string.Join(", ", AllowedExtensions));
 
-        if (file.Length > MaxFileSizeBytes)
-            return (null, "File too large. Max 30 MB.");
+        if (file.Length > UploadLimits.AvatarMaxBytes)
+            return (null, UploadLimits.FormatMaxFileSizeMessage(UploadLimits.AvatarMaxBytes));
 
         await using (var peek = file.OpenReadStream())
         {
@@ -210,32 +216,33 @@ public class ProfileController : ControllerBase
         var webRoot = _env.WebRootPath;
         if (string.IsNullOrEmpty(webRoot))
             webRoot = Path.Combine(_env.ContentRootPath, "wwwroot");
-        var dir = Path.Combine(webRoot, AvatarSubDir, userId);
-        try
-        {
-            Directory.CreateDirectory(dir);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to create avatar directory {Dir}", dir);
-            return (null, "Server error creating upload directory");
-        }
 
         var fileName = faceId.HasValue ? $"face_{faceId.Value}{ext}" : $"global{ext}";
-        var fullPath = Path.Combine(dir, fileName);
+        if (!UploadPathSecurity.TryResolveFileUnderWebRoot(
+                webRoot,
+                [..AvatarDirSegments, userId],
+                fileName,
+                out var fullPath,
+                out var pathError))
+            return (null, pathError);
 
         try
         {
+            Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
             await using (var stream = new FileStream(fullPath, FileMode.Create))
                 await file.CopyToAsync(stream);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to save avatar file {Path}", fullPath);
+            _logger.LogError(ex, "Failed to save avatar file under uploads (user folder redacted)");
             return (null, "Server error saving file");
         }
 
-        var relativePath = "/" + AvatarSubDir.Replace('\\', '/') + "/" + userId + "/" + fileName;
+        var relativePath = UploadPathSecurity.BuildUploadUrlPath(
+            AvatarDirSegments[0],
+            AvatarDirSegments[1],
+            userId,
+            fileName);
         return (relativePath, null);
     }
 }

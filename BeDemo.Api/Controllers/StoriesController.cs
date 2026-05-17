@@ -420,23 +420,32 @@ public class StoriesController : ControllerBase
                 }));
         }
 
+        // Persist under wwwroot/uploads/stories/{storyId}/ with path containment (SHV2 BE-U4).
         var webRoot = string.IsNullOrEmpty(_env.WebRootPath)
             ? Path.Combine(_env.ContentRootPath, "wwwroot")
             : _env.WebRootPath;
-        var dir = Path.Combine(webRoot, "uploads", "stories", id.ToString());
-        Directory.CreateDirectory(dir);
 
+        var storyIdSegment = id.ToString();
         var ext = Path.GetExtension(file.FileName);
         if (string.IsNullOrEmpty(ext) || ext.Length > 10)
             ext = ".bin";
+        // BE-U5: non-guessable file names (GUID) — do not derive from user-supplied base name.
         var fileName = $"{Guid.NewGuid():N}{ext}";
-        var fullPath = Path.Combine(dir, fileName);
+        if (!UploadPathSecurity.TryResolveFileUnderWebRoot(
+                webRoot,
+                ["uploads", "stories", storyIdSegment],
+                fileName,
+                out var fullPath,
+                out var pathError))
+            return BadRequest(new { error = pathError ?? "Invalid upload path" });
+
+        Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
         await using (var stream = System.IO.File.Create(fullPath))
         {
             await file.CopyToAsync(stream, cancellationToken);
         }
 
-        var url = $"/uploads/stories/{id}/{fileName}";
+        var url = UploadPathSecurity.BuildUploadUrlPath("uploads", "stories", storyIdSegment, fileName);
         var img = new StoryImage
         {
             StoryId = id,
