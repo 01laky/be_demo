@@ -261,50 +261,15 @@ public class ChatHub : Hub
         try
         {
             var prompt = BuildPromptWithHistory(trimmed, history.ToArray());
-            if (mode == "inline")
+            if (mode is "inline" or "live")
             {
-                var snapshot = await _platformStats.GetPublicSnapshotAsync(Context.ConnectionAborted);
-                var json = JsonSerializer.Serialize(snapshot, PublicStatsJsonOptions);
+                // Full operator dashboard counts from EF (same as GET /api/Stats) — max statistics for the local model.
+                var statsJson = await BuildOperatorStatsContextJsonAsync(Context.ConnectionAborted);
                 aiResponse = await _aiGrpcService.GenerateAsync(
                     prompt,
                     maxNewTokens: maxTokens,
-                    statsContextJson: json,
+                    statsContextJson: statsJson,
                     cancellationToken: Context.ConnectionAborted);
-            }
-            else if (mode == "live")
-            {
-                var liveUrl = (_configuration["AiStats:PublicSnapshotAbsoluteUrl"] ?? string.Empty).Trim();
-                if (string.IsNullOrEmpty(liveUrl))
-                {
-                    aiResponse =
-                        "Režim live nie je nakonfigurovaný na serveri. Použite inline v Nastaveniach alebo kontaktujte administrátora.";
-                }
-                else
-                {
-                    var historyText = BuildHistoryPlainText(history.ToArray());
-                    aiResponse = await _aiGrpcService.OperatorStatsChatAsync(
-                        trimmed,
-                        historyText,
-                        fetchLivePublicSnapshot: true,
-                        publicStatsAbsoluteUrl: liveUrl,
-                        maxNewTokens: maxTokens,
-                        cancellationToken: Context.ConnectionAborted);
-                }
-
-                if (OperatorAiResponseGuard.IsInfrastructureFailure(aiResponse))
-                {
-                    _logger.LogWarning(
-                        "Live stats fetch failed for conversation {ConversationId}, falling back to inline. Detail: {Detail}",
-                        conversationId,
-                        aiResponse.Length > 200 ? aiResponse[..200] : aiResponse);
-                    var snapshot = await _platformStats.GetPublicSnapshotAsync(Context.ConnectionAborted);
-                    var json = JsonSerializer.Serialize(snapshot, PublicStatsJsonOptions);
-                    aiResponse = await _aiGrpcService.GenerateAsync(
-                        prompt,
-                        maxNewTokens: maxTokens,
-                        statsContextJson: json,
-                        cancellationToken: Context.ConnectionAborted);
-                }
             }
             else
                 aiResponse = await _aiGrpcService.GenerateAsync(prompt, maxNewTokens: maxTokens, cancellationToken: Context.ConnectionAborted);
@@ -356,6 +321,17 @@ public class ChatHub : Hub
 
         await Clients.Group(OperatorAiHubGroups.Operators).SendAsync("OperatorAiMessageAppended", appended);
         await Clients.Group(OperatorAiHubGroups.Operators).SendAsync("OperatorAiConversationListChanged", updatedConversation);
+    }
+
+    private async Task<string> BuildOperatorStatsContextJsonAsync(CancellationToken cancellationToken)
+    {
+        var dashboard = await _platformStats.GetOperatorDashboardSummaryAsync(cancellationToken);
+        var payload = new OperatorAiStatsContextDto
+        {
+            SnapshotUtc = DateTime.UtcNow,
+            Dashboard = dashboard,
+        };
+        return JsonSerializer.Serialize(payload, PublicStatsJsonOptions);
     }
 
     private static string BuildPromptWithHistory(string message, ChatHistoryEntry[]? history)
