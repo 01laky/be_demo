@@ -361,6 +361,9 @@ public class ChatHub : Hub
     private static string BuildPromptWithHistory(string message, ChatHistoryEntry[]? history)
     {
         var sb = new StringBuilder();
+        sb.Append("[Server clock: ")
+            .Append(DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"))
+            .AppendLine(" UTC]");
         if (history != null && history.Length > 0)
         {
             foreach (var entry in history)
