@@ -109,6 +109,22 @@ public class FacesControllerConfigTests : IClassFixture<CustomWebApplicationFact
     }
 
     [Fact]
+    public async Task GetFacesConfig_ShouldListPrivateAndPublicFaces_WhenGlobalAdminOnPublicScope()
+    {
+        using var publicFace = _factory.CreateFaceClient("public");
+        var token = await IntegrationTestSeed.GetSuperAdminAccessTokenAsync(publicFace);
+        publicFace.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await publicFace.GetAsync("/api/faces/config");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var facesConfig = await response.Content.ReadFromJsonAsync<JsonElement[]>();
+        facesConfig.Should().NotBeNull();
+        var indices = facesConfig!.Select(f => f.GetProperty("index").GetString()).ToList();
+        indices.Should().Contain("public");
+        indices.Should().Contain("basic");
+    }
+
+    [Fact]
     public async Task GetFacesConfig_ShouldListAllSeededFaces_WhenGlobalAdminOnAdminScope()
     {
         using var admin = _factory.CreateFaceClient("admin");

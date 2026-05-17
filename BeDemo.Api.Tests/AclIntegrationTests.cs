@@ -41,6 +41,9 @@ public class AclIntegrationTests : IClassFixture<CustomWebApplicationFactory<Pro
         _unscoped.Dispose();
     }
 
+    private static int PublicFaceIdFromConfig(JsonElement[] cfg) =>
+        cfg.First(f => f.GetProperty("index").GetString() == "public").GetProperty("id").GetInt32();
+
     private static bool JsonArrayContainsRoleName(JsonElement arr, string name)
     {
         foreach (var el in arr.EnumerateArray())
@@ -127,7 +130,7 @@ public class AclIntegrationTests : IClassFixture<CustomWebApplicationFactory<Pro
 
         var cfg = await _publicFace.GetFromJsonAsync<JsonElement[]>("/api/faces/config");
         cfg.Should().NotBeNull();
-        var faceId = cfg![0].GetProperty("id").GetInt32();
+        var faceId = PublicFaceIdFromConfig(cfg!);
 
         var put = await _publicFace.PutAsJsonAsync($"/api/faces/{faceId}/my-role", new { userRoleId = faceAdminId });
         put.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -147,7 +150,7 @@ public class AclIntegrationTests : IClassFixture<CustomWebApplicationFactory<Pro
 
         var cfg = await _publicFace.GetFromJsonAsync<JsonElement[]>("/api/faces/config");
         cfg.Should().NotBeNull();
-        var faceId = cfg![0].GetProperty("id").GetInt32();
+        var faceId = PublicFaceIdFromConfig(cfg!);
 
         var put = await _publicFace.PutAsJsonAsync($"/api/faces/{faceId}/my-role", new { userRoleId = faceUserId });
         put.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -196,7 +199,7 @@ public class AclIntegrationTests : IClassFixture<CustomWebApplicationFactory<Pro
         faceUserId.Should().NotBeNull();
 
         var cfg = await _publicFace.GetFromJsonAsync<JsonElement[]>("/api/faces/config");
-        var faceId = cfg![0].GetProperty("id").GetInt32();
+        var faceId = PublicFaceIdFromConfig(cfg!);
         (await _publicFace.PutAsJsonAsync($"/api/faces/{faceId}/my-role", new { userRoleId = faceUserId }))
             .StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -273,7 +276,7 @@ public class AclIntegrationTests : IClassFixture<CustomWebApplicationFactory<Pro
         var tenantToken = await AclTestClients.RegisterAndGetTokenAsync(_factory, _oauth);
         _publicFace.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tenantToken);
         var cfg = await _publicFace.GetFromJsonAsync<JsonElement[]>("/api/faces/config");
-        var faceId = cfg![0].GetProperty("id").GetInt32();
+        var faceId = PublicFaceIdFromConfig(cfg!);
 
         var r1 = await _publicFace.PutAsJsonAsync($"/api/faces/{faceId}/my-role", new { userRoleId = 0 });
         r1.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -288,7 +291,7 @@ public class AclIntegrationTests : IClassFixture<CustomWebApplicationFactory<Pro
         var tenantToken = await AclTestClients.RegisterAndGetTokenAsync(_factory, _oauth);
         _publicFace.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tenantToken);
         var cfg = await _publicFace.GetFromJsonAsync<JsonElement[]>("/api/faces/config");
-        var faceId = cfg![0].GetProperty("id").GetInt32();
+        var faceId = PublicFaceIdFromConfig(cfg!);
 
         int globalUserRoleId;
         using (var scope = _factory.Services.CreateScope())
@@ -325,7 +328,7 @@ public class AclIntegrationTests : IClassFixture<CustomWebApplicationFactory<Pro
         var roleId = JsonArrayRoleIdByName(arr!, roleName);
         roleId.Should().NotBeNull("role {0} must appear in tenant face-roles list", roleName);
         var cfg = await _publicFace.GetFromJsonAsync<JsonElement[]>("/api/faces/config");
-        var faceId = cfg![0].GetProperty("id").GetInt32();
+        var faceId = PublicFaceIdFromConfig(cfg!);
         var put = await _publicFace.PutAsJsonAsync($"/api/faces/{faceId}/my-role", new { userRoleId = roleId });
         put.StatusCode.Should().Be(HttpStatusCode.OK, "self-assign {0} should succeed", roleName);
     }

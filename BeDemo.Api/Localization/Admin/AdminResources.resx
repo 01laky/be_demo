@@ -146,7 +146,22 @@
     <value>No messages in this thread yet. Send the first message below.</value>
   </data>
   <data name="pages.chat.waitingForAi" xml:space="preserve">
-    <value>Waiting for AI response…</value>
+    <value>Generating response…</value>
+  </data>
+  <data name="pages.chat.waitingForAiElapsed" xml:space="preserve">
+    <value>{{seconds}} s elapsed — local CPU model; a reply can take 1–5 min. RAM may stay flat while computing.</value>
+  </data>
+  <data name="pages.chat.modelStatusReady" xml:space="preserve">
+    <value>Model ready · {{model}}</value>
+  </data>
+  <data name="pages.chat.modelStatusLoading" xml:space="preserve">
+    <value>Model loading…</value>
+  </data>
+  <data name="pages.chat.modelStatusUnavailable" xml:space="preserve">
+    <value>Model unavailable</value>
+  </data>
+  <data name="pages.chat.modelStatusUnknown" xml:space="preserve">
+    <value>Model status unknown</value>
   </data>
   <data name="pages.chat.modelLoading" xml:space="preserve">
     <value>The AI model is still loading into memory. Chat will be available when loading finishes (first run may take several minutes).</value>

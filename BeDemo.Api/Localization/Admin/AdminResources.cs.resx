@@ -146,7 +146,22 @@
     <value>V této konverzaci zatím nejsou zprávy. Napište první zprávu níže.</value>
   </data>
   <data name="pages.chat.waitingForAi" xml:space="preserve">
-    <value>Čeká se na odpověď AI…</value>
+    <value>Generuji odpověď…</value>
+  </data>
+  <data name="pages.chat.waitingForAiElapsed" xml:space="preserve">
+    <value>Už {{seconds}} s — lokální model na CPU, odpověď může trvat 1–5 min. RAM nemusí výrazně růst.</value>
+  </data>
+  <data name="pages.chat.modelStatusReady" xml:space="preserve">
+    <value>Model připraven · {{model}}</value>
+  </data>
+  <data name="pages.chat.modelStatusLoading" xml:space="preserve">
+    <value>Model se načítá…</value>
+  </data>
+  <data name="pages.chat.modelStatusUnavailable" xml:space="preserve">
+    <value>Model nedostupný</value>
+  </data>
+  <data name="pages.chat.modelStatusUnknown" xml:space="preserve">
+    <value>Stav modelu neznámý</value>
   </data>
   <data name="pages.chat.modelLoading" xml:space="preserve">
     <value>AI model se stále načítá do paměti. Chat bude dostupný po dokončení načítání (první spuštění může trvat několik minut).</value>

@@ -99,8 +99,10 @@ public class FacesController : ControllerBase
     /// <summary>
     /// GET /api/faces-config
     /// Get all faces with their pages configuration
-    /// - For authenticated users: returns only private faces (IsPublic = false)
-    /// - For anonymous users: returns only public faces (IsPublic = true)
+    /// - For anonymous users on the public tenant: all public faces.
+    /// - For authenticated users on the public tenant: public faces plus private faces they may enter
+    ///   (all faces for global Admin/SuperAdmin; otherwise faces with a <see cref="UserFaceRole"/> row).
+    /// - For other tenants: the single face matching the URL scope.
     /// Used by frontend to generate routes before router initialization
     /// </summary>
     [HttpGet("config")]
@@ -113,7 +115,9 @@ public class FacesController : ControllerBase
             // - Admin URL + global admin JWT: full graph (all faces) for admin SPA.
             // - Admin URL + anyone else: Forbid (private face + enforcement already blocks anonymous).
             // - Public tenant + anonymous: all public faces (landing / directory across public tenants only).
-            // - Otherwise (private tenant, or authenticated on a public tenant): single scoped face only.
+            // - Public tenant + authenticated: public faces + private faces the user may use (portal switcher).
+            // - Otherwise (private tenant): single scoped face only.
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             List<Face> faces;
             if (_faceScope.IsAdminFaceScope)
             {
@@ -139,6 +143,39 @@ public class FacesController : ControllerBase
                     .OrderBy(f => f.Index)
                     .ToListAsync();
             }
+            else if (_faceScope.IsPublicFace)
+            {
+                IQueryable<Face> query = _context.Faces
+                    .Include(f => f.Pages)
+                    .ThenInclude(p => p.PageType)
+                    .Include(f => f.Pages)
+                    .ThenInclude(p => p.RouteTranslations);
+
+                if (!string.IsNullOrEmpty(userId) && IsGlobalAdmin())
+                {
+                    faces = await query.OrderBy(f => f.Index).ToListAsync();
+                }
+                else if (!string.IsNullOrEmpty(userId))
+                {
+                    var privateFaceIds = await _context.UserFaceRoles
+                        .AsNoTracking()
+                        .Where(ufr => ufr.UserId == userId)
+                        .Select(ufr => ufr.FaceId)
+                        .ToListAsync();
+
+                    faces = await query
+                        .Where(f => f.IsPublic || privateFaceIds.Contains(f.Id))
+                        .OrderBy(f => f.Index)
+                        .ToListAsync();
+                }
+                else
+                {
+                    faces = await query
+                        .Where(f => f.IsPublic)
+                        .OrderBy(f => f.Index)
+                        .ToListAsync();
+                }
+            }
             else
             {
                 faces = await _context.Faces
@@ -151,7 +188,6 @@ public class FacesController : ControllerBase
                     .ToListAsync();
             }
 
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             Dictionary<int, (int RoleId, string RoleName)>? myFaceRoles = null;
             Dictionary<int, (bool Visited, bool FaceRoleIntroCompleted)>? myFaceState = null;
             if (!string.IsNullOrEmpty(userId))

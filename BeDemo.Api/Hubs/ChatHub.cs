@@ -277,7 +277,7 @@ public class ChatHub : Hub
                 if (string.IsNullOrEmpty(liveUrl))
                 {
                     aiResponse =
-                        "Live statistics mode is not configured on the server (AiStats:PublicSnapshotAbsoluteUrl). Use inline mode or contact an administrator.";
+                        "Režim live nie je nakonfigurovaný na serveri. Použite inline v Nastaveniach alebo kontaktujte administrátora.";
                 }
                 else
                 {
@@ -290,6 +290,21 @@ public class ChatHub : Hub
                         maxNewTokens: maxTokens,
                         cancellationToken: Context.ConnectionAborted);
                 }
+
+                if (OperatorAiResponseGuard.IsInfrastructureFailure(aiResponse))
+                {
+                    _logger.LogWarning(
+                        "Live stats fetch failed for conversation {ConversationId}, falling back to inline. Detail: {Detail}",
+                        conversationId,
+                        aiResponse.Length > 200 ? aiResponse[..200] : aiResponse);
+                    var snapshot = await _platformStats.GetPublicSnapshotAsync(Context.ConnectionAborted);
+                    var json = JsonSerializer.Serialize(snapshot, PublicStatsJsonOptions);
+                    aiResponse = await _aiGrpcService.GenerateAsync(
+                        prompt,
+                        maxNewTokens: maxTokens,
+                        statsContextJson: json,
+                        cancellationToken: Context.ConnectionAborted);
+                }
             }
             else
                 aiResponse = await _aiGrpcService.GenerateAsync(prompt, maxNewTokens: maxTokens, cancellationToken: Context.ConnectionAborted);
@@ -300,17 +315,23 @@ public class ChatHub : Hub
         catch (Exception ex)
         {
             _logger.LogError(ex, "SendToAiWithOperatorStats failed for user {UserId}", userId);
-            aiResponse = "Error: AI service is currently unavailable. Please try again later.";
+            aiResponse =
+                "Ospravedlňujem sa, AI služba momentálne nie je dostupná. Skúste to prosím neskôr.";
         }
 
-        if (IsTransientAiStatusMessage(aiResponse))
+        if (OperatorAiResponseGuard.ShouldNotPersist(aiResponse))
         {
             _logger.LogWarning(
-                "Transient AI status returned for conversation {ConversationId}, not persisting.",
+                "Non-chat AI status returned for conversation {ConversationId}, not persisting.",
                 conversationId);
-            await Clients.Caller.SendAsync("ReceiveAiMessage", trimmed, aiResponse);
+            await Clients.Caller.SendAsync(
+                "ReceiveAiMessage",
+                trimmed,
+                OperatorAiResponseGuard.ToUserFacingMessage(aiResponse));
             return;
         }
+
+        aiResponse = OperatorAiResponseGuard.ToUserFacingMessage(aiResponse);
 
         var (userDto, assistantDto) = await _operatorAi.AppendExchangeAsync(
             conversationId,
@@ -335,18 +356,6 @@ public class ChatHub : Hub
 
         await Clients.Group(OperatorAiHubGroups.Operators).SendAsync("OperatorAiMessageAppended", appended);
         await Clients.Group(OperatorAiHubGroups.Operators).SendAsync("OperatorAiConversationListChanged", updatedConversation);
-    }
-
-    /// <summary>Temporary AI status text — must not be stored as a conversation turn.</summary>
-    private static bool IsTransientAiStatusMessage(string? text)
-    {
-        if (string.IsNullOrWhiteSpace(text))
-            return false;
-        return text.Contains("načítava", StringComparison.OrdinalIgnoreCase)
-            || text.Contains("nacitava", StringComparison.OrdinalIgnoreCase)
-            || text.Contains("MODEL_LOAD", StringComparison.OrdinalIgnoreCase)
-            || text.Contains("AI service unavailable", StringComparison.OrdinalIgnoreCase)
-            || text.Contains("AI služba nie je dostupná", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string BuildPromptWithHistory(string message, ChatHistoryEntry[]? history)
