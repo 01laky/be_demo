@@ -237,6 +237,16 @@ public class ChatHub : Hub
             return;
         }
 
+        var modelStatus = await _aiGrpcService.GetModelStatusAsync(Context.ConnectionAborted);
+        if (!modelStatus.Ready)
+        {
+            var waitMessage = modelStatus.Unavailable
+                ? "AI služba nie je dostupná. Skúste to prosím neskôr."
+                : "⏳ AI model sa stále načítava. Počkajte prosím chvíľu a skúste znova.";
+            await Clients.Caller.SendAsync("ReceiveAiMessage", trimmed, waitMessage);
+            return;
+        }
+
         var mode = (statsMode ?? "off").Trim().ToLowerInvariant();
         if (mode is not ("off" or "inline" or "live"))
             mode = "off";
@@ -293,6 +303,15 @@ public class ChatHub : Hub
             aiResponse = "Error: AI service is currently unavailable. Please try again later.";
         }
 
+        if (IsTransientAiStatusMessage(aiResponse))
+        {
+            _logger.LogWarning(
+                "Transient AI status returned for conversation {ConversationId}, not persisting.",
+                conversationId);
+            await Clients.Caller.SendAsync("ReceiveAiMessage", trimmed, aiResponse);
+            return;
+        }
+
         var (userDto, assistantDto) = await _operatorAi.AppendExchangeAsync(
             conversationId,
             userId,
@@ -316,6 +335,18 @@ public class ChatHub : Hub
 
         await Clients.Group(OperatorAiHubGroups.Operators).SendAsync("OperatorAiMessageAppended", appended);
         await Clients.Group(OperatorAiHubGroups.Operators).SendAsync("OperatorAiConversationListChanged", updatedConversation);
+    }
+
+    /// <summary>Temporary AI status text — must not be stored as a conversation turn.</summary>
+    private static bool IsTransientAiStatusMessage(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return false;
+        return text.Contains("načítava", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("nacitava", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("MODEL_LOAD", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("AI service unavailable", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("AI služba nie je dostupná", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string BuildPromptWithHistory(string message, ChatHistoryEntry[]? history)

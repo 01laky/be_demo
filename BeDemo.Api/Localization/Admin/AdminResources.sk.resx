@@ -142,6 +142,27 @@
   <data name="pages.chat.placeholder" xml:space="preserve">
     <value>Napíšte správu...</value>
   </data>
+  <data name="pages.chat.emptyThread" xml:space="preserve">
+    <value>V tejto konverzácii zatiaľ nie sú správy. Napíšte prvú správu nižšie.</value>
+  </data>
+  <data name="pages.chat.waitingForAi" xml:space="preserve">
+    <value>Čaká sa na odpoveď AI…</value>
+  </data>
+  <data name="pages.chat.modelLoading" xml:space="preserve">
+    <value>AI model sa stále načítava do pamäte. Chat bude dostupný po dokončení načítania (prvé spustenie môže trvať niekoľko minút).</value>
+  </data>
+  <data name="pages.chat.modelLoadingPlaceholder" xml:space="preserve">
+    <value>AI model sa načítava…</value>
+  </data>
+  <data name="pages.chat.modelUnavailable" xml:space="preserve">
+    <value>AI služba nie je dostupná. Skúste to neskôr alebo kontaktujte administrátora.</value>
+  </data>
+  <data name="pages.chat.loadingMessages" xml:space="preserve">
+    <value>Načítavajú sa správy…</value>
+  </data>
+  <data name="pages.chat.errorGeneric" xml:space="preserve">
+    <value>Nepodarilo sa získať odpoveď AI. Skúste to znova.</value>
+  </data>
   <data name="pages.chat.send" xml:space="preserve">
     <value>Odoslať</value>
   </data>

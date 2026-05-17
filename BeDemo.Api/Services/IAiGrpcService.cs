@@ -40,7 +40,15 @@ public interface IAiGrpcService
     Task<AiContentReviewResult> ReviewContentAsync(
         AiContentReviewRequest request,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lightweight readiness probe (gRPC HealthCheck JSON in <c>message</c>).
+    /// </summary>
+    Task<AiModelStatus> GetModelStatusAsync(CancellationToken cancellationToken = default);
 }
+
+/// <summary>Local Qwen model readiness reported by many_faces_ai HealthCheck.</summary>
+public sealed record AiModelStatus(bool Ready, bool Loading, bool Unavailable, string? ModelName);
 
 public sealed record AiContentReviewRequest(
     ModeratedContentType ContentType,

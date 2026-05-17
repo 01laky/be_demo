@@ -6,6 +6,7 @@
  * Recreates the channel on connection failures (e.g. after AI container restart).
  */
 
+using System.Text.Json;
 using Grpc.Core;
 using Grpc.Net.Client;
 using BeDemo.Api.Models;
@@ -205,6 +206,69 @@ public class AiGrpcService : IAiGrpcService, IDisposable
         }
 
         return "Error: AI service unavailable";
+    }
+
+    /// <inheritdoc />
+    public async Task<AiModelStatus> GetModelStatusAsync(CancellationToken cancellationToken = default)
+    {
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(TimeSpan.FromSeconds(15));
+        var callOptions = new CallOptions(deadline: DateTime.UtcNow.AddSeconds(15), cancellationToken: cts.Token);
+
+        for (var attempt = 1; attempt <= 2; attempt++)
+        {
+            try
+            {
+                var channel = GetOrCreateChannel();
+                var client = new HealthService.HealthServiceClient(channel);
+                var response = await client.HealthCheckAsync(new HealthCheckRequest(), callOptions);
+                return ParseModelStatus(response.Message);
+            }
+            catch (RpcException ex) when (ex.StatusCode == StatusCode.Unavailable || ex.StatusCode == StatusCode.Unimplemented)
+            {
+                _logger.LogWarning(ex, "HealthCheck gRPC unavailable (attempt {Attempt})", attempt);
+                InvalidateChannel();
+                if (attempt == 2)
+                    return new AiModelStatus(false, false, true, null);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "HealthCheck failed");
+                return new AiModelStatus(false, false, true, null);
+            }
+        }
+
+        return new AiModelStatus(false, false, true, null);
+    }
+
+    private static AiModelStatus ParseModelStatus(string? message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+            return new AiModelStatus(false, true, false, null);
+
+        var trimmed = message.Trim();
+        if (!trimmed.StartsWith('{'))
+            return new AiModelStatus(false, true, false, null);
+
+        try
+        {
+            using var doc = JsonDocument.Parse(trimmed);
+            var root = doc.RootElement;
+            var ready = root.TryGetProperty("ready", out var r) && r.GetBoolean();
+            var loading = root.TryGetProperty("loading", out var l) && l.GetBoolean();
+            var unavailable = root.TryGetProperty("unavailable", out var u) && u.GetBoolean();
+            if (root.TryGetProperty("error", out var err) && err.ValueKind == JsonValueKind.String
+                && !string.IsNullOrWhiteSpace(err.GetString()))
+                unavailable = true;
+            string? modelName = null;
+            if (root.TryGetProperty("modelName", out var m) && m.ValueKind == JsonValueKind.String)
+                modelName = m.GetString();
+            return new AiModelStatus(ready, loading, unavailable, modelName);
+        }
+        catch (JsonException)
+        {
+            return new AiModelStatus(false, true, false, null);
+        }
     }
 
     public async Task<AiContentReviewResult> ReviewContentAsync(

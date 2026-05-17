@@ -215,5 +215,8 @@ public class ContentModerationPayloadLogRedactionTests
                     "m",
                     "t"),
                 null));
+
+        public Task<AiModelStatus> GetModelStatusAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult(new AiModelStatus(true, false, false, "test-model"));
     }
 }

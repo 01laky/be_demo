@@ -190,5 +190,8 @@ public sealed class ContentModerationProductionPathTests
             LastReviewRequest = request;
             return Task.FromResult(new AiContentReviewResult(_recommendation, null));
         }
+
+        public Task<AiModelStatus> GetModelStatusAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult(new AiModelStatus(true, false, false, "test-model"));
     }
 }

@@ -49,4 +49,17 @@ public sealed class OperatorAiConversationsControllerTests : IClassFixture<Custo
         var delete = await client.DeleteAsync($"/api/operator-ai/conversations/{created.Id}");
         delete.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
+
+    [Fact]
+    public async Task Model_status_on_admin_face_scope()
+    {
+        var client = _factory.CreateFaceClient("admin");
+        var token = await IntegrationTestSeed.GetAdminAccessTokenAsync(client);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await client.GetAsync("/api/operator-ai/model-status");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var status = await response.Content.ReadFromJsonAsync<OperatorAiModelStatusDto>();
+        status.Should().NotBeNull();
+    }
 }

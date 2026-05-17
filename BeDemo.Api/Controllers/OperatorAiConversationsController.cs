@@ -17,19 +17,38 @@ public sealed class OperatorAiConversationsController : ControllerBase
 {
     private readonly IAccessEvaluator _access;
     private readonly IOperatorAiConversationService _operatorAi;
+    private readonly IAiGrpcService _aiGrpc;
     private readonly IHubContext<ChatHub> _hub;
     private readonly ILogger<OperatorAiConversationsController> _logger;
 
     public OperatorAiConversationsController(
         IAccessEvaluator access,
         IOperatorAiConversationService operatorAi,
+        IAiGrpcService aiGrpc,
         IHubContext<ChatHub> hub,
         ILogger<OperatorAiConversationsController> logger)
     {
         _access = access;
         _operatorAi = operatorAi;
+        _aiGrpc = aiGrpc;
         _hub = hub;
         _logger = logger;
+    }
+
+    [HttpGet("~/api/operator-ai/model-status")]
+    public async Task<ActionResult<OperatorAiModelStatusDto>> GetModelStatus(CancellationToken cancellationToken)
+    {
+        if (!RequireOperator())
+            return Forbid();
+
+        var status = await _aiGrpc.GetModelStatusAsync(cancellationToken);
+        return Ok(new OperatorAiModelStatusDto
+        {
+            Ready = status.Ready,
+            Loading = status.Loading,
+            Unavailable = status.Unavailable,
+            ModelName = status.ModelName,
+        });
     }
 
     [HttpGet]

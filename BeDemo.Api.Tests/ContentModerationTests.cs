@@ -1198,6 +1198,9 @@ public class ContentModerationTests : IClassFixture<CustomWebApplicationFactory<
                 ? new AiContentReviewResult(null, _error)
                 : new AiContentReviewResult(_recommendation, null));
         }
+
+        public Task<AiModelStatus> GetModelStatusAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult(new AiModelStatus(true, false, false, "test-model"));
     }
 
     private sealed class CapturingRedisJobQueue : IRedisJobQueue

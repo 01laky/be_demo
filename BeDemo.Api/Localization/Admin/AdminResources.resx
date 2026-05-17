@@ -142,6 +142,27 @@
   <data name="pages.chat.placeholder" xml:space="preserve">
     <value>Type a message...</value>
   </data>
+  <data name="pages.chat.emptyThread" xml:space="preserve">
+    <value>No messages in this thread yet. Send the first message below.</value>
+  </data>
+  <data name="pages.chat.waitingForAi" xml:space="preserve">
+    <value>Waiting for AI response…</value>
+  </data>
+  <data name="pages.chat.modelLoading" xml:space="preserve">
+    <value>The AI model is still loading into memory. Chat will be available when loading finishes (first run may take several minutes).</value>
+  </data>
+  <data name="pages.chat.modelLoadingPlaceholder" xml:space="preserve">
+    <value>AI model is loading…</value>
+  </data>
+  <data name="pages.chat.modelUnavailable" xml:space="preserve">
+    <value>The AI service is unavailable. Try again later or contact an administrator.</value>
+  </data>
+  <data name="pages.chat.loadingMessages" xml:space="preserve">
+    <value>Loading messages…</value>
+  </data>
+  <data name="pages.chat.errorGeneric" xml:space="preserve">
+    <value>Could not get an AI response. Please try again.</value>
+  </data>
   <data name="pages.chat.send" xml:space="preserve">
     <value>Send</value>
   </data>
