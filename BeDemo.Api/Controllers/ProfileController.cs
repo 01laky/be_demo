@@ -227,7 +227,7 @@ public class ProfileController : ControllerBase
         var fileName = faceId.HasValue ? $"face_{faceId.Value}{ext}" : $"global{ext}";
         if (!UploadPathSecurity.TryResolveFileUnderWebRoot(
                 webRoot,
-                [..AvatarDirSegments, userId],
+                [.. AvatarDirSegments, userId],
                 fileName,
                 out var fullPath,
                 out var pathError))
