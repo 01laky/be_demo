@@ -631,6 +631,9 @@ public class FacesController : ControllerBase
         try
         {
             // Check if index already exists
+            if (FaceScopeConstants.IsAdminFaceIndex(model.Index))
+                return BadRequest(new { error = "The admin index is reserved for the platform scope face" });
+
             var existingFace = await _context.Faces.FirstOrDefaultAsync(f => f.Index == model.Index);
             if (existingFace != null)
             {
@@ -734,6 +737,12 @@ public class FacesController : ControllerBase
                 _logger.LogWarning("Face not found for update: {FaceId}", id);
                 return NotFound(new { error = "Face not found" });
             }
+
+            if (FaceScopeConstants.IsAdminFaceIndex(face.Index))
+                return BadRequest(new { error = "The admin scope face cannot be modified" });
+
+            if (model.Index != null && FaceScopeConstants.IsAdminFaceIndex(model.Index))
+                return BadRequest(new { error = "The admin index is reserved for the platform scope face" });
 
             // Check if index already exists (excluding current face)
             if (model.Index != null && model.Index != face.Index)

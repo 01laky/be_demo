@@ -70,6 +70,9 @@
   <data name="common.cancel" xml:space="preserve">
     <value>Zrušiť</value>
   </data>
+  <data name="common.ok" xml:space="preserve">
+    <value>OK</value>
+  </data>
   <data name="common.delete" xml:space="preserve">
     <value>Vymazať</value>
   </data>
@@ -1326,6 +1329,9 @@
   </data>
   <data name="pages.logout.title" xml:space="preserve">
     <value>Odhlásiť</value>
+  </data>
+  <data name="pages.logout.confirmMessage" xml:space="preserve">
+    <value>Naozaj sa chcete odhlásiť?</value>
   </data>
   <data name="pages.moderation.title" xml:space="preserve">
     <value>Moderácia</value>
