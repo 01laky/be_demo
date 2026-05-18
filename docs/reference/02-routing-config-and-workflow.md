@@ -167,4 +167,3 @@ dotnet ef migrations remove
 6. **View logs**: Check Docker logs or Seq UI
 
 7. **Stop services**: Run `./scripts/stop-dev.sh` or monorepo `./scripts/stop-all-dev.sh`
-

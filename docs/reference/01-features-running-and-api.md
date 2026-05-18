@@ -253,4 +253,3 @@ To perform a clean rebuild of Docker images:
 - `DELETE /api/pagetypes/{id}` - Delete page type
 
 For detailed API documentation, visit the Swagger UI at `http://localhost:8000/swagger` when the API is running.
-

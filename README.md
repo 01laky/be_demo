@@ -274,4 +274,4 @@ If you use a **standalone clone** of only `many_faces_backend` (no sibling `docs
 
 ### Git hooks (commitlint) in this submodule
 
-Husky + commitlint run via **Yarn** in this repo. After `git clone`, run **`yarn install`** once under `many_faces_backend/` so `.husky/commit-msg` can resolve `yarn exec commitlint` (see monorepo [`docs/guides/development.md`](../docs/guides/development.md) — *Git hooks*).
+Husky + commitlint run via **Yarn** in this repo. After `git clone`, run **`yarn install`** once under `many_faces_backend/` so `.husky/commit-msg` can resolve `yarn exec commitlint` (see monorepo [`docs/guides/development.md`](../docs/guides/development.md) — _Git hooks_).

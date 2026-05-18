@@ -13,15 +13,15 @@ Unless noted, endpoints below assume **`$BASE/api/stories`** as in the curl guid
 
 ## Endpoints (overview)
 
-| Method | Path | Auth | Notes |
-| ------ | ---- | ---- | ----- |
-| `POST` | `/api/stories` | Bearer | Create **draft**. Body may include `title`, optional `faceIds` (empty = all faces). |
-| `POST` | `/api/stories/{id}/images` | Bearer | **Multipart** upload; at least one image before publish. Fields: `file`, `sortOrder` (0–9), optional `description`. |
-| `POST` | `/api/stories/{id}/publish` | Bearer | Publish (immediate or scheduled). Body: `scheduledPublishAt` (ISO UTC or `null`). Worker may process job `story.publish` when scheduled. |
-| `GET` | `/api/stories?faceId={faceId}` | Bearer | List stories for a **face** (viewer / host rules apply). |
-| `GET` | `/api/stories/{id}?faceId=…` | Bearer | Story **detail** for a face context. |
-| `GET` | `/api/stories/me` | Bearer | Current user’s stories. |
-| `POST` | `/api/stories/{id}/view?faceId=…` | Bearer | Record a **view** (analytics). |
+| Method | Path                              | Auth   | Notes                                                                                                                                    |
+| ------ | --------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST` | `/api/stories`                    | Bearer | Create **draft**. Body may include `title`, optional `faceIds` (empty = all faces).                                                      |
+| `POST` | `/api/stories/{id}/images`        | Bearer | **Multipart** upload; at least one image before publish. Fields: `file`, `sortOrder` (0–9), optional `description`.                      |
+| `POST` | `/api/stories/{id}/publish`       | Bearer | Publish (immediate or scheduled). Body: `scheduledPublishAt` (ISO UTC or `null`). Worker may process job `story.publish` when scheduled. |
+| `GET`  | `/api/stories?faceId={faceId}`    | Bearer | List stories for a **face** (viewer / host rules apply).                                                                                 |
+| `GET`  | `/api/stories/{id}?faceId=…`      | Bearer | Story **detail** for a face context.                                                                                                     |
+| `GET`  | `/api/stories/me`                 | Bearer | Current user’s stories.                                                                                                                  |
+| `POST` | `/api/stories/{id}/view?faceId=…` | Bearer | Record a **view** (analytics).                                                                                                           |
 
 ## Likes and comments
 

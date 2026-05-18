@@ -685,5 +685,4 @@ erDiagram
     AspNetUsers ||--o{ UserProfiles : "has"
 ```
 
-
 <!-- END AUTO-GENERATED DATABASE DIAGRAM -->

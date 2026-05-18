@@ -33,6 +33,7 @@ dotnet test --filter "FullyQualifiedName~ContentModerationUnicodeSpoofing"
 dotnet test --filter "FullyQualifiedName~ContentModerationTrustBoundary"
 dotnet test --filter "FullyQualifiedName~ContentModerationPayloadLogRedaction"
 ```
+
 - **Static localization API** — `LocalizationControllerTests` (200/404, face-prefix exempt path); `LocalizationRateLimit429Tests` (`localization-read` policy → **429** + `Retry-After` via `RateLimitedLocalizationWebApplicationFactory`, serial xUnit collection). Each test host gets a unique `Testing:RateLimitScopeId` so rate-limit counters are not shared across parallel `WebApplicationFactory` instances.
 - **Portal golden subtree (§11.1)** — `LocalizationPortalGoldenTests` compares `resources.en.common` auth-flow paths (`pages.login`, `pages.register`, `routes.login|register|homepage`) against `BeDemo.Api.Tests/Fixtures/portal-auth-flow-golden.en.json`. Regenerate intentionally changed copy with `REGENERATE_LOCALIZATION_GOLDEN=1 dotnet test --filter RegeneratePortalAuthFlowGolden`.
 - **Ambiguous `.resx` prefixes (§4.2)** — `ResxLocalizationKeyAmbiguityTests` fails when any Portal/Admin/Mobile culture defines both a leaf key and a longer dotted child (e.g. `pages.login` + `pages.login.title`). Logic: `ResourceJsonUnflattener.FindAmbiguousFlatKeys`.
@@ -118,4 +119,3 @@ lsof -ti:8000,8001 | xargs kill -9
 - Ensure database is running and accessible
 - Check connection string configuration
 - Try removing and recreating migrations if needed
-
