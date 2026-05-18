@@ -1508,7 +1508,121 @@
     <value>Uživatel nebyl nalezen</value>
   </data>
   <data name="pages.userDetail.title" xml:space="preserve">
-    <value>Detail uživatele</value>
+    <value>Operátorská konzole uživatele</value>
+  </data>
+  <data name="pages.userDetail.globalRole" xml:space="preserve">
+    <value>Globální role</value>
+  </data>
+  <data name="pages.userDetail.badgeGlobalBan" xml:space="preserve">
+    <value>Globálně zablokován</value>
+  </data>
+  <data name="pages.userDetail.badgeFaceBans" xml:space="preserve">
+    <value>{{count}} zákaz(ů) ve face</value>
+  </data>
+  <data name="pages.userDetail.badgeEmailConfirmed" xml:space="preserve">
+    <value>Email potvrzen</value>
+  </data>
+  <data name="pages.userDetail.badgeEmailUnconfirmed" xml:space="preserve">
+    <value>Email nepotvrzen</value>
+  </data>
+  <data name="pages.userDetail.moderationTitle" xml:space="preserve">
+    <value>Globální moderace</value>
+  </data>
+  <data name="pages.userDetail.facesTitle" xml:space="preserve">
+    <value>Členství ve face</value>
+  </data>
+  <data name="pages.userDetail.faceColumnTitle" xml:space="preserve">
+    <value>Face</value>
+  </data>
+  <data name="pages.userDetail.faceColumnRole" xml:space="preserve">
+    <value>Role</value>
+  </data>
+  <data name="pages.userDetail.faceColumnStatus" xml:space="preserve">
+    <value>Stav</value>
+  </data>
+  <data name="pages.userDetail.faceBanned" xml:space="preserve">
+    <value>Zablokován ve face</value>
+  </data>
+  <data name="pages.userDetail.faceActive" xml:space="preserve">
+    <value>Aktivní</value>
+  </data>
+  <data name="pages.userDetail.noFaces" xml:space="preserve">
+    <value>Žádná členství ve face</value>
+  </data>
+  <data name="pages.userDetail.banReason" xml:space="preserve">
+    <value>Důvod zákazu</value>
+  </data>
+  <data name="pages.userDetail.banReasonHint" xml:space="preserve">
+    <value>Minimálně 10 znaků (povinné při zákazu)</value>
+  </data>
+  <data name="pages.userDetail.banReasonInvalid" xml:space="preserve">
+    <value>Důvod zákazu musí mít alespoň 10 znaků</value>
+  </data>
+  <data name="pages.userDetail.globalBan" xml:space="preserve">
+    <value>Globální zákaz</value>
+  </data>
+  <data name="pages.userDetail.globalUnban" xml:space="preserve">
+    <value>Zrušit globální zákaz</value>
+  </data>
+  <data name="pages.userDetail.faceBan" xml:space="preserve">
+    <value>Zákaz ve face</value>
+  </data>
+  <data name="pages.userDetail.faceUnban" xml:space="preserve">
+    <value>Zrušit zákaz ve face</value>
+  </data>
+  <data name="pages.userDetail.confirmGlobalBanTitle" xml:space="preserve">
+    <value>Potvrdit globální zákaz</value>
+  </data>
+  <data name="pages.userDetail.confirmGlobalBanMessage" xml:space="preserve">
+    <value>Uživatel se nebude moci přihlásit; aktivní relace budou zrušeny.</value>
+  </data>
+  <data name="pages.userDetail.confirmGlobalUnbanTitle" xml:space="preserve">
+    <value>Potvrdit zrušení globálního zákazu</value>
+  </data>
+  <data name="pages.userDetail.confirmGlobalUnbanMessage" xml:space="preserve">
+    <value>Uživatel se bude moci znovu přihlásit.</value>
+  </data>
+  <data name="pages.userDetail.confirmFaceBanTitle" xml:space="preserve">
+    <value>Potvrdit zákaz ve face</value>
+  </data>
+  <data name="pages.userDetail.confirmFaceBanMessage" xml:space="preserve">
+    <value>Uživatel nemůže používat tento face včetně messengeru.</value>
+  </data>
+  <data name="pages.userDetail.confirmFaceUnbanTitle" xml:space="preserve">
+    <value>Potvrdit zrušení zákazu ve face</value>
+  </data>
+  <data name="pages.userDetail.confirmFaceUnbanMessage" xml:space="preserve">
+    <value>Obnoví se přístup do tohoto face.</value>
+  </data>
+  <data name="pages.userDetail.platformMessageTitle" xml:space="preserve">
+    <value>Zpráva platformy</value>
+  </data>
+  <data name="pages.userDetail.platformMessageHint" xml:space="preserve">
+    <value>Doručeno jako DM viditelné pod každým face tohoto uživatele.</value>
+  </data>
+  <data name="pages.userDetail.platformMessagePlaceholder" xml:space="preserve">
+    <value>Zpráva pro uživatele…</value>
+  </data>
+  <data name="pages.userDetail.sendMessage" xml:space="preserve">
+    <value>Odeslat zprávu</value>
+  </data>
+  <data name="pages.userDetail.successGlobalBan" xml:space="preserve">
+    <value>Uživatel globálně zablokován</value>
+  </data>
+  <data name="pages.userDetail.successGlobalUnban" xml:space="preserve">
+    <value>Globální zákaz zrušen</value>
+  </data>
+  <data name="pages.userDetail.successFaceBan" xml:space="preserve">
+    <value>Zákaz ve face aplikován</value>
+  </data>
+  <data name="pages.userDetail.successFaceUnban" xml:space="preserve">
+    <value>Zákaz ve face zrušen</value>
+  </data>
+  <data name="pages.userDetail.successRole" xml:space="preserve">
+    <value>Role ve face aktualizována</value>
+  </data>
+  <data name="pages.userDetail.successMessage" xml:space="preserve">
+    <value>Zpráva odeslána</value>
   </data>
   <data name="pages.users.title" xml:space="preserve">
     <value>Uživatelé</value>

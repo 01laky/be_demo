@@ -1508,7 +1508,121 @@
     <value>User not found</value>
   </data>
   <data name="pages.userDetail.title" xml:space="preserve">
-    <value>User Details</value>
+    <value>User operator console</value>
+  </data>
+  <data name="pages.userDetail.globalRole" xml:space="preserve">
+    <value>Global role</value>
+  </data>
+  <data name="pages.userDetail.badgeGlobalBan" xml:space="preserve">
+    <value>Globally banned</value>
+  </data>
+  <data name="pages.userDetail.badgeFaceBans" xml:space="preserve">
+    <value>{{count}} face ban(s)</value>
+  </data>
+  <data name="pages.userDetail.badgeEmailConfirmed" xml:space="preserve">
+    <value>Email confirmed</value>
+  </data>
+  <data name="pages.userDetail.badgeEmailUnconfirmed" xml:space="preserve">
+    <value>Email not confirmed</value>
+  </data>
+  <data name="pages.userDetail.moderationTitle" xml:space="preserve">
+    <value>Global moderation</value>
+  </data>
+  <data name="pages.userDetail.facesTitle" xml:space="preserve">
+    <value>Face memberships</value>
+  </data>
+  <data name="pages.userDetail.faceColumnTitle" xml:space="preserve">
+    <value>Face</value>
+  </data>
+  <data name="pages.userDetail.faceColumnRole" xml:space="preserve">
+    <value>Role</value>
+  </data>
+  <data name="pages.userDetail.faceColumnStatus" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="pages.userDetail.faceBanned" xml:space="preserve">
+    <value>Banned in face</value>
+  </data>
+  <data name="pages.userDetail.faceActive" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="pages.userDetail.noFaces" xml:space="preserve">
+    <value>No face memberships</value>
+  </data>
+  <data name="pages.userDetail.banReason" xml:space="preserve">
+    <value>Ban reason</value>
+  </data>
+  <data name="pages.userDetail.banReasonHint" xml:space="preserve">
+    <value>At least 10 characters (required for bans)</value>
+  </data>
+  <data name="pages.userDetail.banReasonInvalid" xml:space="preserve">
+    <value>Ban reason must be at least 10 characters</value>
+  </data>
+  <data name="pages.userDetail.globalBan" xml:space="preserve">
+    <value>Global ban</value>
+  </data>
+  <data name="pages.userDetail.globalUnban" xml:space="preserve">
+    <value>Remove global ban</value>
+  </data>
+  <data name="pages.userDetail.faceBan" xml:space="preserve">
+    <value>Ban in face</value>
+  </data>
+  <data name="pages.userDetail.faceUnban" xml:space="preserve">
+    <value>Remove face ban</value>
+  </data>
+  <data name="pages.userDetail.confirmGlobalBanTitle" xml:space="preserve">
+    <value>Confirm global ban</value>
+  </data>
+  <data name="pages.userDetail.confirmGlobalBanMessage" xml:space="preserve">
+    <value>This locks the user out of the platform and revokes active sessions.</value>
+  </data>
+  <data name="pages.userDetail.confirmGlobalUnbanTitle" xml:space="preserve">
+    <value>Confirm global unban</value>
+  </data>
+  <data name="pages.userDetail.confirmGlobalUnbanMessage" xml:space="preserve">
+    <value>The user will be able to sign in again.</value>
+  </data>
+  <data name="pages.userDetail.confirmFaceBanTitle" xml:space="preserve">
+    <value>Confirm face ban</value>
+  </data>
+  <data name="pages.userDetail.confirmFaceBanMessage" xml:space="preserve">
+    <value>The user cannot use this face, including messenger, while banned.</value>
+  </data>
+  <data name="pages.userDetail.confirmFaceUnbanTitle" xml:space="preserve">
+    <value>Confirm face unban</value>
+  </data>
+  <data name="pages.userDetail.confirmFaceUnbanMessage" xml:space="preserve">
+    <value>Restore access to this face.</value>
+  </data>
+  <data name="pages.userDetail.platformMessageTitle" xml:space="preserve">
+    <value>Platform message</value>
+  </data>
+  <data name="pages.userDetail.platformMessageHint" xml:space="preserve">
+    <value>Delivered as a direct message visible under every face for this user.</value>
+  </data>
+  <data name="pages.userDetail.platformMessagePlaceholder" xml:space="preserve">
+    <value>Message to user…</value>
+  </data>
+  <data name="pages.userDetail.sendMessage" xml:space="preserve">
+    <value>Send message</value>
+  </data>
+  <data name="pages.userDetail.successGlobalBan" xml:space="preserve">
+    <value>User globally banned</value>
+  </data>
+  <data name="pages.userDetail.successGlobalUnban" xml:space="preserve">
+    <value>Global ban removed</value>
+  </data>
+  <data name="pages.userDetail.successFaceBan" xml:space="preserve">
+    <value>Face ban applied</value>
+  </data>
+  <data name="pages.userDetail.successFaceUnban" xml:space="preserve">
+    <value>Face ban removed</value>
+  </data>
+  <data name="pages.userDetail.successRole" xml:space="preserve">
+    <value>Face role updated</value>
+  </data>
+  <data name="pages.userDetail.successMessage" xml:space="preserve">
+    <value>Message sent</value>
   </data>
   <data name="pages.users.title" xml:space="preserve">
     <value>Users</value>
