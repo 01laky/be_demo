@@ -89,6 +89,12 @@ public sealed class OAuth2Service : IOAuth2Service
                     return null;
                 }
 
+                if (await userManager.IsLockedOutAsync(userByCreds).ConfigureAwait(false))
+                {
+                    _logger.LogWarning("Password grant rejected: user account is locked out ({UserId})", userByCreds.Id);
+                    return null;
+                }
+
                 var useRememberMe = request.RememberMe == true;
                 var (accessPw, minutesPw) = await _accessTokens.CreateAsync(userByCreds, useRememberMe).ConfigureAwait(false);
                 var refreshPlain = GenerateOpaqueRefreshToken();
@@ -126,6 +132,12 @@ public sealed class OAuth2Service : IOAuth2Service
                 if (userFromRefresh == null)
                 {
                     _logger.LogWarning("Refresh token referred to missing user {UserId}", redeem.UserId);
+                    return null;
+                }
+
+                if (await userManager.IsLockedOutAsync(userFromRefresh).ConfigureAwait(false))
+                {
+                    _logger.LogWarning("Refresh grant rejected: user account is locked out ({UserId})", userFromRefresh.Id);
                     return null;
                 }
 

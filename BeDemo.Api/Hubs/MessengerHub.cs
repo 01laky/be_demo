@@ -30,12 +30,18 @@ public class MessengerHub : Hub
     private readonly ApplicationDbContext _context;
     private readonly ILogger<MessengerHub> _logger;
     private readonly IFaceScopeContext _faceScope;
+    private readonly IFaceModerationService _faceModeration;
 
-    public MessengerHub(ApplicationDbContext context, ILogger<MessengerHub> logger, IFaceScopeContext faceScope)
+    public MessengerHub(
+        ApplicationDbContext context,
+        ILogger<MessengerHub> logger,
+        IFaceScopeContext faceScope,
+        IFaceModerationService faceModeration)
     {
         _context = context;
         _logger = logger;
         _faceScope = faceScope;
+        _faceModeration = faceModeration;
     }
 
     private string? UserId => Context.UserIdentifier ?? Context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -76,6 +82,9 @@ public class MessengerHub : Hub
             return;
 
         if (!await EnforceTenantSocialPairAsync(receiverId))
+            return;
+
+        if (_faceScope.IsAvailable && await _faceModeration.ShouldBlockPeerActivityInFaceAsync(UserId, _faceScope.FaceId))
             return;
 
         var sender = await _context.Users.FindAsync(UserId);

@@ -77,6 +77,9 @@ public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     /// <summary>Messages within <see cref="OperatorAiConversation"/>.</summary>
     public DbSet<OperatorAiMessage> OperatorAiMessages { get; set; } = null!;
 
+    /// <summary>Operator face-scoped bans (not peer <see cref="UserBlock"/>).</summary>
+    public DbSet<UserFaceModeration> UserFaceModerations { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -1118,6 +1121,26 @@ public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 .WithMany(c => c.Messages)
                 .HasForeignKey(e => e.ConversationId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<UserFaceModeration>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Reason).IsRequired().HasMaxLength(2000);
+            entity.Property(e => e.BannedAt).IsRequired();
+            entity.HasIndex(e => new { e.UserId, e.FaceId, e.LiftedAt });
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Face)
+                .WithMany()
+                .HasForeignKey(e => e.FaceId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.BannedByUser)
+                .WithMany()
+                .HasForeignKey(e => e.BannedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }
