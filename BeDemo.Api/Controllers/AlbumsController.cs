@@ -111,6 +111,7 @@ public class AlbumsController : ControllerBase
                 faces = a.AlbumFaces.Select(af => new { af.FaceId, af.Face.Title }),
                 likesCount = a.Likes.Count,
                 commentsCount = a.Comments.Count,
+                mediaCount = a.MediaItems.Count,
                 approvalStatus = a.ApprovalStatus.ToString(),
                 aiReviewStatus = a.AiReviewStatus.ToString(),
                 creatorStatusLabel = ContentModerationHelpers.CreatorStatusLabel(a.ApprovalStatus, a.AiReviewStatus),
@@ -132,6 +133,7 @@ public class AlbumsController : ControllerBase
         var album = await _context.Albums
             .Include(a => a.Creator)
             .Include(a => a.AlbumFaces).ThenInclude(af => af.Face)
+            .Include(a => a.MediaItems)
             .Include(a => a.Likes)
             .Include(a => a.Comments)
             .FirstOrDefaultAsync(a => a.Id == id);
@@ -176,6 +178,19 @@ public class AlbumsController : ControllerBase
             humanDecisionReason = showModerationFields ? album.HumanDecisionReason : null,
             submittedAtUtc = showModerationFields ? album.SubmittedAtUtc : null,
             creatorStatusLabel = ContentModerationHelpers.CreatorStatusLabel(album.ApprovalStatus, album.AiReviewStatus),
+            mediaCount = album.MediaItems.Count,
+            mediaItems = album.MediaItems
+                .OrderBy(m => m.SortOrder)
+                .Select(m => new
+                {
+                    m.Id,
+                    mediaType = m.MediaType.ToString(),
+                    m.ImageUrl,
+                    m.VideoUrl,
+                    m.ThumbnailUrl,
+                    m.SortOrder,
+                    m.Title,
+                }),
             album.CreatedAt,
             album.UpdatedAt,
         });
@@ -218,6 +233,7 @@ public class AlbumsController : ControllerBase
                 faces = a.AlbumFaces.Select(af => new { af.FaceId, af.Face.Title }),
                 likesCount = a.Likes.Count,
                 commentsCount = a.Comments.Count,
+                mediaCount = a.MediaItems.Count,
                 approvalStatus = a.ApprovalStatus.ToString(),
                 aiReviewStatus = a.AiReviewStatus.ToString(),
                 creatorStatusLabel = ContentModerationHelpers.CreatorStatusLabel(a.ApprovalStatus, a.AiReviewStatus),

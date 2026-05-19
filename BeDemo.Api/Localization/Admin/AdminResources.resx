@@ -70,6 +70,9 @@
   <data name="common.cancel" xml:space="preserve">
     <value>Cancel</value>
   </data>
+  <data name="common.error" xml:space="preserve">
+    <value>Something went wrong.</value>
+  </data>
   <data name="common.ok" xml:space="preserve">
     <value>OK</value>
   </data>
@@ -1531,6 +1534,99 @@
   <data name="pages.albumDetail.title" xml:space="preserve">
     <value>Album details</value>
   </data>
+  <data name="pages.albumDetail.albumId" xml:space="preserve">
+    <value>Album ID</value>
+  </data>
+  <data name="pages.albumDetail.approve" xml:space="preserve">
+    <value>Approve</value>
+  </data>
+  <data name="pages.albumDetail.reject" xml:space="preserve">
+    <value>Reject</value>
+  </data>
+  <data name="pages.albumDetail.remove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="pages.albumDetail.deleteAlbum" xml:space="preserve">
+    <value>Delete album</value>
+  </data>
+  <data name="pages.albumDetail.deleteMedia" xml:space="preserve">
+    <value>Delete item</value>
+  </data>
+  <data name="pages.albumDetail.deleteFromPreview" xml:space="preserve">
+    <value>Delete this item</value>
+  </data>
+  <data name="pages.albumDetail.openChat" xml:space="preserve">
+    <value>Open chat</value>
+  </data>
+  <data name="pages.albumDetail.viewCreator" xml:space="preserve">
+    <value>View creator</value>
+  </data>
+  <data name="pages.albumDetail.openInQueue" xml:space="preserve">
+    <value>Open in moderation queue</value>
+  </data>
+  <data name="pages.albumDetail.overviewSection" xml:space="preserve">
+    <value>Overview</value>
+  </data>
+  <data name="pages.albumDetail.moderationSection" xml:space="preserve">
+    <value>Moderation</value>
+  </data>
+  <data name="pages.albumDetail.messagesSection" xml:space="preserve">
+    <value>Messages &amp; audit</value>
+  </data>
+  <data name="pages.albumDetail.mediaSection" xml:space="preserve">
+    <value>Media</value>
+  </data>
+  <data name="pages.albumDetail.mediaEmpty" xml:space="preserve">
+    <value>No media items in this album.</value>
+  </data>
+  <data name="pages.albumDetail.mediaCountLabel" xml:space="preserve">
+    <value>{{count}} items</value>
+  </data>
+  <data name="pages.albumDetail.videoBadge" xml:space="preserve">
+    <value>Video</value>
+  </data>
+  <data name="pages.albumDetail.previewPrev" xml:space="preserve">
+    <value>Previous</value>
+  </data>
+  <data name="pages.albumDetail.previewNext" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="pages.albumDetail.previewCounter" xml:space="preserve">
+    <value>{{current}} / {{total}}</value>
+  </data>
+  <data name="pages.albumDetail.reasonLabel" xml:space="preserve">
+    <value>Internal reason (audit)</value>
+  </data>
+  <data name="pages.albumDetail.userMessageLabel" xml:space="preserve">
+    <value>Message to creator</value>
+  </data>
+  <data name="pages.albumDetail.copyReasonToUserMessage" xml:space="preserve">
+    <value>Copy reason to user message</value>
+  </data>
+  <data name="pages.albumDetail.validationRequired" xml:space="preserve">
+    <value>This field is required.</value>
+  </data>
+  <data name="pages.albumDetail.validationMin" xml:space="preserve">
+    <value>Enter at least 10 characters.</value>
+  </data>
+  <data name="pages.albumDetail.validationMax" xml:space="preserve">
+    <value>Maximum 2000 characters.</value>
+  </data>
+  <data name="pages.albumDetail.successApprove" xml:space="preserve">
+    <value>Album approved.</value>
+  </data>
+  <data name="pages.albumDetail.successReject" xml:space="preserve">
+    <value>Album rejected; creator notified when messenger is available.</value>
+  </data>
+  <data name="pages.albumDetail.successDeleteAlbum" xml:space="preserve">
+    <value>Album deleted.</value>
+  </data>
+  <data name="pages.albumDetail.successDeleteMedia" xml:space="preserve">
+    <value>Media item deleted.</value>
+  </data>
+  <data name="pages.albumsTable.mediaCount" xml:space="preserve">
+    <value>Media</value>
+  </data>
   <data name="pages.albumsTable.colApproval" xml:space="preserve">
     <value>Approval</value>
   </data>
@@ -2003,7 +2099,7 @@
     <value>Search by name or email</value>
   </data>
   <data name="pages.userChat.charCount" xml:space="preserve">
-    <value>{count} / {max} characters</value>
+    <value>{{count}} / {{max}} characters</value>
   </data>
   <data name="pages.userChat.loadOlder" xml:space="preserve">
     <value>Load older messages</value>

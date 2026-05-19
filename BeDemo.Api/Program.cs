@@ -104,6 +104,7 @@ builder.Services.AddOptions<BeDemo.Api.Configuration.OperatorAiOptions>()
 builder.Services.AddScoped<IOperatorAiConversationService, OperatorAiConversationService>();
 builder.Services.AddScoped<IFaceModerationService, FaceModerationService>();
 builder.Services.AddScoped<IOperatorUserModerationService, OperatorUserModerationService>();
+builder.Services.AddScoped<IOperatorAlbumManagementService, OperatorAlbumManagementService>();
 builder.Services.AddScoped<IPlatformDirectMessageService, PlatformDirectMessageService>();
 builder.Services.AddScoped<IOperatorUserChatService, OperatorUserChatService>();
 builder.Services.AddSingleton<IPlatformChatRateLimiter, PlatformChatRateLimiter>();

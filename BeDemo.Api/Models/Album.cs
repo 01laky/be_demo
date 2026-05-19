@@ -47,4 +47,5 @@ public class Album
     public ICollection<AlbumFace> AlbumFaces { get; set; } = new List<AlbumFace>();
     public ICollection<AlbumComment> Comments { get; set; } = new List<AlbumComment>();
     public ICollection<AlbumLike> Likes { get; set; } = new List<AlbumLike>();
+    public ICollection<AlbumMedia> MediaItems { get; set; } = new List<AlbumMedia>();
 }

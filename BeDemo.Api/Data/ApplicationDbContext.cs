@@ -32,6 +32,7 @@ public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<AlbumFace> AlbumFaces { get; set; } = null!;
     public DbSet<AlbumComment> AlbumComments { get; set; } = null!;
     public DbSet<AlbumLike> AlbumLikes { get; set; } = null!;
+    public DbSet<AlbumMedia> AlbumMedia { get; set; } = null!;
     public DbSet<Blog> Blogs { get; set; } = null!;
     public DbSet<BlogImage> BlogImages { get; set; } = null!;
     public DbSet<BlogComment> BlogComments { get; set; } = null!;
@@ -526,6 +527,23 @@ public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.HasOne(e => e.User)
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<AlbumMedia>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.AlbumId);
+            entity.Property(e => e.ImageUrl).IsRequired().HasMaxLength(2048);
+            entity.Property(e => e.VideoUrl).HasMaxLength(2048);
+            entity.Property(e => e.ThumbnailUrl).HasMaxLength(2048);
+            entity.Property(e => e.Title).HasMaxLength(200);
+            entity.Property(e => e.MediaType).IsRequired();
+            entity.Property(e => e.CreatedAt).IsRequired();
+
+            entity.HasOne(e => e.Album)
+                .WithMany(a => a.MediaItems)
+                .HasForeignKey(e => e.AlbumId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

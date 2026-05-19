@@ -767,14 +767,23 @@ public class ContentModerationTests : IClassFixture<CustomWebApplicationFactory<
         var rejected = await reject.Content.ReadFromJsonAsync<JsonElement>();
         rejected.GetProperty("approvalStatus").GetString().Should().Be("Rejected");
 
-        var remove = await superAdmin.PostAsJsonAsync(
+        var removeMissingMessage = await superAdmin.PostAsJsonAsync(
             $"/api/contentmoderation/{ModeratedContentType.Album}/{albumId}/remove",
             new { reason = "Escalated policy incident" });
+        removeMissingMessage.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var faceId = await GetPublicFaceIdAsync(_client);
+        var remove = await superAdmin.PostAsJsonAsync(
+            $"/api/contentmoderation/{ModeratedContentType.Album}/{albumId}/remove",
+            new
+            {
+                reason = "Escalated policy incident with enough detail",
+                userMessage = "Your album was removed per policy.",
+            });
         remove.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var events = await superAdmin.GetFromJsonAsync<JsonElement[]>(
-            $"/api/contentmoderation/{ModeratedContentType.Album}/{albumId}/events");
-        events!.Select(e => e.GetProperty("newApprovalStatus").GetString()).Should().Contain("Removed");
+        var gone = await _client.GetAsync($"/api/albums/{albumId}?faceId={faceId}");
+        gone.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]

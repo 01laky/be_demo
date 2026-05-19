@@ -24,6 +24,8 @@ using BeDemo.Api.Validation.Files;
 using BeDemo.Api.Validation.Filters;
 using BeDemo.Api.Validation.Moderation;
 using BeDemo.Api.Validation.OAuth;
+using BeDemo.Api.Validation.OperatorAi;
+using BeDemo.Api.Validation.OperatorContent;
 using BeDemo.Api.Validation.Pages;
 using BeDemo.Api.Validation.Profile;
 using BeDemo.Api.Validation.Reels;
@@ -458,6 +460,6 @@ public sealed class ValidatorSection4MatrixTests
 
     [Fact] public void T11_UpdateUserRequestValidator_valid_minimal_passes() =>
         new UpdateUserRequestValidator().Validate(new UpdateUserModel { FirstName = "A" }).IsValid.Should().BeTrue();
-    // Skipped matrix (add to SAMPLES in generator): AdminCreateRegistrationInviteDto, FaceProfileListQuery, PaginationQuery, WallTicketListQuery
+    // Skipped matrix (add to SAMPLES in generator): FaceChatRoomListQuery, FaceProfileListQuery, GetFacesQuery, OperatorAlbumDeleteRequest, PaginationQuery, WallTicketListQuery
 
 }

@@ -771,6 +771,43 @@ public static class DatabaseSeeder
                 CreatedAt = DateTime.UtcNow,
             });
         }
+
+        await context.SaveChangesAsync();
+
+        // Demo media: two images + one video poster for operator album detail grid.
+        foreach (var a in albums)
+        {
+            context.AlbumMedia.Add(new AlbumMedia
+            {
+                AlbumId = a.Id,
+                MediaType = MediaTypeEnum.Image,
+                ImageUrl = "https://picsum.photos/seed/mf-album-img/800/600",
+                SortOrder = 0,
+                Title = "Seeded photo 1",
+                CreatedAt = DateTime.UtcNow,
+            });
+            context.AlbumMedia.Add(new AlbumMedia
+            {
+                AlbumId = a.Id,
+                MediaType = MediaTypeEnum.Image,
+                ImageUrl = "https://picsum.photos/seed/mf-album-img2/800/600",
+                SortOrder = 1,
+                Title = "Seeded photo 2",
+                CreatedAt = DateTime.UtcNow,
+            });
+            context.AlbumMedia.Add(new AlbumMedia
+            {
+                AlbumId = a.Id,
+                MediaType = MediaTypeEnum.Video,
+                ImageUrl = "https://picsum.photos/seed/mf-album-vid/800/600",
+                VideoUrl = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+                SortOrder = 2,
+                Title = "Seeded clip",
+                CreatedAt = DateTime.UtcNow,
+            });
+        }
+
+        await context.SaveChangesAsync();
     }
 
     private static async Task EnsureBlogsForUserFaceAsync(ApplicationDbContext context, string userId, int faceId)

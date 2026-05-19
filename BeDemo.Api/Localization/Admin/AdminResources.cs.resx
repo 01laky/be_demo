@@ -70,6 +70,9 @@
   <data name="common.cancel" xml:space="preserve">
     <value>Zrušit</value>
   </data>
+  <data name="common.error" xml:space="preserve">
+    <value>Něco se pokazilo.</value>
+  </data>
   <data name="common.ok" xml:space="preserve">
     <value>OK</value>
   </data>
@@ -1531,6 +1534,99 @@
   <data name="pages.albumDetail.title" xml:space="preserve">
     <value>Detail alba</value>
   </data>
+  <data name="pages.albumDetail.albumId" xml:space="preserve">
+    <value>ID alba</value>
+  </data>
+  <data name="pages.albumDetail.approve" xml:space="preserve">
+    <value>Schválit</value>
+  </data>
+  <data name="pages.albumDetail.reject" xml:space="preserve">
+    <value>Zamítnout</value>
+  </data>
+  <data name="pages.albumDetail.remove" xml:space="preserve">
+    <value>Odebrat</value>
+  </data>
+  <data name="pages.albumDetail.deleteAlbum" xml:space="preserve">
+    <value>Smazat album</value>
+  </data>
+  <data name="pages.albumDetail.deleteMedia" xml:space="preserve">
+    <value>Smazat položku</value>
+  </data>
+  <data name="pages.albumDetail.deleteFromPreview" xml:space="preserve">
+    <value>Smazat tuto položku</value>
+  </data>
+  <data name="pages.albumDetail.openChat" xml:space="preserve">
+    <value>Otevřít chat</value>
+  </data>
+  <data name="pages.albumDetail.viewCreator" xml:space="preserve">
+    <value>Autor</value>
+  </data>
+  <data name="pages.albumDetail.openInQueue" xml:space="preserve">
+    <value>Fronta moderace</value>
+  </data>
+  <data name="pages.albumDetail.overviewSection" xml:space="preserve">
+    <value>Přehled</value>
+  </data>
+  <data name="pages.albumDetail.moderationSection" xml:space="preserve">
+    <value>Moderace</value>
+  </data>
+  <data name="pages.albumDetail.messagesSection" xml:space="preserve">
+    <value>Zprávy a audit</value>
+  </data>
+  <data name="pages.albumDetail.mediaSection" xml:space="preserve">
+    <value>Média</value>
+  </data>
+  <data name="pages.albumDetail.mediaEmpty" xml:space="preserve">
+    <value>Album neobsahuje žádná média.</value>
+  </data>
+  <data name="pages.albumDetail.mediaCountLabel" xml:space="preserve">
+    <value>{{count}} položek</value>
+  </data>
+  <data name="pages.albumDetail.videoBadge" xml:space="preserve">
+    <value>Video</value>
+  </data>
+  <data name="pages.albumDetail.previewPrev" xml:space="preserve">
+    <value>Předchozí</value>
+  </data>
+  <data name="pages.albumDetail.previewNext" xml:space="preserve">
+    <value>Další</value>
+  </data>
+  <data name="pages.albumDetail.previewCounter" xml:space="preserve">
+    <value>{{current}} / {{total}}</value>
+  </data>
+  <data name="pages.albumDetail.reasonLabel" xml:space="preserve">
+    <value>Interní důvod (audit)</value>
+  </data>
+  <data name="pages.albumDetail.userMessageLabel" xml:space="preserve">
+    <value>Zpráva pro autora</value>
+  </data>
+  <data name="pages.albumDetail.copyReasonToUserMessage" xml:space="preserve">
+    <value>Zkopírovat důvod do zprávy</value>
+  </data>
+  <data name="pages.albumDetail.validationRequired" xml:space="preserve">
+    <value>Pole je povinné.</value>
+  </data>
+  <data name="pages.albumDetail.validationMin" xml:space="preserve">
+    <value>Zadejte alespoň 10 znaků.</value>
+  </data>
+  <data name="pages.albumDetail.validationMax" xml:space="preserve">
+    <value>Maximálně 2000 znaků.</value>
+  </data>
+  <data name="pages.albumDetail.successApprove" xml:space="preserve">
+    <value>Album schváleno.</value>
+  </data>
+  <data name="pages.albumDetail.successReject" xml:space="preserve">
+    <value>Album zamítnuto; autor dostane zprávu, pokud je messenger dostupný.</value>
+  </data>
+  <data name="pages.albumDetail.successDeleteAlbum" xml:space="preserve">
+    <value>Album smazáno.</value>
+  </data>
+  <data name="pages.albumDetail.successDeleteMedia" xml:space="preserve">
+    <value>Položka smazána.</value>
+  </data>
+  <data name="pages.albumsTable.mediaCount" xml:space="preserve">
+    <value>Média</value>
+  </data>
   <data name="pages.albumsTable.colApproval" xml:space="preserve">
     <value>Schválení</value>
   </data>
@@ -2003,7 +2099,7 @@
     <value>Hledat podle jména nebo e-mailu</value>
   </data>
   <data name="pages.userChat.charCount" xml:space="preserve">
-    <value>{count} / {max} znaků</value>
+    <value>{{count}} / {{max}} znaků</value>
   </data>
   <data name="pages.userChat.loadOlder" xml:space="preserve">
     <value>Načíst starší zprávy</value>

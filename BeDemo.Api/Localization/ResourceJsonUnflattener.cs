@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 
 namespace BeDemo.Api.Localization;
 
@@ -12,6 +13,18 @@ namespace BeDemo.Api.Localization;
 /// </remarks>
 public static class ResourceJsonUnflattener
 {
+    // Authors write {{name}} in .resx; ResourceManager usually returns {name}. i18next expects {{name}} in JSON.
+    // Negative lookaround avoids turning an already-doubled {{name}} into {{{name}}}.
+    private static readonly Regex SingleNamedPlaceholder = new(
+        @"(?<!\{)\{([a-zA-Z_][a-zA-Z0-9_]*)\}(?!\})",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// Re-doubles single-brace named placeholders for i18next after .NET resource unescaping.
+    /// </summary>
+    public static string NormalizeForI18next(string value) =>
+        string.IsNullOrEmpty(value) ? value : SingleNamedPlaceholder.Replace(value, "{{$1}}");
+
     /// <summary>
     /// Finds pairs of flat keys where <paramref name="parent"/> is a strict dotted prefix of <paramref name="child"/>,
     /// which would make <see cref="ToNestedObject"/> fail or produce inconsistent trees.

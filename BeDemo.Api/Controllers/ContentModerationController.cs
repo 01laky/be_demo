@@ -24,6 +24,7 @@ public sealed class ContentModerationController : ControllerBase
     private readonly IRedisJobQueue _jobQueue;
     private readonly ILogger<ContentModerationController> _logger;
     private readonly IContentModerationNotifier _moderationNotifier;
+    private readonly IOperatorAlbumManagementService _operatorAlbums;
 
     public ContentModerationController(
         ApplicationDbContext context,
@@ -31,7 +32,8 @@ public sealed class ContentModerationController : ControllerBase
         IContentModerationMetrics metrics,
         IRedisJobQueue jobQueue,
         ILogger<ContentModerationController> logger,
-        IContentModerationNotifier moderationNotifier)
+        IContentModerationNotifier moderationNotifier,
+        IOperatorAlbumManagementService operatorAlbums)
     {
         _context = context;
         _access = access;
@@ -39,6 +41,7 @@ public sealed class ContentModerationController : ControllerBase
         _jobQueue = jobQueue;
         _logger = logger;
         _moderationNotifier = moderationNotifier;
+        _operatorAlbums = operatorAlbums;
     }
 
     private string? UserId => User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -379,9 +382,26 @@ public sealed class ContentModerationController : ControllerBase
             string.IsNullOrWhiteSpace(decision?.Reason))
             return ModerationActionResult.Fail(StatusCodes.Status400BadRequest, "Reason is required");
 
+        if (targetStatus is ContentApprovalStatus.Rejected or ContentApprovalStatus.Removed &&
+            string.IsNullOrWhiteSpace(decision?.UserMessage))
+            return ModerationActionResult.Fail(StatusCodes.Status400BadRequest, "User message is required");
+
         var item = await LoadModeratedItemAsync(contentType, contentId);
         if (item == null)
             return ModerationActionResult.Fail(StatusCodes.Status404NotFound, "Content not found");
+
+        // Album "remove" from moderation = same hard-delete as operator Delete album (not Removed status).
+        if (contentType == ModeratedContentType.Album && targetStatus == ContentApprovalStatus.Removed)
+        {
+            await _operatorAlbums.HardDeleteAlbumAsync(
+                UserId!,
+                contentId,
+                item.FaceId,
+                decision!.Reason!.Trim(),
+                decision.UserMessage!.Trim(),
+                CancellationToken.None);
+            return ModerationActionResult.Ok(ContentApprovalStatus.Removed, item.AiReviewStatus, "Hard deleted");
+        }
 
         if (item.ApprovalStatus == targetStatus)
             return ModerationActionResult.Ok(item.ApprovalStatus, item.AiReviewStatus, "Already in target status");
@@ -430,6 +450,22 @@ public sealed class ContentModerationController : ControllerBase
 
         if (saveChanges)
             await _context.SaveChangesAsync();
+
+        // Reject: also send platform DM (best-effort); album row remains.
+        if (targetStatus == ContentApprovalStatus.Rejected && contentType == ModeratedContentType.Album)
+        {
+            var album = await _context.Albums.AsNoTracking().FirstOrDefaultAsync(a => a.Id == contentId);
+            if (album != null && !string.IsNullOrWhiteSpace(decision?.UserMessage))
+            {
+                await _operatorAlbums.SendRejectDmBestEffortAsync(
+                    UserId!,
+                    album.CreatorId,
+                    album.Title,
+                    decision.UserMessage.Trim(),
+                    CancellationToken.None);
+            }
+        }
+
         return ModerationActionResult.Ok(item.ApprovalStatus, item.AiReviewStatus, "Updated");
     }
 

@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using BeDemo.Api.Localization;
 using BeDemo.Api.Services;
 using BeDemo.Api.Tests.Localization;
+using BeDemo.Api.Tests.TestDoubles;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -22,7 +23,10 @@ public class LocalizationPortalGoldenTests
     private static JsonObject GetPortalEnglishCommonNamespace()
     {
         var cache = new MemoryCache(new MemoryCacheOptions());
-        var service = new LocalizationBundleService(cache, NullLogger<LocalizationBundleService>.Instance);
+        var service = new LocalizationBundleService(
+            cache,
+            new HostEnvironmentStub(),
+            NullLogger<LocalizationBundleService>.Instance);
         var bundle = service.GetBundle(LocalizationApp.Portal)
             ?? throw new InvalidOperationException("Portal localization bundle must not be null.");
 

@@ -63,6 +63,19 @@ public class ResourceJsonUnflattenerTests
     }
 
     [Fact]
+    public void NormalizeForI18next_RedoublesNamedPlaceholdersAfterResxUnescape()
+    {
+        Assert.Equal(
+            "{{count}} / {{max}} characters",
+            ResourceJsonUnflattener.NormalizeForI18next("{count} / {max} characters"));
+        Assert.Equal("{{current}} / {{total}}", ResourceJsonUnflattener.NormalizeForI18next("{current} / {total}"));
+        Assert.Equal(
+            "{{count}} / {{max}} characters",
+            ResourceJsonUnflattener.NormalizeForI18next("{{count}} / {{max}} characters"));
+        Assert.Equal("Plain text", ResourceJsonUnflattener.NormalizeForI18next("Plain text"));
+    }
+
+    [Fact]
     public void ToMobileNamespaces_SplitsByPrefix()
     {
         var ns = ResourceJsonUnflattener.ToMobileNamespaces(new Dictionary<string, string>

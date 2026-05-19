@@ -9,6 +9,7 @@ using BeDemo.Api.Localization.Admin;
 using BeDemo.Api.Localization.Mobile;
 using BeDemo.Api.Localization.Portal;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Hosting;
 
 namespace BeDemo.Api.Services;
 
@@ -37,19 +38,29 @@ public sealed class LocalizationBundleService : ILocalizationBundleService
         };
 
     private readonly IMemoryCache _cache;
+    private readonly IHostEnvironment _environment;
     private readonly ILogger<LocalizationBundleService> _logger;
 
-    public LocalizationBundleService(IMemoryCache cache, ILogger<LocalizationBundleService> logger)
+    public LocalizationBundleService(
+        IMemoryCache cache,
+        IHostEnvironment environment,
+        ILogger<LocalizationBundleService> logger)
     {
         _cache = cache;
+        _environment = environment;
         _logger = logger;
     }
 
     public LocalizationBundleResponse? GetBundle(LocalizationApp app)
     {
+        // Short TTL in Development so .resx edits show up after rebuild without waiting 1h or restarting the API.
+        var cacheTtl = _environment.IsDevelopment()
+            ? TimeSpan.FromSeconds(5)
+            : TimeSpan.FromHours(1);
+
         return _cache.GetOrCreate($"localization-bundle:{app}", entry =>
         {
-            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
+            entry.AbsoluteExpirationRelativeToNow = cacheTtl;
             return BuildBundle(app);
         });
     }
@@ -120,7 +131,7 @@ public sealed class LocalizationBundleService : ILocalizationBundleService
         foreach (System.Collections.DictionaryEntry entry in set)
         {
             if (entry.Key is string key && entry.Value is string value)
-                result[key] = value;
+                result[key] = ResourceJsonUnflattener.NormalizeForI18next(value);
         }
 
         return result;
