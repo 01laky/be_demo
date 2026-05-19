@@ -98,7 +98,8 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         var response = await _client.GetAsync("/api/blogs");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var blogs = await response.Content.ReadFromJsonAsync<JsonElement>();
-        blogs.ValueKind.Should().Be(JsonValueKind.Array);
+        blogs.TryGetProperty("items", out var items).Should().BeTrue();
+        items.ValueKind.Should().Be(JsonValueKind.Array);
     }
 
     [Fact]
@@ -140,12 +141,12 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         var created = await response.Content.ReadFromJsonAsync<JsonElement>();
         var blogId = created.GetProperty("id").GetInt32();
 
-        var list = await _client.GetFromJsonAsync<JsonElement[]>($"/api/blogs?faceId={faceId}");
+        var list = await IntegrationTestPaginatedList.GetListItemsAsync(_client, $"/api/blogs?faceId={faceId}");
         list!.Select(e => e.GetProperty("id").GetInt32()).Should().NotContain(blogId);
 
         await ApproveAsSuperAdminAsync(ModeratedContentType.Blog, blogId);
 
-        var approvedList = await _client.GetFromJsonAsync<JsonElement[]>($"/api/blogs?faceId={faceId}");
+        var approvedList = await IntegrationTestPaginatedList.GetListItemsAsync(_client, $"/api/blogs?faceId={faceId}");
         approvedList!.Select(e => e.GetProperty("id").GetInt32()).Should().Contain(blogId);
     }
 
@@ -284,8 +285,9 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         var response = await _client.GetAsync("/api/blogs");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var blogs = await response.Content.ReadFromJsonAsync<JsonElement>();
-        blogs.GetArrayLength().Should().BeGreaterThanOrEqualTo(2);
-        foreach (var b in blogs.EnumerateArray())
+        var items = IntegrationTestPaginatedList.ReadItems(blogs);
+        items.Length.Should().BeGreaterThanOrEqualTo(2);
+        foreach (var b in items)
             b.GetProperty("faceId").GetInt32().Should().Be(scopedFaceId);
     }
 

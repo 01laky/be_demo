@@ -99,7 +99,7 @@ public class AlbumsControllerTests : IClassFixture<RegistrationInviteWebApplicat
         var response = await _client.GetAsync("/api/albums");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var albums = await response.Content.ReadFromJsonAsync<JsonElement>();
-        albums.ValueKind.Should().Be(JsonValueKind.Array);
+        albums.TryGetProperty("items", out _).Should().BeTrue();
     }
 
     [Fact]
@@ -131,12 +131,12 @@ public class AlbumsControllerTests : IClassFixture<RegistrationInviteWebApplicat
         var basicAlbum = await basicResp.Content.ReadFromJsonAsync<JsonElement>();
         await ApproveAsSuperAdminAsync(ModeratedContentType.Album, basicAlbum.GetProperty("id").GetInt32());
 
-        var publicList = await publicClient.GetFromJsonAsync<JsonElement[]>("/api/albums");
+        var publicList = await IntegrationTestPaginatedList.GetListItemsAsync(publicClient, "/api/albums");
         publicList.Should().NotBeNull();
         publicList!.Select(e => e.GetProperty("title").GetString()).Should().Contain("Only on Public");
         publicList.Select(e => e.GetProperty("title").GetString()).Should().NotContain("Only on Basic");
 
-        var basicList = await basicClient.GetFromJsonAsync<JsonElement[]>("/api/albums");
+        var basicList = await IntegrationTestPaginatedList.GetListItemsAsync(basicClient, "/api/albums");
         basicList.Should().NotBeNull();
         basicList!.Select(e => e.GetProperty("title").GetString()).Should().Contain("Only on Basic");
         basicList.Select(e => e.GetProperty("title").GetString()).Should().NotContain("Only on Public");
@@ -180,12 +180,12 @@ public class AlbumsControllerTests : IClassFixture<RegistrationInviteWebApplicat
         var created = await response.Content.ReadFromJsonAsync<JsonElement>();
         var albumId = created.GetProperty("id").GetInt32();
 
-        var list = await _client.GetFromJsonAsync<JsonElement[]>("/api/albums");
+        var list = await IntegrationTestPaginatedList.GetListItemsAsync(_client, "/api/albums");
         list!.Select(e => e.GetProperty("id").GetInt32()).Should().NotContain(albumId);
 
         await ApproveAsSuperAdminAsync(ModeratedContentType.Album, albumId);
 
-        var approvedList = await _client.GetFromJsonAsync<JsonElement[]>("/api/albums");
+        var approvedList = await IntegrationTestPaginatedList.GetListItemsAsync(_client, "/api/albums");
         approvedList!.Select(e => e.GetProperty("id").GetInt32()).Should().Contain(albumId);
     }
 

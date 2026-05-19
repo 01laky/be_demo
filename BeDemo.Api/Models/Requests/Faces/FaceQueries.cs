@@ -3,7 +3,20 @@ namespace BeDemo.Api.Models.Requests.Faces;
 public sealed class FaceProfileListQuery
 {
     public int Page { get; set; } = 1;
-    public int PageSize { get; set; } = 20;
+    public int PageSize { get; set; } = 10;
+    public string? Search { get; set; }
+    public string? SortBy { get; set; }
+    public string? SortDir { get; set; }
+}
+
+public sealed class FaceChatRoomListQuery
+{
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 10;
+    public string? Search { get; set; }
+    public string? SortBy { get; set; }
+    public string? SortDir { get; set; }
+    public bool? IsPublic { get; set; }
 }
 
 public sealed class ChatMessagesQuery

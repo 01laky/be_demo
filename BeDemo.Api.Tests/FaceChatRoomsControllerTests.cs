@@ -152,8 +152,8 @@ public class FaceChatRoomsControllerTests : IClassFixture<CustomWebApplicationFa
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var res = await client.GetAsync($"/api/faces/{faceId}/chat-rooms");
         res.StatusCode.Should().Be(HttpStatusCode.OK);
-        var arr = await res.Content.ReadFromJsonAsync<JsonElement[]>();
-        arr.Should().NotBeNull();
+        var envelope = await res.Content.ReadFromJsonAsync<JsonElement>();
+        IntegrationTestPaginatedList.ReadItems(envelope);
     }
 
     [Fact]

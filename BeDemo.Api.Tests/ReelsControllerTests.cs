@@ -86,7 +86,7 @@ public class ReelsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         var response = await _client.GetAsync("/api/reels");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var reels = await response.Content.ReadFromJsonAsync<JsonElement>();
-        reels!.ValueKind.Should().Be(JsonValueKind.Array);
+        reels.TryGetProperty("items", out _).Should().BeTrue();
     }
 
     [Fact]
@@ -128,13 +128,13 @@ public class ReelsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
     {
         var reelId = await CreateTestReelAsync(_client);
 
-        var list = await _client.GetFromJsonAsync<JsonElement[]>("/api/reels");
-        list!.Select(e => e.GetProperty("id").GetInt32()).Should().NotContain(reelId);
+        var list = await IntegrationTestPaginatedList.GetListItemsAsync(_client, "/api/reels");
+        list.Select(e => e.GetProperty("id").GetInt32()).Should().NotContain(reelId);
 
         await ApproveAsSuperAdminAsync(ModeratedContentType.Reel, reelId);
 
-        var approvedList = await _client.GetFromJsonAsync<JsonElement[]>("/api/reels");
-        approvedList!.Select(e => e.GetProperty("id").GetInt32()).Should().Contain(reelId);
+        var approvedList = await IntegrationTestPaginatedList.GetListItemsAsync(_client, "/api/reels");
+        approvedList.Select(e => e.GetProperty("id").GetInt32()).Should().Contain(reelId);
     }
 
     [Fact]
@@ -162,14 +162,12 @@ public class ReelsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         await CreateTestReelAsync(publicClient, null);
         await ApproveAsSuperAdminAsync(ModeratedContentType.Reel, scopedId);
 
-        var onPublic = await publicClient.GetFromJsonAsync<JsonElement[]>("/api/reels");
-        onPublic.Should().NotBeNull();
-        onPublic!.Select(e => e.GetProperty("id").GetInt32()).Should().Contain(scopedId);
+        var onPublic = await IntegrationTestPaginatedList.GetListItemsAsync(publicClient, "/api/reels");
+        onPublic.Select(e => e.GetProperty("id").GetInt32()).Should().Contain(scopedId);
 
         SetAuth(basicClient, token);
-        var onBasic = await basicClient.GetFromJsonAsync<JsonElement[]>("/api/reels");
-        onBasic.Should().NotBeNull();
-        onBasic!.Select(e => e.GetProperty("id").GetInt32()).Should().NotContain(scopedId);
+        var onBasic = await IntegrationTestPaginatedList.GetListItemsAsync(basicClient, "/api/reels");
+        onBasic.Select(e => e.GetProperty("id").GetInt32()).Should().NotContain(scopedId);
     }
 
     [Fact]

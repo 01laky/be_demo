@@ -5,6 +5,7 @@ using BeDemo.Api.Data;
 using BeDemo.Api.Models;
 using BeDemo.Api.Models.Requests.Albums;
 using BeDemo.Api.Services;
+using BeDemo.Api.Utils;
 
 namespace BeDemo.Api.Controllers;
 
@@ -42,28 +43,62 @@ public class AlbumsController : ControllerBase
 
     private bool CanManageAllFaces() => _access.CanManageAllFaces(User);
 
-    /// <summary>GET /api/albums?faceId= - Optional face filter (album must be linked via AlbumFaces).</summary>
+    /// <summary>GET /api/albums?faceId= - Paginated list; operator inventory skips portal visibility (§1.1).</summary>
     [HttpGet]
     public async Task<IActionResult> GetAlbums([FromQuery] AlbumListQuery listQuery)
     {
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
 
-        var faceId = listQuery.FaceId;
-        var query = _context.Albums
-            .Where(a => a.ApprovalStatus == ContentApprovalStatus.Approved)
-            .Where(a => a.AlbumType == AlbumTypeEnum.Public || a.CreatorId == UserId);
+        var operatorInventory = CanManageAllFaces();
+        var page = listQuery.Page;
+        var pageSize = listQuery.PageSize;
 
-        // Tenant: always filter to scoped face. Admin: optional ?faceId= targets a tenant (required to see non-admin face albums).
-        var effectiveFaceId = _faceScope.ResolveDataFaceId(faceId);
+        // CanManageAllFaces: full face-bound set for admin Face detail; tenants keep Approved + public-only.
+        IQueryable<Album> query = _context.Albums.AsNoTracking();
+        query = OperatorContentListFilters.ApplyAlbumPortalVisibility(query, operatorInventory, UserId);
+
+        var effectiveFaceId = _faceScope.ResolveDataFaceId(listQuery.FaceId);
         query = query.Where(a => a.AlbumFaces.Any(af => af.FaceId == effectiveFaceId));
 
-        var albums = await query
-            .Include(a => a.Creator)
-            .Include(a => a.AlbumFaces).ThenInclude(af => af.Face)
-            .Include(a => a.Likes)
-            .Include(a => a.Comments)
-            .OrderByDescending(a => a.CreatedAt)
+        if (!string.IsNullOrWhiteSpace(listQuery.Search))
+        {
+            var pattern = $"%{listQuery.Search.Trim()}%";
+            query = query.Where(a =>
+                EF.Functions.ILike(a.Title, pattern) ||
+                (a.Description != null && EF.Functions.ILike(a.Description, pattern)));
+        }
+
+        if (!string.IsNullOrWhiteSpace(listQuery.ApprovalStatus) &&
+            Enum.TryParse<ContentApprovalStatus>(listQuery.ApprovalStatus, true, out var approvalFilter))
+        {
+            query = query.Where(a => a.ApprovalStatus == approvalFilter);
+        }
+
+        if (!string.IsNullOrWhiteSpace(listQuery.MediaType) &&
+            int.TryParse(listQuery.MediaType, out var mediaTypeInt) &&
+            Enum.IsDefined(typeof(MediaTypeEnum), mediaTypeInt))
+        {
+            var mediaType = (MediaTypeEnum)mediaTypeInt;
+            query = query.Where(a => a.MediaType == mediaType);
+        }
+
+        if (!string.IsNullOrWhiteSpace(listQuery.AlbumType) &&
+            int.TryParse(listQuery.AlbumType, out var albumTypeInt) &&
+            Enum.IsDefined(typeof(AlbumTypeEnum), albumTypeInt))
+        {
+            var albumType = (AlbumTypeEnum)albumTypeInt;
+            query = query.Where(a => a.AlbumType == albumType);
+        }
+
+        var totalCount = await query.CountAsync();
+        var (clampedPage, totalPages) = ListPaginationHelper.ClampPage(page, pageSize, totalCount);
+        page = clampedPage;
+
+        var albums = await ListSortApplicators
+            .ApplyAlbumsSort(query, listQuery.SortBy, listQuery.SortDir)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(a => new
             {
                 a.Id,
@@ -84,7 +119,7 @@ public class AlbumsController : ControllerBase
             })
             .ToListAsync();
 
-        return Ok(albums);
+        return Ok(ListPaginationHelper.BuildEnvelope(albums, page, pageSize, totalCount, totalPages));
     }
 
     /// <summary>GET /api/albums/{id} - Get album by ID</summary>
@@ -104,18 +139,23 @@ public class AlbumsController : ControllerBase
         if (album == null)
             return NotFound(new { error = "Album not found" });
 
+        var operatorInventory = CanManageAllFaces();
         var isCreator = album.CreatorId == UserId;
-        if (!isCreator && album.ApprovalStatus != ContentApprovalStatus.Approved)
-            return NotFound(new { error = "Album not found" });
 
-        // Visibility check: private/paid only visible to creator.
-        if (album.AlbumType != AlbumTypeEnum.Public && !isCreator)
-            return Forbid();
+        if (!operatorInventory)
+        {
+            if (!isCreator && album.ApprovalStatus != ContentApprovalStatus.Approved)
+                return NotFound(new { error = "Album not found" });
+            if (album.AlbumType != AlbumTypeEnum.Public && !isCreator)
+                return Forbid();
+        }
 
         var effectiveFaceId = _faceScope.ResolveDataFaceId(
             Request.Query.TryGetValue("faceId", out var qf) && int.TryParse(qf.FirstOrDefault(), out var qid) ? qid : null);
         if (!album.AlbumFaces.Any(af => af.FaceId == effectiveFaceId))
             return NotFound(new { error = "Album not found" });
+
+        var showModerationFields = operatorInventory || isCreator;
 
         return Ok(new
         {
@@ -132,8 +172,9 @@ public class AlbumsController : ControllerBase
             isLikedByMe = album.Likes.Any(l => l.UserId == UserId),
             approvalStatus = album.ApprovalStatus.ToString(),
             aiReviewStatus = album.AiReviewStatus.ToString(),
-            aiReviewUserMessage = isCreator ? album.AiReviewUserMessage : null,
-            humanDecisionReason = isCreator ? album.HumanDecisionReason : null,
+            aiReviewUserMessage = showModerationFields ? album.AiReviewUserMessage : null,
+            humanDecisionReason = showModerationFields ? album.HumanDecisionReason : null,
+            submittedAtUtc = showModerationFields ? album.SubmittedAtUtc : null,
             creatorStatusLabel = ContentModerationHelpers.CreatorStatusLabel(album.ApprovalStatus, album.AiReviewStatus),
             album.CreatedAt,
             album.UpdatedAt,

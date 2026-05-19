@@ -1507,6 +1507,228 @@
   <data name="pages.pagesTable.title" xml:space="preserve">
     <value>Stránky</value>
   </data>
+  <data name="pages.albumDetail.aiReviewStatus" xml:space="preserve">
+    <value>Stav AI kontroly</value>
+  </data>
+  <data name="pages.albumDetail.aiReviewUserMessage" xml:space="preserve">
+    <value>Správa AI pre tvorcu</value>
+  </data>
+  <data name="pages.albumDetail.approvalStatus" xml:space="preserve">
+    <value>Stav schválenia</value>
+  </data>
+  <data name="pages.albumDetail.createdAt" xml:space="preserve">
+    <value>Vytvorené</value>
+  </data>
+  <data name="pages.albumDetail.creatorStatusLabel" xml:space="preserve">
+    <value>Stav tvorcu</value>
+  </data>
+  <data name="pages.albumDetail.description" xml:space="preserve">
+    <value>Popis</value>
+  </data>
+  <data name="pages.albumDetail.humanDecisionReason" xml:space="preserve">
+    <value>Dôvod ľudského rozhodnutia</value>
+  </data>
+  <data name="pages.albumDetail.title" xml:space="preserve">
+    <value>Detail albumu</value>
+  </data>
+  <data name="pages.albumsTable.colApproval" xml:space="preserve">
+    <value>Schválenie</value>
+  </data>
+  <data name="pages.albumsTable.colCreatedAt" xml:space="preserve">
+    <value>Vytvorené</value>
+  </data>
+  <data name="pages.albumsTable.colCreator" xml:space="preserve">
+    <value>Tvorca</value>
+  </data>
+  <data name="pages.albumsTable.colTitle" xml:space="preserve">
+    <value>Názov</value>
+  </data>
+  <data name="pages.albumsTable.error" xml:space="preserve">
+    <value>Chyba pri načítaní albumov</value>
+  </data>
+  <data name="pages.albumsTable.loading" xml:space="preserve">
+    <value>Načítavanie albumov...</value>
+  </data>
+  <data name="pages.albumsTable.noAlbums" xml:space="preserve">
+    <value>Žiadne albumy nenájdené</value>
+  </data>
+  <data name="pages.albumsTable.title" xml:space="preserve">
+    <value>Albumy</value>
+  </data>
+  <data name="pages.blogDetail.approvalStatus" xml:space="preserve">
+    <value>Stav schválenia</value>
+  </data>
+  <data name="pages.blogDetail.content" xml:space="preserve">
+    <value>Obsah</value>
+  </data>
+  <data name="pages.blogDetail.title" xml:space="preserve">
+    <value>Detail blogu</value>
+  </data>
+  <data name="pages.blogsTable.colApproval" xml:space="preserve">
+    <value>Schválenie</value>
+  </data>
+  <data name="pages.blogsTable.colCreatedAt" xml:space="preserve">
+    <value>Vytvorené</value>
+  </data>
+  <data name="pages.blogsTable.colCreator" xml:space="preserve">
+    <value>Tvorca</value>
+  </data>
+  <data name="pages.blogsTable.colTitle" xml:space="preserve">
+    <value>Názov</value>
+  </data>
+  <data name="pages.blogsTable.error" xml:space="preserve">
+    <value>Chyba pri načítaní blogov</value>
+  </data>
+  <data name="pages.blogsTable.loading" xml:space="preserve">
+    <value>Načítavanie blogov...</value>
+  </data>
+  <data name="pages.blogsTable.noItems" xml:space="preserve">
+    <value>Žiadne blogy nenájdené</value>
+  </data>
+  <data name="pages.blogsTable.title" xml:space="preserve">
+    <value>Blogy</value>
+  </data>
+  <data name="pages.chatRoomDetail.description" xml:space="preserve">
+    <value>Popis</value>
+  </data>
+  <data name="pages.chatRoomDetail.isPublic" xml:space="preserve">
+    <value>Verejná</value>
+  </data>
+  <data name="pages.chatRoomDetail.title" xml:space="preserve">
+    <value>Detail chatovacej miestnosti</value>
+  </data>
+  <data name="pages.chatRoomsTable.colCreatedAt" xml:space="preserve">
+    <value>Vytvorené</value>
+  </data>
+  <data name="pages.chatRoomsTable.colPublic" xml:space="preserve">
+    <value>Verejná</value>
+  </data>
+  <data name="pages.chatRoomsTable.colSystem" xml:space="preserve">
+    <value>Systémová</value>
+  </data>
+  <data name="pages.chatRoomsTable.colTitle" xml:space="preserve">
+    <value>Názov</value>
+  </data>
+  <data name="pages.chatRoomsTable.error" xml:space="preserve">
+    <value>Chyba pri načítaní chatovacích miestností</value>
+  </data>
+  <data name="pages.chatRoomsTable.loading" xml:space="preserve">
+    <value>Načítavanie chatovacích miestností...</value>
+  </data>
+  <data name="pages.chatRoomsTable.noItems" xml:space="preserve">
+    <value>Žiadne chatovacie miestnosti nenájdené</value>
+  </data>
+  <data name="pages.chatRoomsTable.private" xml:space="preserve">
+    <value>Súkromná</value>
+  </data>
+  <data name="pages.chatRoomsTable.public" xml:space="preserve">
+    <value>Verejná</value>
+  </data>
+  <data name="pages.chatRoomsTable.system" xml:space="preserve">
+    <value>Systémová</value>
+  </data>
+  <data name="pages.chatRoomsTable.title" xml:space="preserve">
+    <value>Chatovacie miestnosti</value>
+  </data>
+  <data name="pages.profileDetail.displayName" xml:space="preserve">
+    <value>Zobrazované meno</value>
+  </data>
+  <data name="pages.profileDetail.title" xml:space="preserve">
+    <value>Detail profilu</value>
+  </data>
+  <data name="pages.profileDetail.userId" xml:space="preserve">
+    <value>ID používateľa</value>
+  </data>
+  <data name="pages.profilesTable.colDisplayName" xml:space="preserve">
+    <value>Zobrazované meno</value>
+  </data>
+  <data name="pages.profilesTable.colUserId" xml:space="preserve">
+    <value>ID používateľa</value>
+  </data>
+  <data name="pages.profilesTable.error" xml:space="preserve">
+    <value>Chyba pri načítaní profilov</value>
+  </data>
+  <data name="pages.profilesTable.loading" xml:space="preserve">
+    <value>Načítavanie profilov...</value>
+  </data>
+  <data name="pages.profilesTable.noItems" xml:space="preserve">
+    <value>Žiadne profily nenájdené</value>
+  </data>
+  <data name="pages.profilesTable.title" xml:space="preserve">
+    <value>Profily</value>
+  </data>
+  <data name="pages.reelDetail.approvalStatus" xml:space="preserve">
+    <value>Stav schválenia</value>
+  </data>
+  <data name="pages.reelDetail.description" xml:space="preserve">
+    <value>Popis</value>
+  </data>
+  <data name="pages.reelDetail.title" xml:space="preserve">
+    <value>Detail reelu</value>
+  </data>
+  <data name="pages.reelDetail.videoUrl" xml:space="preserve">
+    <value>URL videa</value>
+  </data>
+  <data name="pages.reelsTable.colApproval" xml:space="preserve">
+    <value>Schválenie</value>
+  </data>
+  <data name="pages.reelsTable.colCreatedAt" xml:space="preserve">
+    <value>Vytvorené</value>
+  </data>
+  <data name="pages.reelsTable.colCreator" xml:space="preserve">
+    <value>Tvorca</value>
+  </data>
+  <data name="pages.reelsTable.colTitle" xml:space="preserve">
+    <value>Názov</value>
+  </data>
+  <data name="pages.reelsTable.error" xml:space="preserve">
+    <value>Chyba pri načítaní reelov</value>
+  </data>
+  <data name="pages.reelsTable.loading" xml:space="preserve">
+    <value>Načítavanie reelov...</value>
+  </data>
+  <data name="pages.reelsTable.noItems" xml:space="preserve">
+    <value>Žiadne reely nenájdené</value>
+  </data>
+  <data name="pages.reelsTable.title" xml:space="preserve">
+    <value>Reely</value>
+  </data>
+  <data name="pages.storiesTable.colCreatedAt" xml:space="preserve">
+    <value>Vytvorené</value>
+  </data>
+  <data name="pages.storiesTable.colPublished" xml:space="preserve">
+    <value>Publikované</value>
+  </data>
+  <data name="pages.storiesTable.colTitle" xml:space="preserve">
+    <value>Názov</value>
+  </data>
+  <data name="pages.storiesTable.draft" xml:space="preserve">
+    <value>Koncept</value>
+  </data>
+  <data name="pages.storiesTable.error" xml:space="preserve">
+    <value>Chyba pri načítaní príbehov</value>
+  </data>
+  <data name="pages.storiesTable.loading" xml:space="preserve">
+    <value>Načítavanie príbehov...</value>
+  </data>
+  <data name="pages.storiesTable.noItems" xml:space="preserve">
+    <value>Žiadne príbehy nenájdené</value>
+  </data>
+  <data name="pages.storiesTable.published" xml:space="preserve">
+    <value>Publikované</value>
+  </data>
+  <data name="pages.storiesTable.title" xml:space="preserve">
+    <value>Príbehy</value>
+  </data>
+  <data name="pages.storyDetail.publishedAt" xml:space="preserve">
+    <value>Publikované</value>
+  </data>
+  <data name="pages.storyDetail.state" xml:space="preserve">
+    <value>Stav</value>
+  </data>
+  <data name="pages.storyDetail.title" xml:space="preserve">
+    <value>Detail príbehu</value>
+  </data>
   <data name="pages.registrationInvites.create" xml:space="preserve">
     <value>Vytvoriť pozvánku</value>
   </data>

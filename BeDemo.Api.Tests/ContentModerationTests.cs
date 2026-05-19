@@ -880,7 +880,7 @@ public class ContentModerationTests : IClassFixture<CustomWebApplicationFactory<
 
         var otherToken = await RegisterAndLoginAsync("pub_other");
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", otherToken);
-        var list = await _client.GetFromJsonAsync<JsonElement[]>($"/api/blogs?faceId={faceId}");
+        var list = await IntegrationTestPaginatedList.GetListItemsAsync(_client, $"/api/blogs?faceId={faceId}");
         list.Should().NotBeNull();
         list!.Select(e => e.GetProperty("id").GetInt32()).Should().NotContain(blogId);
     }
@@ -1088,7 +1088,7 @@ public class ContentModerationTests : IClassFixture<CustomWebApplicationFactory<
 
         var otherToken = await RegisterAndLoginAsync("reel_pub_other");
         owner.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", otherToken);
-        var list = await owner.GetFromJsonAsync<JsonElement[]>($"/api/reels?faceId={faceId}");
+        var list = await IntegrationTestPaginatedList.GetListItemsAsync(owner, $"/api/reels?faceId={faceId}");
         list.Should().NotBeNull();
         list!.Select(e => e.GetProperty("id").GetInt32()).Should().NotContain(reelId);
     }

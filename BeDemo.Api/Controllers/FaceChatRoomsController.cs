@@ -7,6 +7,7 @@ using BeDemo.Api.Data;
 using BeDemo.Api.Hubs;
 using BeDemo.Api.Models;
 using BeDemo.Api.Services;
+using BeDemo.Api.Models.Requests.Faces;
 using BeDemo.Api.Utils;
 
 namespace BeDemo.Api.Controllers;
@@ -65,9 +66,12 @@ public class FaceChatRoomsController : ControllerBase
             hasPendingRequest,
         };
 
-    /// <summary>List chat rooms for face (mixed system + user). Host sees list but cannot participate.</summary>
+    /// <summary>List chat rooms for face (paginated envelope).</summary>
     [HttpGet]
-    public async Task<IActionResult> List(int faceId, CancellationToken cancellationToken)
+    public async Task<IActionResult> List(
+        int faceId,
+        [FromQuery] FaceChatRoomListQuery listQuery,
+        CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
@@ -76,11 +80,31 @@ public class FaceChatRoomsController : ControllerBase
         if (face == null)
             return NotFound(new { error = "Face not found" });
 
+        var page = listQuery.Page;
+        var pageSize = listQuery.PageSize;
         var isHost = await FaceChatRoomAuth.IsHostInFaceAsync(_context, UserId, faceId, cancellationToken);
-        var rooms = await _context.FaceChatRooms
-            .AsNoTracking()
-            .Where(r => r.FaceId == faceId)
-            .OrderByDescending(r => r.LastMessageAt ?? r.CreatedAt)
+
+        IQueryable<FaceChatRoom> roomQuery = _context.FaceChatRooms.AsNoTracking().Where(r => r.FaceId == faceId);
+
+        if (!string.IsNullOrWhiteSpace(listQuery.Search))
+        {
+            var pattern = $"%{listQuery.Search.Trim()}%";
+            roomQuery = roomQuery.Where(r =>
+                EF.Functions.ILike(r.Title, pattern) ||
+                (r.Description != null && EF.Functions.ILike(r.Description, pattern)));
+        }
+
+        if (listQuery.IsPublic.HasValue)
+            roomQuery = roomQuery.Where(r => r.IsPublic == listQuery.IsPublic.Value);
+
+        var totalCount = await roomQuery.CountAsync(cancellationToken);
+        var (clampedPage, totalPages) = ListPaginationHelper.ClampPage(page, pageSize, totalCount);
+        page = clampedPage;
+
+        var rooms = await ListSortApplicators
+            .ApplyFaceChatRoomsSort(roomQuery, listQuery.SortBy, listQuery.SortDir)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
 
         var ids = rooms.Select(r => r.Id).ToList();
@@ -111,7 +135,7 @@ public class FaceChatRoomsController : ControllerBase
             return RoomDto(r, isHost, canPart, member, pending.Contains(r.Id), mc);
         }).ToList();
 
-        return Ok(list);
+        return Ok(ListPaginationHelper.BuildEnvelope(list, page, pageSize, totalCount, totalPages));
     }
 
     [HttpGet("{roomId:int}")]

@@ -68,49 +68,79 @@ public class StoriesController : ControllerBase
         return null;
     }
 
-    /// <summary>Published stories for the current face (non-host viewers only).</summary>
+    /// <summary>Stories for face — paginated envelope; operator sees unpublished/draft (§1.1).</summary>
     [HttpGet]
     public async Task<IActionResult> ListForFace([FromQuery] StoryListQuery query, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
 
+        var operatorInventory = CanManageAllFaces();
+        var page = query.Page;
+        var pageSize = query.PageSize;
         var effectiveFaceId = _faceScope.ResolveDataFaceId(query.FaceId);
-        if (!await StoryViewerRules.ViewerHasFaceMembershipAsync(_context, UserId, effectiveFaceId, cancellationToken))
-            return Ok(Array.Empty<object>());
 
-        var now = DateTime.UtcNow;
-        var stories = await _context.Stories
-            .AsNoTracking()
-            .Include(s => s.Creator)
-            .Include(s => s.StoryFaces)
-            .Include(s => s.Images)
-            .Where(s =>
+        if (!operatorInventory &&
+            !await StoryViewerRules.ViewerHasFaceMembershipAsync(_context, UserId, effectiveFaceId, cancellationToken))
+        {
+            return Ok(ListPaginationHelper.BuildEnvelope(Array.Empty<object>(), page, pageSize, 0, 0));
+        }
+
+        IQueryable<Story> dbQuery = _context.Stories.AsNoTracking();
+
+        if (!operatorInventory)
+        {
+            var now = DateTime.UtcNow;
+            dbQuery = dbQuery.Where(s =>
                 s.State == StoryState.Published &&
                 s.PublishedAt != null &&
                 s.PublishedAt <= now &&
                 s.ExpiresAt != null &&
-                s.ExpiresAt > now)
-            .OrderByDescending(s => s.PublishedAt)
+                s.ExpiresAt > now);
+        }
+        else if (query.IsPublished == true)
+        {
+            dbQuery = dbQuery.Where(s => s.State == StoryState.Published);
+        }
+        else if (query.IsPublished == false)
+        {
+            dbQuery = dbQuery.Where(s => s.State != StoryState.Published);
+        }
+
+        dbQuery = dbQuery.Where(s =>
+            !s.StoryFaces.Any() ||
+            s.StoryFaces.Any(sf => sf.FaceId == effectiveFaceId));
+
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            var pattern = $"%{query.Search.Trim()}%";
+            dbQuery = dbQuery.Where(s => EF.Functions.ILike(s.Title, pattern));
+        }
+
+        var totalCount = await dbQuery.CountAsync(cancellationToken);
+        var (clampedPage, totalPages) = ListPaginationHelper.ClampPage(page, pageSize, totalCount);
+        page = clampedPage;
+
+        var stories = await ListSortApplicators
+            .ApplyStoriesSort(dbQuery, query.SortBy, query.SortDir)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(s => new
+            {
+                s.Id,
+                s.Title,
+                creatorId = s.CreatorId,
+                creatorName = ((s.Creator.FirstName ?? "") + " " + (s.Creator.LastName ?? "")).Trim(),
+                imageCount = s.Images.Count,
+                isPublished = s.State == StoryState.Published,
+                state = s.State.ToString(),
+                s.PublishedAt,
+                s.ExpiresAt,
+                s.CreatedAt,
+            })
             .ToListAsync(cancellationToken);
 
-        var visible = stories
-            .Where(s => StoryVisibility.IsTargetedForFace(s, effectiveFaceId))
-            .ToList();
-
-        var result = visible.Select(s => new
-        {
-            s.Id,
-            s.Title,
-            creatorId = s.CreatorId,
-            creatorName = ((s.Creator.FirstName ?? "") + " " + (s.Creator.LastName ?? "")).Trim(),
-            imageCount = s.Images.Count,
-            coverUrl = SignStoredImageUrl(s.Images.OrderBy(i => i.SortOrder).Select(i => i.ImageUrl).FirstOrDefault()),
-            s.PublishedAt,
-            s.ExpiresAt,
-        });
-
-        return Ok(result);
+        return Ok(ListPaginationHelper.BuildEnvelope(stories, page, pageSize, totalCount, totalPages));
     }
 
     /// <summary>Current user's stories (all states), optional face targeting filter.</summary>

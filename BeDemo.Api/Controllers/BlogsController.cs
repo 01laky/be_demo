@@ -5,6 +5,7 @@ using BeDemo.Api.Data;
 using BeDemo.Api.Models;
 using BeDemo.Api.Models.Requests.Blogs;
 using BeDemo.Api.Services;
+using BeDemo.Api.Utils;
 
 namespace BeDemo.Api.Controllers;
 
@@ -17,6 +18,8 @@ public class BlogsController : ControllerBase
     private readonly ApplicationDbContext _context;
     private readonly ILogger<BlogsController> _logger;
     private readonly IRedisJobQueue _jobQueue;
+    private readonly IFaceScopeContext _faceScope;
+    private readonly IAccessEvaluator _access;
     /// <summary>Queues in-app notifications when user content enters the moderation pipeline.</summary>
     private readonly IContentModerationNotifier _moderationNotifier;
 
@@ -24,37 +27,60 @@ public class BlogsController : ControllerBase
         ApplicationDbContext context,
         ILogger<BlogsController> logger,
         IRedisJobQueue jobQueue,
+        IFaceScopeContext faceScope,
+        IAccessEvaluator access,
         IContentModerationNotifier moderationNotifier)
     {
         _context = context;
         _logger = logger;
         _jobQueue = jobQueue;
+        _faceScope = faceScope;
+        _access = access;
         _moderationNotifier = moderationNotifier;
     }
 
     private string? UserId => User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
-    /// <summary>GET /api/blogs?faceId={faceId} - Get blogs for a face</summary>
+    private bool CanManageAllFaces() => _access.CanManageAllFaces(User);
+
+    /// <summary>GET /api/blogs?faceId= - Paginated blogs for scoped face.</summary>
     [HttpGet]
     public async Task<IActionResult> GetBlogs([FromQuery] BlogListQuery listQuery)
     {
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
 
-        var query = _context.Blogs
-            .Where(b => b.ApprovalStatus == ContentApprovalStatus.Approved)
-            .AsQueryable();
+        var operatorInventory = CanManageAllFaces();
+        var page = listQuery.Page;
+        var pageSize = listQuery.PageSize;
+        var effectiveFaceId = _faceScope.ResolveDataFaceId(listQuery.FaceId);
 
-        if (listQuery.FaceId.HasValue)
-            query = query.Where(b => b.FaceId == listQuery.FaceId.Value);
+        IQueryable<Blog> query = _context.Blogs.AsNoTracking();
+        query = OperatorContentListFilters.ApplyBlogPortalVisibility(query, operatorInventory);
+        query = query.Where(b => b.FaceId == effectiveFaceId);
 
-        var blogs = await query
-            .Include(b => b.Creator)
-            .Include(b => b.Face)
-            .Include(b => b.Images)
-            .Include(b => b.Likes)
-            .Include(b => b.Comments)
-            .OrderByDescending(b => b.CreatedAt)
+        if (!string.IsNullOrWhiteSpace(listQuery.Search))
+        {
+            var pattern = $"%{listQuery.Search.Trim()}%";
+            query = query.Where(b =>
+                EF.Functions.ILike(b.Title, pattern) ||
+                EF.Functions.ILike(b.Content, pattern));
+        }
+
+        if (!string.IsNullOrWhiteSpace(listQuery.ApprovalStatus) &&
+            Enum.TryParse<ContentApprovalStatus>(listQuery.ApprovalStatus, true, out var approvalFilter))
+        {
+            query = query.Where(b => b.ApprovalStatus == approvalFilter);
+        }
+
+        var totalCount = await query.CountAsync();
+        var (clampedPage, totalPages) = ListPaginationHelper.ClampPage(page, pageSize, totalCount);
+        page = clampedPage;
+
+        var blogs = await ListSortApplicators
+            .ApplyBlogsSort(query, listQuery.SortBy, listQuery.SortDir)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(b => new
             {
                 b.Id,
@@ -75,7 +101,7 @@ public class BlogsController : ControllerBase
             })
             .ToListAsync();
 
-        return Ok(blogs);
+        return Ok(ListPaginationHelper.BuildEnvelope(blogs, page, pageSize, totalCount, totalPages));
     }
 
     /// <summary>GET /api/blogs/{id} - Get blog by ID</summary>
@@ -96,9 +122,12 @@ public class BlogsController : ControllerBase
         if (blog == null)
             return NotFound(new { error = "Blog not found" });
 
+        var operatorInventory = CanManageAllFaces();
         var isCreator = blog.CreatorId == UserId;
-        if (!isCreator && blog.ApprovalStatus != ContentApprovalStatus.Approved)
+        if (!operatorInventory && !isCreator && blog.ApprovalStatus != ContentApprovalStatus.Approved)
             return NotFound(new { error = "Blog not found" });
+
+        var showModerationFields = operatorInventory || isCreator;
 
         return Ok(new
         {
@@ -115,8 +144,9 @@ public class BlogsController : ControllerBase
             isLikedByMe = blog.Likes.Any(l => l.UserId == UserId),
             approvalStatus = blog.ApprovalStatus.ToString(),
             aiReviewStatus = blog.AiReviewStatus.ToString(),
-            aiReviewUserMessage = isCreator ? blog.AiReviewUserMessage : null,
-            humanDecisionReason = isCreator ? blog.HumanDecisionReason : null,
+            aiReviewUserMessage = showModerationFields ? blog.AiReviewUserMessage : null,
+            humanDecisionReason = showModerationFields ? blog.HumanDecisionReason : null,
+            submittedAtUtc = showModerationFields ? blog.SubmittedAtUtc : null,
             creatorStatusLabel = ContentModerationHelpers.CreatorStatusLabel(blog.ApprovalStatus, blog.AiReviewStatus),
             blog.CreatedAt,
             blog.UpdatedAt,

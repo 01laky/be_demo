@@ -19,6 +19,8 @@ public class ReelsController : ControllerBase
     private readonly ApplicationDbContext _context;
     private readonly IRedisJobQueue _jobQueue;
     private readonly ILogger<ReelsController> _logger;
+    private readonly IFaceScopeContext _faceScope;
+    private readonly IAccessEvaluator _access;
     /// <summary>Queues in-app notifications when reels enter the moderation pipeline.</summary>
     private readonly IContentModerationNotifier _moderationNotifier;
 
@@ -26,41 +28,62 @@ public class ReelsController : ControllerBase
         ApplicationDbContext context,
         IRedisJobQueue jobQueue,
         ILogger<ReelsController> logger,
+        IFaceScopeContext faceScope,
+        IAccessEvaluator access,
         IContentModerationNotifier moderationNotifier)
     {
         _context = context;
         _jobQueue = jobQueue;
         _logger = logger;
+        _faceScope = faceScope;
+        _access = access;
         _moderationNotifier = moderationNotifier;
     }
 
     private string? UserId => User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
-    /// <summary>GET /api/reels?faceId= - Optional face filter: no ReelFaces = all faces; else only matching face.</summary>
+    private bool CanManageAllFaces() => _access.CanManageAllFaces(User);
+
+    /// <summary>GET /api/reels?faceId= - Paginated; operator sees all approval statuses for scoped face.</summary>
     [HttpGet]
     public async Task<IActionResult> GetReels([FromQuery] ReelListQuery listQuery)
     {
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
 
-        var faceId = listQuery.FaceId;
-        var query = _context.Reels
-            .Where(r => r.ApprovalStatus == ContentApprovalStatus.Approved)
-            .AsQueryable();
+        var operatorInventory = CanManageAllFaces();
+        var page = listQuery.Page;
+        var pageSize = listQuery.PageSize;
+        var effectiveFaceId = _faceScope.ResolveDataFaceId(listQuery.FaceId);
 
-        if (faceId.HasValue)
+        IQueryable<Reel> query = _context.Reels.AsNoTracking();
+        query = OperatorContentListFilters.ApplyReelPortalVisibility(query, operatorInventory);
+        query = query.Where(r =>
+            !r.ReelFaces.Any() ||
+            r.ReelFaces.Any(rf => rf.FaceId == effectiveFaceId));
+
+        if (!string.IsNullOrWhiteSpace(listQuery.Search))
         {
+            var pattern = $"%{listQuery.Search.Trim()}%";
             query = query.Where(r =>
-                !r.ReelFaces.Any() ||
-                r.ReelFaces.Any(rf => rf.FaceId == faceId.Value));
+                EF.Functions.ILike(r.Title, pattern) ||
+                (r.Description != null && EF.Functions.ILike(r.Description, pattern)));
         }
 
-        var reels = await query
-            .Include(r => r.Creator)
-            .Include(r => r.ReelFaces).ThenInclude(rf => rf.Face)
-            .Include(r => r.Likes)
-            .Include(r => r.Comments)
-            .OrderByDescending(r => r.CreatedAt)
+        if (!string.IsNullOrWhiteSpace(listQuery.ApprovalStatus) &&
+            Enum.TryParse<ContentApprovalStatus>(listQuery.ApprovalStatus, true, out var approvalFilter))
+        {
+            query = query.Where(r => r.ApprovalStatus == approvalFilter);
+        }
+
+        var totalCount = await query.CountAsync();
+        var (clampedPage, totalPages) = ListPaginationHelper.ClampPage(page, pageSize, totalCount);
+        page = clampedPage;
+
+        var reels = await ListSortApplicators
+            .ApplyReelsSort(query, listQuery.SortBy, listQuery.SortDir)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(r => new
             {
                 r.Id,
@@ -80,7 +103,7 @@ public class ReelsController : ControllerBase
             })
             .ToListAsync();
 
-        return Ok(reels);
+        return Ok(ListPaginationHelper.BuildEnvelope(reels, page, pageSize, totalCount, totalPages));
     }
 
     [HttpGet("{id:int}")]
@@ -100,12 +123,16 @@ public class ReelsController : ControllerBase
         if (reel == null)
             return NotFound(new { error = "Reel not found" });
 
+        var operatorInventory = CanManageAllFaces();
         var isCreator = reel.CreatorId == UserId;
-        if (!isCreator && reel.ApprovalStatus != ContentApprovalStatus.Approved)
+        if (!operatorInventory && !isCreator && reel.ApprovalStatus != ContentApprovalStatus.Approved)
             return NotFound(new { error = "Reel not found" });
 
-        if (!ReelVisibility.IsVisibleForFace(reel, faceId))
+        var effectiveFaceId = _faceScope.ResolveDataFaceId(faceId);
+        if (!ReelVisibility.IsVisibleForFace(reel, effectiveFaceId))
             return NotFound(new { error = "Reel not found" });
+
+        var showModerationFields = operatorInventory || isCreator;
 
         return Ok(new
         {
@@ -121,8 +148,9 @@ public class ReelsController : ControllerBase
             isLikedByMe = reel.Likes.Any(l => l.UserId == UserId),
             approvalStatus = reel.ApprovalStatus.ToString(),
             aiReviewStatus = reel.AiReviewStatus.ToString(),
-            aiReviewUserMessage = isCreator ? reel.AiReviewUserMessage : null,
-            humanDecisionReason = isCreator ? reel.HumanDecisionReason : null,
+            aiReviewUserMessage = showModerationFields ? reel.AiReviewUserMessage : null,
+            humanDecisionReason = showModerationFields ? reel.HumanDecisionReason : null,
+            submittedAtUtc = showModerationFields ? reel.SubmittedAtUtc : null,
             creatorStatusLabel = ContentModerationHelpers.CreatorStatusLabel(reel.ApprovalStatus, reel.AiReviewStatus),
             reel.CreatedAt,
             reel.UpdatedAt,
