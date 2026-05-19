@@ -207,12 +207,6 @@ public sealed class ValidatorSection4MatrixTests
     [Fact] public void T11_GetModerationQueueQueryValidator_valid_minimal_passes() =>
         new GetModerationQueueQueryValidator().Validate(new GetModerationQueueQuery { FaceId = 1 }).IsValid.Should().BeTrue();
 
-    [Fact] public void T1_AdminInviteListQueryValidator_invalid_fails() =>
-        new AdminInviteListQueryValidator().Validate(new AdminInviteListQuery { Take = 0 }).IsValid.Should().BeFalse();
-
-    [Fact] public void T11_AdminInviteListQueryValidator_valid_minimal_passes() =>
-        new AdminInviteListQueryValidator().Validate(new AdminInviteListQuery { Skip = 0, Take = 10 }).IsValid.Should().BeTrue();
-
     [Fact] public void T1_RegisterPrefillQueryValidator_invalid_fails() =>
         new RegisterPrefillQueryValidator().Validate(new RegisterPrefillQuery()).IsValid.Should().BeFalse();
 

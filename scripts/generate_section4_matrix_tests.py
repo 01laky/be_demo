@@ -128,7 +128,6 @@ SAMPLES: dict[str, tuple[str, str]] = {
         "new BulkModerationRequest(BeDemo.Api.Models.Requests.Moderation.BulkModerationAction.Approve, new List<BulkModerationItemDto> { new(ModeratedContentType.Blog, 1) }, null, null)",
     ),
     "PublishStoryDto": ("new PublishStoryDto { ScheduledPublishAt = DateTime.UtcNow.AddDays(-1) }", "new PublishStoryDto()"),
-    "AdminInviteListQuery": ("new AdminInviteListQuery { Take = 0 }", "new AdminInviteListQuery { Skip = 0, Take = 10 }"),
     "ChatMessagesQuery": ("new ChatMessagesQuery { PageSize = 0 }", "new ChatMessagesQuery { PageSize = 20 }"),
     "AlbumListQuery": ("new AlbumListQuery { FaceId = -1 }", "new AlbumListQuery { FaceId = 1 }"),
     "BlogListQuery": ("new BlogListQuery { FaceId = -1 }", "new BlogListQuery { FaceId = 1 }"),

@@ -19,8 +19,6 @@ SCHEMAS: list[tuple[str, str, str, str]] = [
     ("RegisterResendDtoValidator", "RegisterResendDto", "BeDemo.Api.Models.DTOs", "OAuth"),
     ("RegisterPrefillQueryValidator", "RegisterPrefillQuery", "BeDemo.Api.Models.Requests.OAuth", "OAuth"),
     ("RegisterCompleteDtoValidator", "RegisterCompleteDto", "BeDemo.Api.Models.DTOs", "OAuth"),
-    ("AdminInviteListQueryValidator", "AdminInviteListQuery", "BeDemo.Api.Models.Requests.OAuth", "OAuth"),
-    ("AdminCreateRegistrationInviteValidator", "AdminCreateRegistrationInviteDto", "BeDemo.Api.Models.DTOs", "OAuth"),
     ("LocalizationBundleQueryValidator", "LocalizationBundleQuery", "BeDemo.Api.Models.Requests.OAuth", "OAuth"),
     ("GetUsersQueryValidator", "GetUsersQuery", "BeDemo.Api.Models.Requests.Users", "Users"),
     ("CreateUserRequestValidator", "CreateUserModel", "BeDemo.Api.Controllers", "Users"),
