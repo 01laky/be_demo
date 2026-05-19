@@ -26,6 +26,7 @@ public sealed class ContentModerationController : ControllerBase
     private readonly IContentModerationNotifier _moderationNotifier;
     private readonly IOperatorAlbumManagementService _operatorAlbums;
     private readonly IOperatorReelManagementService _operatorReels;
+    private readonly IOperatorBlogManagementService _operatorBlogs;
 
     public ContentModerationController(
         ApplicationDbContext context,
@@ -35,7 +36,8 @@ public sealed class ContentModerationController : ControllerBase
         ILogger<ContentModerationController> logger,
         IContentModerationNotifier moderationNotifier,
         IOperatorAlbumManagementService operatorAlbums,
-        IOperatorReelManagementService operatorReels)
+        IOperatorReelManagementService operatorReels,
+        IOperatorBlogManagementService operatorBlogs)
     {
         _context = context;
         _access = access;
@@ -45,6 +47,7 @@ public sealed class ContentModerationController : ControllerBase
         _moderationNotifier = moderationNotifier;
         _operatorAlbums = operatorAlbums;
         _operatorReels = operatorReels;
+        _operatorBlogs = operatorBlogs;
     }
 
     private string? UserId => User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -100,6 +103,7 @@ public sealed class ContentModerationController : ControllerBase
             var blogs = await _context.Blogs
                 .Include(b => b.Creator)
                 .Include(b => b.Face)
+                .Include(b => b.Images)
                 .Where(b => !q.ContentId.HasValue || b.Id == q.ContentId)
                 .Where(b => q.ApprovalStatus == null || b.ApprovalStatus == q.ApprovalStatus)
                 .Where(b => q.AiReviewStatus == null || b.AiReviewStatus == q.AiReviewStatus)
@@ -191,8 +195,13 @@ public sealed class ContentModerationController : ControllerBase
             ContentModerationPreviewText.ToPlainTextPreview(album.Description),
             null);
 
-    private static ModerationItemDto MapBlog(Blog blog) =>
-        new(
+    private static ModerationItemDto MapBlog(Blog blog)
+    {
+        var firstImageUrl = blog.Images
+            .OrderBy(i => i.SortOrder)
+            .Select(i => i.ImageUrl)
+            .FirstOrDefault();
+        return new(
             ModeratedContentType.Blog,
             blog.Id,
             blog.Title,
@@ -217,7 +226,8 @@ public sealed class ContentModerationController : ControllerBase
             blog.RemovalReason,
             blog.CreatedAt,
             ContentModerationPreviewText.ToPlainTextPreview(blog.Content),
-            null);
+            ContentModerationPreviewText.ToMediaUrlPreview(firstImageUrl));
+    }
 
     private static ModerationItemDto MapReel(Reel reel, int faceId, string faceTitle) =>
         new(
@@ -422,6 +432,19 @@ public sealed class ContentModerationController : ControllerBase
             return ModerationActionResult.Ok(ContentApprovalStatus.Removed, item.AiReviewStatus, "Hard deleted");
         }
 
+        // Blog "remove" from moderation = hard-delete (same as operator Delete blog).
+        if (contentType == ModeratedContentType.Blog && targetStatus == ContentApprovalStatus.Removed)
+        {
+            await _operatorBlogs.HardDeleteBlogAsync(
+                UserId!,
+                contentId,
+                item.FaceId,
+                decision!.Reason!.Trim(),
+                decision.UserMessage!.Trim(),
+                CancellationToken.None);
+            return ModerationActionResult.Ok(ContentApprovalStatus.Removed, item.AiReviewStatus, "Hard deleted");
+        }
+
         if (item.ApprovalStatus == targetStatus)
             return ModerationActionResult.Ok(item.ApprovalStatus, item.AiReviewStatus, "Already in target status");
 
@@ -494,6 +517,20 @@ public sealed class ContentModerationController : ControllerBase
                     UserId!,
                     reel.CreatorId,
                     reel.Title,
+                    decision.UserMessage.Trim(),
+                    CancellationToken.None);
+            }
+        }
+
+        if (targetStatus == ContentApprovalStatus.Rejected && contentType == ModeratedContentType.Blog)
+        {
+            var blog = await _context.Blogs.AsNoTracking().FirstOrDefaultAsync(b => b.Id == contentId);
+            if (blog != null && !string.IsNullOrWhiteSpace(decision?.UserMessage))
+            {
+                await _operatorBlogs.SendRejectDmBestEffortAsync(
+                    UserId!,
+                    blog.CreatorId,
+                    blog.Title,
                     decision.UserMessage.Trim(),
                     CancellationToken.None);
             }

@@ -53,11 +53,25 @@ public class BlogsController : ControllerBase
         var operatorInventory = CanManageAllFaces();
         var page = listQuery.Page;
         var pageSize = listQuery.PageSize;
-        var effectiveFaceId = _faceScope.ResolveDataFaceId(listQuery.FaceId);
 
         IQueryable<Blog> query = _context.Blogs.AsNoTracking();
         query = OperatorContentListFilters.ApplyBlogPortalVisibility(query, operatorInventory);
-        query = query.Where(b => b.FaceId == effectiveFaceId);
+
+        if (!string.IsNullOrWhiteSpace(listQuery.CreatorId))
+        {
+            var creatorId = listQuery.CreatorId.Trim();
+            query = query.Where(b => b.CreatorId == creatorId);
+            if (listQuery.FaceId is > 0)
+            {
+                var scopedFaceId = _faceScope.ResolveDataFaceId(listQuery.FaceId);
+                query = query.Where(b => b.FaceId == scopedFaceId);
+            }
+        }
+        else
+        {
+            var effectiveFaceId = _faceScope.ResolveDataFaceId(listQuery.FaceId);
+            query = query.Where(b => b.FaceId == effectiveFaceId);
+        }
 
         if (!string.IsNullOrWhiteSpace(listQuery.Search))
         {
@@ -91,6 +105,7 @@ public class BlogsController : ControllerBase
                 creatorId = b.CreatorId,
                 creatorName = (b.Creator.FirstName ?? "") + " " + (b.Creator.LastName ?? ""),
                 images = b.Images.OrderBy(i => i.SortOrder).Select(i => new { i.Id, i.ImageUrl, i.SortOrder }),
+                imageCount = b.Images.Count,
                 likesCount = b.Likes.Count,
                 commentsCount = b.Comments.Count,
                 approvalStatus = b.ApprovalStatus.ToString(),
@@ -106,7 +121,7 @@ public class BlogsController : ControllerBase
 
     /// <summary>GET /api/blogs/{id} - Get blog by ID</summary>
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetBlog(int id)
+    public async Task<IActionResult> GetBlog(int id, [FromQuery] BlogDetailQuery detailQuery)
     {
         if (string.IsNullOrEmpty(UserId))
             return Unauthorized();
@@ -127,18 +142,25 @@ public class BlogsController : ControllerBase
         if (!operatorInventory && !isCreator && blog.ApprovalStatus != ContentApprovalStatus.Approved)
             return NotFound(new { error = "Blog not found" });
 
+        var effectiveFaceId = _faceScope.ResolveDataFaceId(detailQuery.FaceId);
+        if (blog.FaceId != effectiveFaceId)
+            return NotFound(new { error = "Blog not found" });
+
         var showModerationFields = operatorInventory || isCreator;
+        var contentPlainText = ContentModerationPreviewText.ToPlainTextPreview(blog.Content);
 
         return Ok(new
         {
             blog.Id,
             blog.Title,
             blog.Content,
+            contentPlainText,
             blog.FaceId,
             faceTitle = blog.Face.Title,
             creatorId = blog.CreatorId,
             creatorName = (blog.Creator.FirstName ?? "") + " " + (blog.Creator.LastName ?? ""),
             images = blog.Images.OrderBy(i => i.SortOrder).Select(i => new { i.Id, i.ImageUrl, i.SortOrder }),
+            imageCount = blog.Images.Count,
             likesCount = blog.Likes.Count,
             commentsCount = blog.Comments.Count,
             isLikedByMe = blog.Likes.Any(l => l.UserId == UserId),
@@ -147,6 +169,15 @@ public class BlogsController : ControllerBase
             aiReviewUserMessage = showModerationFields ? blog.AiReviewUserMessage : null,
             humanDecisionReason = showModerationFields ? blog.HumanDecisionReason : null,
             submittedAtUtc = showModerationFields ? blog.SubmittedAtUtc : null,
+            removedAtUtc = showModerationFields ? blog.RemovedAtUtc : null,
+            removalReason = showModerationFields ? blog.RemovalReason : null,
+            aiReviewDecision = showModerationFields ? blog.AiReviewDecision.ToString() : null,
+            aiReviewRiskLevel = showModerationFields ? blog.AiReviewRiskLevel.ToString() : null,
+            aiReviewFlagsJson = showModerationFields ? blog.AiReviewFlagsJson : null,
+            aiReviewReason = showModerationFields ? blog.AiReviewReason : null,
+            aiReviewModelVersion = showModerationFields ? blog.AiReviewModelVersion : null,
+            aiReviewTraceId = showModerationFields ? blog.AiReviewTraceId : null,
+            aiReviewConfidence = showModerationFields ? blog.AiReviewConfidence : null,
             creatorStatusLabel = ContentModerationHelpers.CreatorStatusLabel(blog.ApprovalStatus, blog.AiReviewStatus),
             blog.CreatedAt,
             blog.UpdatedAt,

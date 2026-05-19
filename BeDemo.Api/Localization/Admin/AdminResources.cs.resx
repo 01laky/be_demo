@@ -1660,6 +1660,145 @@
   <data name="pages.blogDetail.title" xml:space="preserve">
     <value>Detail blogu</value>
   </data>
+
+  <data name="pages.blogDetail.blogPostTitle" xml:space="preserve">
+    <value>Blog post</value>
+  </data>
+  <data name="pages.blogDetail.blogId" xml:space="preserve">
+    <value>Blog ID</value>
+  </data>
+  <data name="pages.blogDetail.contentSection" xml:space="preserve">
+    <value>Content (plain text)</value>
+  </data>
+  <data name="pages.blogDetail.contentEmpty" xml:space="preserve">
+    <value>No content</value>
+  </data>
+  <data name="pages.blogDetail.imagesSection" xml:space="preserve">
+    <value>Images</value>
+  </data>
+  <data name="pages.blogDetail.imagesEmpty" xml:space="preserve">
+    <value>No images on this blog</value>
+  </data>
+  <data name="pages.blogDetail.imageCount" xml:space="preserve">
+    <value>{{count}} image(s)</value>
+  </data>
+  <data name="pages.blogDetail.createdAt" xml:space="preserve">
+    <value>Created</value>
+  </data>
+  <data name="pages.blogDetail.updatedAt" xml:space="preserve">
+    <value>Updated</value>
+  </data>
+  <data name="pages.blogDetail.submittedAt" xml:space="preserve">
+    <value>Submitted</value>
+  </data>
+  <data name="pages.blogDetail.faceLabel" xml:space="preserve">
+    <value>Face</value>
+  </data>
+  <data name="pages.blogDetail.likesCount" xml:space="preserve">
+    <value>Likes</value>
+  </data>
+  <data name="pages.blogDetail.commentsCount" xml:space="preserve">
+    <value>Comments</value>
+  </data>
+  <data name="pages.blogDetail.aiReviewSection" xml:space="preserve">
+    <value>AI review</value>
+  </data>
+  <data name="pages.blogDetail.aiReviewStatus" xml:space="preserve">
+    <value>AI status</value>
+  </data>
+  <data name="pages.blogDetail.aiReviewDecision" xml:space="preserve">
+    <value>AI decision</value>
+  </data>
+  <data name="pages.blogDetail.aiReviewConfidence" xml:space="preserve">
+    <value>AI confidence</value>
+  </data>
+  <data name="pages.blogDetail.aiReviewRisk" xml:space="preserve">
+    <value>AI risk</value>
+  </data>
+  <data name="pages.blogDetail.aiReviewFlags" xml:space="preserve">
+    <value>AI flags</value>
+  </data>
+  <data name="pages.blogDetail.aiReviewReason" xml:space="preserve">
+    <value>AI reason</value>
+  </data>
+  <data name="pages.blogDetail.aiReviewModel" xml:space="preserve">
+    <value>AI model</value>
+  </data>
+  <data name="pages.blogDetail.aiReviewTrace" xml:space="preserve">
+    <value>AI trace</value>
+  </data>
+  <data name="pages.blogDetail.moderationSection" xml:space="preserve">
+    <value>Moderation</value>
+  </data>
+  <data name="pages.blogDetail.openChat" xml:space="preserve">
+    <value>Open chat</value>
+  </data>
+  <data name="pages.blogDetail.openInQueue" xml:space="preserve">
+    <value>Open in queue</value>
+  </data>
+  <data name="pages.blogDetail.approve" xml:space="preserve">
+    <value>Approve</value>
+  </data>
+  <data name="pages.blogDetail.reject" xml:space="preserve">
+    <value>Reject</value>
+  </data>
+  <data name="pages.blogDetail.deleteBlog" xml:space="preserve">
+    <value>Delete blog</value>
+  </data>
+  <data name="pages.blogDetail.deleteImage" xml:space="preserve">
+    <value>Delete image</value>
+  </data>
+  <data name="pages.blogDetail.messagesSection" xml:space="preserve">
+    <value>Messages</value>
+  </data>
+  <data name="pages.blogDetail.aiReviewUserMessage" xml:space="preserve">
+    <value>AI message to creator</value>
+  </data>
+  <data name="pages.blogDetail.humanDecisionReason" xml:space="preserve">
+    <value>Human decision reason</value>
+  </data>
+  <data name="pages.blogDetail.removedAt" xml:space="preserve">
+    <value>Removed at</value>
+  </data>
+  <data name="pages.blogDetail.removalReason" xml:space="preserve">
+    <value>Removal reason</value>
+  </data>
+  <data name="pages.blogDetail.legacyRemovedHint" xml:space="preserve">
+    <value>This blog was soft-removed earlier. Use Delete blog to permanently remove the record.</value>
+  </data>
+  <data name="pages.blogDetail.successApprove" xml:space="preserve">
+    <value>Blog approved</value>
+  </data>
+  <data name="pages.blogDetail.successReject" xml:space="preserve">
+    <value>Blog rejected</value>
+  </data>
+  <data name="pages.blogDetail.successDeleteBlog" xml:space="preserve">
+    <value>Blog deleted</value>
+  </data>
+  <data name="pages.blogDetail.successDeleteImage" xml:space="preserve">
+    <value>Image removed</value>
+  </data>
+  <data name="pages.blogDetail.approveOverrideReasonRequired" xml:space="preserve">
+    <value>Override reason is required when approving AI-recommended rejection</value>
+  </data>
+  <data name="pages.blogDetail.approveReasonDefault" xml:space="preserve">
+    <value>Approved from blog detail</value>
+  </data>
+  <data name="pages.blogsTable.colImages" xml:space="preserve">
+    <value>Images</value>
+  </data>
+  <data name="pages.userDetail.blogsTitle" xml:space="preserve">
+    <value>Blogs</value>
+  </data>
+  <data name="pages.userDetail.blogsEmpty" xml:space="preserve">
+    <value>No blogs for this user</value>
+  </data>
+  <data name="pages.userDetail.blogsColFace" xml:space="preserve">
+    <value>Face</value>
+  </data>
+  <data name="pages.moderation.openBlogDetail" xml:space="preserve">
+    <value>Open blog detail</value>
+  </data>
   <data name="pages.blogsTable.colApproval" xml:space="preserve">
     <value>Schválení</value>
   </data>

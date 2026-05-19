@@ -801,24 +801,46 @@ public static class DatabaseSeeder
         var have = await context.Blogs.CountAsync(b => b.CreatorId == userId && b.FaceId == faceId);
         for (var i = have; i < GridDemoItemsPerUserPerFace; i++)
         {
+            var index = have + (i - have);
             var created = DateTime.UtcNow;
+            // Demo mix: even index = no images; odd = 1–3 images; every 3rd = pending; every 5th = HTML; 15th = pending+HTML.
+            var pendingDemo = index % 3 == 0 || index % 15 == 0;
+            var withImages = index % 2 == 1;
+            var htmlBody = index % 5 == 0 || index % 15 == 0;
+            var content = htmlBody
+                ? $"<p>Seeded <strong>HTML</strong> body for face {faceId}, index {index + 1}.</p>"
+                : $"Seeded blog body for grid demo. Face {faceId}, index {index + 1}.";
+
             var blog = new Blog
             {
                 CreatorId = userId,
                 FaceId = faceId,
-                Title = $"Blog post {i + 1} (face {faceId})",
-                Content = $"Seeded blog body for grid demo. Face {faceId}, index {i + 1}.",
+                Title = $"Blog post {index + 1} (face {faceId})",
+                Content = content,
+                ApprovalStatus = pendingDemo
+                    ? ContentApprovalStatus.PendingApproval
+                    : ContentApprovalStatus.Approved,
+                AiReviewStatus = pendingDemo ? AiReviewStatus.NeedsHumanReview : AiReviewStatus.NotQueued,
+                SubmittedAtUtc = pendingDemo ? created.AddMinutes(-index) : null,
                 CreatedAt = created,
-                Images = new List<BlogImage>
-                {
-                    new BlogImage
-                    {
-                        ImageUrl = $"https://picsum.photos/seed/blog{faceId}{userId.GetHashCode()}{i}/640/400",
-                        SortOrder = 0,
-                        CreatedAt = created,
-                    },
-                },
+                Images = new List<BlogImage>(),
             };
+
+            if (withImages)
+            {
+                var imageCount = (index % 3) + 1;
+                for (var img = 0; img < imageCount; img++)
+                {
+                    blog.Images.Add(new BlogImage
+                    {
+                        ImageUrl =
+                            $"https://picsum.photos/seed/blog{faceId}{userId.GetHashCode()}{index}{img}/640/400",
+                        SortOrder = img,
+                        CreatedAt = created,
+                    });
+                }
+            }
+
             context.Blogs.Add(blog);
         }
 

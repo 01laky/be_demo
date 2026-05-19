@@ -63,12 +63,12 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
 
     private Task<int> CreateTestFaceAsync() => IntegrationTestFaceHelper.CreateUniqueFaceIdAsync(_factory);
 
-    private async Task<int> CreateTestBlogAsync(int? faceId = null, List<string>? imageUrls = null)
+    private async Task<(int BlogId, int FaceId)> CreateTestBlogAsync(int? faceId = null, List<string>? imageUrls = null)
     {
         var token = await GetAuthTokenAsync();
         SetAuth(token);
 
-        var face = faceId ?? await CreateTestFaceAsync();
+        var face = faceId ?? await IntegrationTestFaceHelper.GetScopedFaceIdFromConfigAsync(_client, token, "public");
 
         var resp = await _client.PostAsJsonAsync("/api/blogs", new
         {
@@ -79,8 +79,11 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         });
         resp.StatusCode.Should().Be(HttpStatusCode.Created);
         var blog = await resp.Content.ReadFromJsonAsync<JsonElement>();
-        return blog.GetProperty("id").GetInt32();
+        return (blog.GetProperty("id").GetInt32(), face);
     }
+
+    private Task<HttpResponseMessage> GetBlogDetailAsync(int blogId, int faceId) =>
+        _client.GetAsync($"/api/blogs/{blogId}?faceId={faceId}");
 
     // ==================== Blogs CRUD ====================
 
@@ -200,8 +203,9 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
     [Fact]
     public async Task CreateBlog_ShouldCreateWithImages()
     {
-        SetAuth(await GetAuthTokenAsync());
-        var faceId = await CreateTestFaceAsync();
+        var token = await GetAuthTokenAsync();
+        SetAuth(token);
+        var faceId = await IntegrationTestFaceHelper.GetScopedFaceIdFromConfigAsync(_client, token, "public");
 
         var response = await _client.PostAsJsonAsync("/api/blogs", new
         {
@@ -216,7 +220,7 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         var blogId = blog.GetProperty("id").GetInt32();
 
         // Verify images via detail
-        var detailResp = await _client.GetAsync($"/api/blogs/{blogId}");
+        var detailResp = await GetBlogDetailAsync(blogId, faceId);
         detailResp.StatusCode.Should().Be(HttpStatusCode.OK);
         var detail = await detailResp.Content.ReadFromJsonAsync<JsonElement>();
         detail.GetProperty("images").GetArrayLength().Should().Be(2);
@@ -225,8 +229,9 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
     [Fact]
     public async Task CreateBlog_ShouldLimitToThreeImages()
     {
-        SetAuth(await GetAuthTokenAsync());
-        var faceId = await CreateTestFaceAsync();
+        var token = await GetAuthTokenAsync();
+        SetAuth(token);
+        var faceId = await IntegrationTestFaceHelper.GetScopedFaceIdFromConfigAsync(_client, token, "public");
 
         var response = await _client.PostAsJsonAsync("/api/blogs", new
         {
@@ -245,7 +250,8 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         var blog = await response.Content.ReadFromJsonAsync<JsonElement>();
         var blogId = blog.GetProperty("id").GetInt32();
 
-        var detailResp = await _client.GetAsync($"/api/blogs/{blogId}");
+        var detailResp = await GetBlogDetailAsync(blogId, faceId);
+        detailResp.StatusCode.Should().Be(HttpStatusCode.OK);
         var detail = await detailResp.Content.ReadFromJsonAsync<JsonElement>();
         detail.GetProperty("images").GetArrayLength().Should().Be(3);
     }
@@ -254,9 +260,9 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
     public async Task GetBlog_ShouldReturnBlog_WhenExists()
     {
         SetAuth(await GetAuthTokenAsync());
-        var blogId = await CreateTestBlogAsync();
+        var (blogId, faceId) = await CreateTestBlogAsync();
 
-        var response = await _client.GetAsync($"/api/blogs/{blogId}");
+        var response = await GetBlogDetailAsync(blogId, faceId);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var blog = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -277,8 +283,8 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         var token = await GetAuthTokenAsync();
         SetAuth(token);
         var scopedFaceId = await IntegrationTestFaceHelper.GetScopedFaceIdFromConfigAsync(_client, token, "public");
-        var first = await CreateTestBlogAsync(faceId: scopedFaceId);
-        var second = await CreateTestBlogAsync(faceId: scopedFaceId);
+        var (first, _) = await CreateTestBlogAsync(faceId: scopedFaceId);
+        var (second, _) = await CreateTestBlogAsync(faceId: scopedFaceId);
         await ApproveAsSuperAdminAsync(ModeratedContentType.Blog, first);
         await ApproveAsSuperAdminAsync(ModeratedContentType.Blog, second);
 
@@ -295,7 +301,7 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
     public async Task UpdateBlog_ShouldReturnOk_WhenCreator()
     {
         SetAuth(await GetAuthTokenAsync());
-        var blogId = await CreateTestBlogAsync();
+        var (blogId, _) = await CreateTestBlogAsync();
 
         var response = await _client.PutAsJsonAsync($"/api/blogs/{blogId}", new
         {
@@ -311,7 +317,7 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
     public async Task UpdateBlog_ShouldUpdateImages()
     {
         SetAuth(await GetAuthTokenAsync());
-        var blogId = await CreateTestBlogAsync(imageUrls: new List<string> { "https://example.com/old.jpg" });
+        var (blogId, faceId) = await CreateTestBlogAsync(imageUrls: new List<string> { "https://example.com/old.jpg" });
 
         var response = await _client.PutAsJsonAsync($"/api/blogs/{blogId}", new
         {
@@ -320,7 +326,7 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var detailResp = await _client.GetAsync($"/api/blogs/{blogId}");
+        var detailResp = await GetBlogDetailAsync(blogId, faceId);
         var detail = await detailResp.Content.ReadFromJsonAsync<JsonElement>();
         detail.GetProperty("images").GetArrayLength().Should().Be(2);
     }
@@ -329,13 +335,13 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
     public async Task DeleteBlog_ShouldReturnNoContent_WhenCreator()
     {
         SetAuth(await GetAuthTokenAsync());
-        var blogId = await CreateTestBlogAsync();
+        var (blogId, faceId) = await CreateTestBlogAsync();
 
         var response = await _client.DeleteAsync($"/api/blogs/{blogId}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        var getResp = await _client.GetAsync($"/api/blogs/{blogId}");
+        var getResp = await GetBlogDetailAsync(blogId, faceId);
         getResp.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
@@ -360,7 +366,7 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
     public async Task CreateBlogComment_ShouldReturnCreated()
     {
         SetAuth(await GetAuthTokenAsync());
-        var blogId = await CreateTestBlogAsync();
+        var (blogId, _) = await CreateTestBlogAsync();
 
         var response = await _client.PostAsJsonAsync($"/api/blogs/{blogId}/comments", new
         {
@@ -376,7 +382,7 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
     public async Task CreateBlogComment_ShouldReturnBadRequest_WhenContentEmpty()
     {
         SetAuth(await GetAuthTokenAsync());
-        var blogId = await CreateTestBlogAsync();
+        var (blogId, _) = await CreateTestBlogAsync();
 
         var response = await _client.PostAsJsonAsync($"/api/blogs/{blogId}/comments", new
         {
@@ -401,7 +407,7 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
     public async Task GetBlogComments_ShouldReturnList()
     {
         SetAuth(await GetAuthTokenAsync());
-        var blogId = await CreateTestBlogAsync();
+        var (blogId, _) = await CreateTestBlogAsync();
 
         await _client.PostAsJsonAsync($"/api/blogs/{blogId}/comments", new
         {
@@ -418,7 +424,7 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
     public async Task UpdateBlogComment_ShouldReturnOk_WhenAuthor()
     {
         SetAuth(await GetAuthTokenAsync());
-        var blogId = await CreateTestBlogAsync();
+        var (blogId, _) = await CreateTestBlogAsync();
 
         var createResp = await _client.PostAsJsonAsync($"/api/blogs/{blogId}/comments", new
         {
@@ -441,7 +447,7 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
     public async Task DeleteBlogComment_ShouldReturnNoContent_WhenAuthor()
     {
         SetAuth(await GetAuthTokenAsync());
-        var blogId = await CreateTestBlogAsync();
+        var (blogId, _) = await CreateTestBlogAsync();
 
         var createResp = await _client.PostAsJsonAsync($"/api/blogs/{blogId}/comments", new
         {
@@ -460,7 +466,7 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
     public async Task LikeBlog_ShouldReturnOk()
     {
         SetAuth(await GetAuthTokenAsync());
-        var blogId = await CreateTestBlogAsync();
+        var (blogId, _) = await CreateTestBlogAsync();
 
         var response = await _client.PostAsync($"/api/blogs/{blogId}/likes", null);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -470,7 +476,7 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
     public async Task LikeBlog_ShouldReturnBadRequest_WhenAlreadyLiked()
     {
         SetAuth(await GetAuthTokenAsync());
-        var blogId = await CreateTestBlogAsync();
+        var (blogId, _) = await CreateTestBlogAsync();
 
         await _client.PostAsync($"/api/blogs/{blogId}/likes", null);
         var response = await _client.PostAsync($"/api/blogs/{blogId}/likes", null);
@@ -489,7 +495,7 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
     public async Task UnlikeBlog_ShouldReturnOk()
     {
         SetAuth(await GetAuthTokenAsync());
-        var blogId = await CreateTestBlogAsync();
+        var (blogId, _) = await CreateTestBlogAsync();
 
         await _client.PostAsync($"/api/blogs/{blogId}/likes", null);
         var response = await _client.DeleteAsync($"/api/blogs/{blogId}/likes");
@@ -500,7 +506,7 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
     public async Task UnlikeBlog_ShouldReturnNotFound_WhenNotLiked()
     {
         SetAuth(await GetAuthTokenAsync());
-        var blogId = await CreateTestBlogAsync();
+        var (blogId, _) = await CreateTestBlogAsync();
 
         var response = await _client.DeleteAsync($"/api/blogs/{blogId}/likes");
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -510,7 +516,7 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
     public async Task GetBlogLikes_ShouldReturnList()
     {
         SetAuth(await GetAuthTokenAsync());
-        var blogId = await CreateTestBlogAsync();
+        var (blogId, _) = await CreateTestBlogAsync();
 
         await _client.PostAsync($"/api/blogs/{blogId}/likes", null);
 
@@ -524,12 +530,12 @@ public class BlogsControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
     public async Task GetBlogDetail_ShouldIncludeLikeAndCommentCounts()
     {
         SetAuth(await GetAuthTokenAsync());
-        var blogId = await CreateTestBlogAsync();
+        var (blogId, faceId) = await CreateTestBlogAsync();
 
         await _client.PostAsync($"/api/blogs/{blogId}/likes", null);
         await _client.PostAsJsonAsync($"/api/blogs/{blogId}/comments", new { content = "Nice!" });
 
-        var response = await _client.GetAsync($"/api/blogs/{blogId}");
+        var response = await GetBlogDetailAsync(blogId, faceId);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var blog = await response.Content.ReadFromJsonAsync<JsonElement>();
         blog.GetProperty("likesCount").GetInt32().Should().Be(1);
