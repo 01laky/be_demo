@@ -58,9 +58,25 @@ public class ReelsController : ControllerBase
 
         IQueryable<Reel> query = _context.Reels.AsNoTracking();
         query = OperatorContentListFilters.ApplyReelPortalVisibility(query, operatorInventory);
-        query = query.Where(r =>
-            !r.ReelFaces.Any() ||
-            r.ReelFaces.Any(rf => rf.FaceId == effectiveFaceId));
+
+        if (!string.IsNullOrWhiteSpace(listQuery.CreatorId))
+        {
+            var creatorId = listQuery.CreatorId.Trim();
+            query = query.Where(r => r.CreatorId == creatorId);
+            if (listQuery.FaceId is > 0)
+            {
+                var scopedFaceId = _faceScope.ResolveDataFaceId(listQuery.FaceId);
+                query = query.Where(r =>
+                    !r.ReelFaces.Any() ||
+                    r.ReelFaces.Any(rf => rf.FaceId == scopedFaceId));
+            }
+        }
+        else
+        {
+            query = query.Where(r =>
+                !r.ReelFaces.Any() ||
+                r.ReelFaces.Any(rf => rf.FaceId == effectiveFaceId));
+        }
 
         if (!string.IsNullOrWhiteSpace(listQuery.Search))
         {
@@ -151,6 +167,12 @@ public class ReelsController : ControllerBase
             aiReviewUserMessage = showModerationFields ? reel.AiReviewUserMessage : null,
             humanDecisionReason = showModerationFields ? reel.HumanDecisionReason : null,
             submittedAtUtc = showModerationFields ? reel.SubmittedAtUtc : null,
+            aiReviewDecision = showModerationFields ? reel.AiReviewDecision.ToString() : null,
+            aiReviewRiskLevel = showModerationFields ? reel.AiReviewRiskLevel.ToString() : null,
+            aiReviewFlagsJson = showModerationFields ? reel.AiReviewFlagsJson : null,
+            aiReviewReason = showModerationFields ? reel.AiReviewReason : null,
+            aiReviewModelVersion = showModerationFields ? reel.AiReviewModelVersion : null,
+            aiReviewTraceId = showModerationFields ? reel.AiReviewTraceId : null,
             creatorStatusLabel = ContentModerationHelpers.CreatorStatusLabel(reel.ApprovalStatus, reel.AiReviewStatus),
             reel.CreatedAt,
             reel.UpdatedAt,

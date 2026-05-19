@@ -25,6 +25,7 @@ public sealed class ContentModerationController : ControllerBase
     private readonly ILogger<ContentModerationController> _logger;
     private readonly IContentModerationNotifier _moderationNotifier;
     private readonly IOperatorAlbumManagementService _operatorAlbums;
+    private readonly IOperatorReelManagementService _operatorReels;
 
     public ContentModerationController(
         ApplicationDbContext context,
@@ -33,7 +34,8 @@ public sealed class ContentModerationController : ControllerBase
         IRedisJobQueue jobQueue,
         ILogger<ContentModerationController> logger,
         IContentModerationNotifier moderationNotifier,
-        IOperatorAlbumManagementService operatorAlbums)
+        IOperatorAlbumManagementService operatorAlbums,
+        IOperatorReelManagementService operatorReels)
     {
         _context = context;
         _access = access;
@@ -42,6 +44,7 @@ public sealed class ContentModerationController : ControllerBase
         _logger = logger;
         _moderationNotifier = moderationNotifier;
         _operatorAlbums = operatorAlbums;
+        _operatorReels = operatorReels;
     }
 
     private string? UserId => User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -66,6 +69,7 @@ public sealed class ContentModerationController : ControllerBase
             var albumRows = await _context.Albums
                 .Include(a => a.Creator)
                 .Include(a => a.AlbumFaces).ThenInclude(af => af.Face)
+                .Where(a => !q.ContentId.HasValue || a.Id == q.ContentId)
                 .Where(a => q.ApprovalStatus == null || a.ApprovalStatus == q.ApprovalStatus)
                 .Where(a => q.AiReviewStatus == null || a.AiReviewStatus == q.AiReviewStatus)
                 .Where(a => q.FaceId == null || a.AlbumFaces.Any(af => af.FaceId == q.FaceId))
@@ -96,6 +100,7 @@ public sealed class ContentModerationController : ControllerBase
             var blogs = await _context.Blogs
                 .Include(b => b.Creator)
                 .Include(b => b.Face)
+                .Where(b => !q.ContentId.HasValue || b.Id == q.ContentId)
                 .Where(b => q.ApprovalStatus == null || b.ApprovalStatus == q.ApprovalStatus)
                 .Where(b => q.AiReviewStatus == null || b.AiReviewStatus == q.AiReviewStatus)
                 .Where(b => q.FaceId == null || b.FaceId == q.FaceId)
@@ -120,6 +125,7 @@ public sealed class ContentModerationController : ControllerBase
             var reelRows = await _context.Reels
                 .Include(r => r.Creator)
                 .Include(r => r.ReelFaces).ThenInclude(rf => rf.Face)
+                .Where(r => !q.ContentId.HasValue || r.Id == q.ContentId)
                 .Where(r => q.ApprovalStatus == null || r.ApprovalStatus == q.ApprovalStatus)
                 .Where(r => q.AiReviewStatus == null || r.AiReviewStatus == q.AiReviewStatus)
                 .Where(r => q.FaceId == null || r.ReelFaces.Any(rf => rf.FaceId == q.FaceId))
@@ -403,6 +409,19 @@ public sealed class ContentModerationController : ControllerBase
             return ModerationActionResult.Ok(ContentApprovalStatus.Removed, item.AiReviewStatus, "Hard deleted");
         }
 
+        // Reel "remove" from moderation = hard-delete (same as operator Delete reel).
+        if (contentType == ModeratedContentType.Reel && targetStatus == ContentApprovalStatus.Removed)
+        {
+            await _operatorReels.HardDeleteReelAsync(
+                UserId!,
+                contentId,
+                item.FaceId,
+                decision!.Reason!.Trim(),
+                decision.UserMessage!.Trim(),
+                CancellationToken.None);
+            return ModerationActionResult.Ok(ContentApprovalStatus.Removed, item.AiReviewStatus, "Hard deleted");
+        }
+
         if (item.ApprovalStatus == targetStatus)
             return ModerationActionResult.Ok(item.ApprovalStatus, item.AiReviewStatus, "Already in target status");
 
@@ -461,6 +480,20 @@ public sealed class ContentModerationController : ControllerBase
                     UserId!,
                     album.CreatorId,
                     album.Title,
+                    decision.UserMessage.Trim(),
+                    CancellationToken.None);
+            }
+        }
+
+        if (targetStatus == ContentApprovalStatus.Rejected && contentType == ModeratedContentType.Reel)
+        {
+            var reel = await _context.Reels.AsNoTracking().FirstOrDefaultAsync(r => r.Id == contentId);
+            if (reel != null && !string.IsNullOrWhiteSpace(decision?.UserMessage))
+            {
+                await _operatorReels.SendRejectDmBestEffortAsync(
+                    UserId!,
+                    reel.CreatorId,
+                    reel.Title,
                     decision.UserMessage.Trim(),
                     CancellationToken.None);
             }

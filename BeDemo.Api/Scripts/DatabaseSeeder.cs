@@ -838,12 +838,19 @@ public static class DatabaseSeeder
         var reels = new List<Reel>();
         for (var k = 0; k < toAdd; k++)
         {
+            var index = have + k;
+            var pendingDemo = index % 3 == 0;
             reels.Add(new Reel
             {
                 CreatorId = userId,
-                Title = $"Reel {have + k + 1} (face {faceId})",
+                Title = $"Reel {index + 1} (face {faceId})",
                 Description = "Seeded reel for grid demo.",
                 VideoUrl = demoVideo,
+                ApprovalStatus = pendingDemo
+                    ? ContentApprovalStatus.PendingApproval
+                    : ContentApprovalStatus.Approved,
+                AiReviewStatus = pendingDemo ? AiReviewStatus.NeedsHumanReview : AiReviewStatus.NotQueued,
+                SubmittedAtUtc = pendingDemo ? DateTime.UtcNow.AddMinutes(-index) : null,
                 CreatedAt = DateTime.UtcNow,
             });
         }

@@ -49,4 +49,18 @@ public sealed class GetModerationQueueQueryValidatorTests
         _sut.TestValidate(new GetModerationQueueQuery { FlagContains = new string('f', 201) })
             .ShouldHaveValidationErrorFor(x => x.FlagContains);
     }
+
+    [Fact]
+    public void ContentId_zero_fails()
+    {
+        _sut.TestValidate(new GetModerationQueueQuery { ContentId = 0 })
+            .ShouldHaveValidationErrorFor(x => x.ContentId);
+    }
+
+    [Fact]
+    public void ContentId_positive_is_valid()
+    {
+        _sut.TestValidate(new GetModerationQueueQuery { ContentId = 42 })
+            .ShouldNotHaveValidationErrorFor(x => x.ContentId);
+    }
 }

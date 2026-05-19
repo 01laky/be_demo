@@ -9,6 +9,7 @@ public sealed class GetModerationQueueQueryValidator : AbstractValidator<BeDemo.
 {
     public GetModerationQueueQueryValidator()
     {
+        RuleFor(x => x.ContentId).GreaterThan(0).When(x => x.ContentId.HasValue);
         RuleFor(x => x.FaceId).OptionalPositiveFaceId();
         RuleFor(x => x.FlagContains).MaximumLength(200).When(x => !string.IsNullOrEmpty(x.FlagContains));
         RuleFor(x => x.MinConfidence).InclusiveBetween(0, 1).When(x => x.MinConfidence.HasValue);

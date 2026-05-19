@@ -1765,6 +1765,123 @@
   <data name="pages.reelDetail.videoUrl" xml:space="preserve">
     <value>Video URL</value>
   </data>
+  <data name="pages.reelDetail.reelId" xml:space="preserve">
+    <value>Reel ID</value>
+  </data>
+  <data name="pages.reelDetail.createdAt" xml:space="preserve">
+    <value>Created at</value>
+  </data>
+  <data name="pages.reelDetail.updatedAt" xml:space="preserve">
+    <value>Updated at</value>
+  </data>
+  <data name="pages.reelDetail.submittedAt" xml:space="preserve">
+    <value>Submitted at</value>
+  </data>
+  <data name="pages.reelDetail.aiReviewStatus" xml:space="preserve">
+    <value>AI review status</value>
+  </data>
+  <data name="pages.reelDetail.creatorStatusLabel" xml:space="preserve">
+    <value>Creator status</value>
+  </data>
+  <data name="pages.reelDetail.likesCount" xml:space="preserve">
+    <value>Likes</value>
+  </data>
+  <data name="pages.reelDetail.commentsCount" xml:space="preserve">
+    <value>Comments</value>
+  </data>
+  <data name="pages.reelDetail.facesLabel" xml:space="preserve">
+    <value>Faces</value>
+  </data>
+  <data name="pages.reelDetail.videoSection" xml:space="preserve">
+    <value>Video</value>
+  </data>
+  <data name="pages.reelDetail.videoEmpty" xml:space="preserve">
+    <value>No video URL on this reel.</value>
+  </data>
+  <data name="pages.reelDetail.openPreview" xml:space="preserve">
+    <value>Open preview</value>
+  </data>
+  <data name="pages.reelDetail.openVideoUrl" xml:space="preserve">
+    <value>Open video in new tab</value>
+  </data>
+  <data name="pages.reelDetail.previewCounter" xml:space="preserve">
+    <value>{{current}} / {{total}}</value>
+  </data>
+  <data name="pages.reelDetail.aiReviewSection" xml:space="preserve">
+    <value>AI review</value>
+  </data>
+  <data name="pages.reelDetail.aiReviewDecision" xml:space="preserve">
+    <value>AI decision</value>
+  </data>
+  <data name="pages.reelDetail.aiReviewRisk" xml:space="preserve">
+    <value>AI risk</value>
+  </data>
+  <data name="pages.reelDetail.aiReviewFlags" xml:space="preserve">
+    <value>AI flags</value>
+  </data>
+  <data name="pages.reelDetail.aiReviewReason" xml:space="preserve">
+    <value>AI reason</value>
+  </data>
+  <data name="pages.reelDetail.aiReviewModel" xml:space="preserve">
+    <value>AI model</value>
+  </data>
+  <data name="pages.reelDetail.aiReviewTrace" xml:space="preserve">
+    <value>AI trace</value>
+  </data>
+  <data name="pages.reelDetail.moderationSection" xml:space="preserve">
+    <value>Moderation</value>
+  </data>
+  <data name="pages.reelDetail.openChat" xml:space="preserve">
+    <value>Open chat</value>
+  </data>
+  <data name="pages.reelDetail.openInQueue" xml:space="preserve">
+    <value>Open in queue</value>
+  </data>
+  <data name="pages.reelDetail.approve" xml:space="preserve">
+    <value>Approve</value>
+  </data>
+  <data name="pages.reelDetail.reject" xml:space="preserve">
+    <value>Reject</value>
+  </data>
+  <data name="pages.reelDetail.deleteReel" xml:space="preserve">
+    <value>Delete reel</value>
+  </data>
+  <data name="pages.reelDetail.messagesSection" xml:space="preserve">
+    <value>Messages</value>
+  </data>
+  <data name="pages.reelDetail.aiReviewUserMessage" xml:space="preserve">
+    <value>AI message to creator</value>
+  </data>
+  <data name="pages.reelDetail.humanDecisionReason" xml:space="preserve">
+    <value>Human decision reason</value>
+  </data>
+  <data name="pages.reelDetail.successApprove" xml:space="preserve">
+    <value>Reel approved.</value>
+  </data>
+  <data name="pages.reelDetail.successReject" xml:space="preserve">
+    <value>Reel rejected.</value>
+  </data>
+  <data name="pages.reelDetail.successDeleteReel" xml:space="preserve">
+    <value>Reel deleted.</value>
+  </data>
+  <data name="pages.reelDetail.approveOverrideReasonRequired" xml:space="preserve">
+    <value>Override reason is required when approving AI-recommended rejection.</value>
+  </data>
+  <data name="pages.userDetail.reelsTitle" xml:space="preserve">
+    <value>Reels</value>
+  </data>
+  <data name="pages.userDetail.reelsEmpty" xml:space="preserve">
+    <value>No reels for this user.</value>
+  </data>
+  <data name="pages.userDetail.reelsColFaces" xml:space="preserve">
+    <value>Faces</value>
+  </data>
+  <data name="pages.moderation.openReelDetail" xml:space="preserve">
+    <value>Open reel detail</value>
+  </data>
+  <data name="pages.moderation.openAlbumDetail" xml:space="preserve">
+    <value>Open album detail</value>
+  </data>
   <data name="pages.reelsTable.colApproval" xml:space="preserve">
     <value>Approval</value>
   </data>

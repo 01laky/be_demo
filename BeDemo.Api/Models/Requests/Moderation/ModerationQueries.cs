@@ -4,6 +4,7 @@ namespace BeDemo.Api.Models.Requests.Moderation;
 
 public sealed class GetModerationQueueQuery
 {
+    public int? ContentId { get; set; }
     public ModeratedContentType? ContentType { get; set; }
     public ContentApprovalStatus? ApprovalStatus { get; set; }
     public AiReviewStatus? AiReviewStatus { get; set; }

@@ -1765,6 +1765,123 @@
   <data name="pages.reelDetail.videoUrl" xml:space="preserve">
     <value>URL videa</value>
   </data>
+  <data name="pages.reelDetail.reelId" xml:space="preserve">
+    <value>ID reelu</value>
+  </data>
+  <data name="pages.reelDetail.createdAt" xml:space="preserve">
+    <value>Vytvořeno</value>
+  </data>
+  <data name="pages.reelDetail.updatedAt" xml:space="preserve">
+    <value>Upraveno</value>
+  </data>
+  <data name="pages.reelDetail.submittedAt" xml:space="preserve">
+    <value>Odesláno</value>
+  </data>
+  <data name="pages.reelDetail.aiReviewStatus" xml:space="preserve">
+    <value>Stav AI kontroly</value>
+  </data>
+  <data name="pages.reelDetail.creatorStatusLabel" xml:space="preserve">
+    <value>Stav pro tvůrce</value>
+  </data>
+  <data name="pages.reelDetail.likesCount" xml:space="preserve">
+    <value>To se mi líbí</value>
+  </data>
+  <data name="pages.reelDetail.commentsCount" xml:space="preserve">
+    <value>Komentáře</value>
+  </data>
+  <data name="pages.reelDetail.facesLabel" xml:space="preserve">
+    <value>Tváře</value>
+  </data>
+  <data name="pages.reelDetail.videoSection" xml:space="preserve">
+    <value>Video</value>
+  </data>
+  <data name="pages.reelDetail.videoEmpty" xml:space="preserve">
+    <value>Reel nemá URL videa.</value>
+  </data>
+  <data name="pages.reelDetail.openPreview" xml:space="preserve">
+    <value>Otevřít náhled</value>
+  </data>
+  <data name="pages.reelDetail.openVideoUrl" xml:space="preserve">
+    <value>Otevřít video na nové kartě</value>
+  </data>
+  <data name="pages.reelDetail.previewCounter" xml:space="preserve">
+    <value>{{current}} / {{total}}</value>
+  </data>
+  <data name="pages.reelDetail.aiReviewSection" xml:space="preserve">
+    <value>AI kontrola</value>
+  </data>
+  <data name="pages.reelDetail.aiReviewDecision" xml:space="preserve">
+    <value>Rozhodnutí AI</value>
+  </data>
+  <data name="pages.reelDetail.aiReviewRisk" xml:space="preserve">
+    <value>Riziko AI</value>
+  </data>
+  <data name="pages.reelDetail.aiReviewFlags" xml:space="preserve">
+    <value>Příznaky AI</value>
+  </data>
+  <data name="pages.reelDetail.aiReviewReason" xml:space="preserve">
+    <value>Důvod AI</value>
+  </data>
+  <data name="pages.reelDetail.aiReviewModel" xml:space="preserve">
+    <value>Model AI</value>
+  </data>
+  <data name="pages.reelDetail.aiReviewTrace" xml:space="preserve">
+    <value>Trace AI</value>
+  </data>
+  <data name="pages.reelDetail.moderationSection" xml:space="preserve">
+    <value>Moderace</value>
+  </data>
+  <data name="pages.reelDetail.openChat" xml:space="preserve">
+    <value>Otevřít chat</value>
+  </data>
+  <data name="pages.reelDetail.openInQueue" xml:space="preserve">
+    <value>Otevřít ve frontě</value>
+  </data>
+  <data name="pages.reelDetail.approve" xml:space="preserve">
+    <value>Schválit</value>
+  </data>
+  <data name="pages.reelDetail.reject" xml:space="preserve">
+    <value>Zamítnout</value>
+  </data>
+  <data name="pages.reelDetail.deleteReel" xml:space="preserve">
+    <value>Smazat reel</value>
+  </data>
+  <data name="pages.reelDetail.messagesSection" xml:space="preserve">
+    <value>Zprávy</value>
+  </data>
+  <data name="pages.reelDetail.aiReviewUserMessage" xml:space="preserve">
+    <value>Zpráva AI pro tvůrce</value>
+  </data>
+  <data name="pages.reelDetail.humanDecisionReason" xml:space="preserve">
+    <value>Důvod lidského rozhodnutí</value>
+  </data>
+  <data name="pages.reelDetail.successApprove" xml:space="preserve">
+    <value>Reel byl schválen.</value>
+  </data>
+  <data name="pages.reelDetail.successReject" xml:space="preserve">
+    <value>Reel byl zamítnut.</value>
+  </data>
+  <data name="pages.reelDetail.successDeleteReel" xml:space="preserve">
+    <value>Reel byl smazán.</value>
+  </data>
+  <data name="pages.reelDetail.approveOverrideReasonRequired" xml:space="preserve">
+    <value>Při schválení po doporučení zamítnutí AI je nutný důvod.</value>
+  </data>
+  <data name="pages.userDetail.reelsTitle" xml:space="preserve">
+    <value>Reely</value>
+  </data>
+  <data name="pages.userDetail.reelsEmpty" xml:space="preserve">
+    <value>Pro tohoto uživatele nejsou žádné reely.</value>
+  </data>
+  <data name="pages.userDetail.reelsColFaces" xml:space="preserve">
+    <value>Tváře</value>
+  </data>
+  <data name="pages.moderation.openReelDetail" xml:space="preserve">
+    <value>Otevřít detail reelu</value>
+  </data>
+  <data name="pages.moderation.openAlbumDetail" xml:space="preserve">
+    <value>Otevřít detail alba</value>
+  </data>
   <data name="pages.reelsTable.colApproval" xml:space="preserve">
     <value>Schválení</value>
   </data>

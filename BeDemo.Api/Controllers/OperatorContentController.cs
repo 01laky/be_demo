@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BeDemo.Api.Controllers;
 
-/// <summary>Super-admin operator content actions (album hard-delete shared by Remove + Delete album UI).</summary>
+/// <summary>Super-admin operator content actions (album/reel hard-delete shared by Remove + detail delete UI).</summary>
 [ApiController]
 [Route("api/operator-content")]
 [Authorize]
@@ -14,11 +14,16 @@ public sealed class OperatorContentController : ControllerBase
 {
     private readonly IAccessEvaluator _access;
     private readonly IOperatorAlbumManagementService _albums;
+    private readonly IOperatorReelManagementService _reels;
 
-    public OperatorContentController(IAccessEvaluator access, IOperatorAlbumManagementService albums)
+    public OperatorContentController(
+        IAccessEvaluator access,
+        IOperatorAlbumManagementService albums,
+        IOperatorReelManagementService reels)
     {
         _access = access;
         _albums = albums;
+        _reels = reels;
     }
 
     private string? OperatorUserId => User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -71,5 +76,28 @@ public sealed class OperatorContentController : ControllerBase
             cancellationToken);
 
         return ok ? NoContent() : NotFound(new { error = "Album or media not found" });
+    }
+
+    /// <summary>Hard-delete reel (toolbar Remove and Delete reel both use this).</summary>
+    [HttpPost("reels/{id:int}/delete")]
+    public async Task<IActionResult> HardDeleteReel(
+        int id,
+        [FromBody] OperatorAlbumDeleteRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!RequireSuperAdmin())
+            return Forbid();
+        if (string.IsNullOrEmpty(OperatorUserId))
+            return Unauthorized();
+
+        await _reels.HardDeleteReelAsync(
+            OperatorUserId,
+            id,
+            request.FaceId,
+            request.Reason,
+            request.UserMessage,
+            cancellationToken);
+
+        return NoContent();
     }
 }
