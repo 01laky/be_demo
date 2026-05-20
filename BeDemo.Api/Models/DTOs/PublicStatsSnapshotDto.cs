@@ -20,4 +20,5 @@ public sealed class PublicStatsSnapshotDto
     public int FaceWallTicketsCount { get; init; }
     public int FaceChatRoomsCount { get; init; }
     public int FaceChatRoomMessagesCount { get; init; }
+    public int FaceVideoLoungesCount { get; init; }
 }

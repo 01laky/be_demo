@@ -889,6 +889,18 @@
   <data name="pages.editFace.validation.titleRequired" xml:space="preserve">
     <value>Title is required</value>
   </data>
+  <data name="pages.editFace.chatRoomsCreate" xml:space="preserve">
+    <value>Allow chat room creation</value>
+  </data>
+  <data name="pages.editFace.chatRoomsCreateHelp" xml:space="preserve">
+    <value>Members (non-host) can create chat rooms on this face</value>
+  </data>
+  <data name="pages.editFace.videoLoungesCreate" xml:space="preserve">
+    <value>Allow video lounge creation</value>
+  </data>
+  <data name="pages.editFace.videoLoungesCreateHelp" xml:space="preserve">
+    <value>Members (non-host) can create video lounges on this face</value>
+  </data>
   <data name="pages.editPage.description" xml:space="preserve">
     <value>Description</value>
   </data>
@@ -912,6 +924,9 @@
   </data>
   <data name="pages.editPage.gridLayout.categories.chatRooms" xml:space="preserve">
     <value>Chat Rooms</value>
+  </data>
+  <data name="pages.editPage.gridLayout.categories.videoLounges" xml:space="preserve">
+    <value>Video Lounges</value>
   </data>
   <data name="pages.editPage.gridLayout.categories.reels" xml:space="preserve">
     <value>Reels</value>
@@ -996,6 +1011,24 @@
   </data>
   <data name="pages.editPage.gridLayout.components.chatRoomGridDesc" xml:space="preserve">
     <value>Paginated grid of chat rooms. Items count adapts to block size.</value>
+  </data>
+  <data name="pages.editPage.gridLayout.components.videoLounge" xml:space="preserve">
+    <value>Video lounge</value>
+  </data>
+  <data name="pages.editPage.gridLayout.components.videoLoungeDesc" xml:space="preserve">
+    <value>Single video lounge tile (optional bound lounge)</value>
+  </data>
+  <data name="pages.editPage.gridLayout.components.videoLoungeGrid" xml:space="preserve">
+    <value>Video lounge grid</value>
+  </data>
+  <data name="pages.editPage.gridLayout.components.videoLoungeGridDesc" xml:space="preserve">
+    <value>Grid of video lounges for the face</value>
+  </data>
+  <data name="pages.editPage.gridLayout.components.videoLoungeCarousel" xml:space="preserve">
+    <value>Video lounge carousel</value>
+  </data>
+  <data name="pages.editPage.gridLayout.components.videoLoungeCarouselDesc" xml:space="preserve">
+    <value>Carousel of video lounges for the face</value>
   </data>
   <data name="pages.editPage.gridLayout.components.clear" xml:space="preserve">
     <value>Remove Component</value>
@@ -2038,6 +2071,135 @@
   </data>
   <data name="pages.chatRoomsTable.title" xml:space="preserve">
     <value>Chat rooms</value>
+  </data>
+  <data name="pages.videoLoungesTable.title" xml:space="preserve">
+    <value>Video lounges</value>
+  </data>
+  <data name="pages.videoLoungesTable.colTitle" xml:space="preserve">
+    <value>Title</value>
+  </data>
+  <data name="pages.videoLoungesTable.colPublic" xml:space="preserve">
+    <value>Visibility</value>
+  </data>
+  <data name="pages.videoLoungesTable.colSystem" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="pages.videoLoungesTable.colMembers" xml:space="preserve">
+    <value>Members</value>
+  </data>
+  <data name="pages.videoLoungesTable.colLive" xml:space="preserve">
+    <value>Live</value>
+  </data>
+  <data name="pages.videoLoungesTable.colCreatedAt" xml:space="preserve">
+    <value>Created</value>
+  </data>
+  <data name="pages.videoLoungesTable.public" xml:space="preserve">
+    <value>Public</value>
+  </data>
+  <data name="pages.videoLoungesTable.private" xml:space="preserve">
+    <value>Private</value>
+  </data>
+  <data name="pages.videoLoungesTable.system" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="pages.videoLoungesTable.loading" xml:space="preserve">
+    <value>Loading video lounges…</value>
+  </data>
+  <data name="pages.videoLoungesTable.error" xml:space="preserve">
+    <value>Failed to load video lounges</value>
+  </data>
+  <data name="pages.videoLoungesTable.noItems" xml:space="preserve">
+    <value>No video lounges on this face</value>
+  </data>
+  <data name="pages.videoLoungesTable.liveBadge" xml:space="preserve">
+    <value>Live · {{count}}</value>
+  </data>
+  <data name="pages.videoLoungeDetail.title" xml:space="preserve">
+    <value>Video lounge details</value>
+  </data>
+  <data name="pages.videoLoungeDetail.loungeTitle" xml:space="preserve">
+    <value>Title</value>
+  </data>
+  <data name="pages.videoLoungeDetail.loungeId" xml:space="preserve">
+    <value>Lounge ID</value>
+  </data>
+  <data name="pages.videoLoungeDetail.visibility" xml:space="preserve">
+    <value>Visibility</value>
+  </data>
+  <data name="pages.videoLoungeDetail.faceLabel" xml:space="preserve">
+    <value>Face</value>
+  </data>
+  <data name="pages.videoLoungeDetail.creatorLabel" xml:space="preserve">
+    <value>Creator</value>
+  </data>
+  <data name="pages.videoLoungeDetail.memberCount" xml:space="preserve">
+    <value>Members</value>
+  </data>
+  <data name="pages.videoLoungeDetail.maxParticipants" xml:space="preserve">
+    <value>Max participants</value>
+  </data>
+  <data name="pages.videoLoungeDetail.liveStatus" xml:space="preserve">
+    <value>Live session</value>
+  </data>
+  <data name="pages.videoLoungeDetail.liveActive" xml:space="preserve">
+    <value>Live · {{count}} participants</value>
+  </data>
+  <data name="pages.videoLoungeDetail.liveInactive" xml:space="preserve">
+    <value>Not live</value>
+  </data>
+  <data name="pages.videoLoungeDetail.createdAt" xml:space="preserve">
+    <value>Created</value>
+  </data>
+  <data name="pages.videoLoungeDetail.updatedAt" xml:space="preserve">
+    <value>Updated</value>
+  </data>
+  <data name="pages.videoLoungeDetail.descriptionSection" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="pages.videoLoungeDetail.descriptionEmpty" xml:space="preserve">
+    <value>No description</value>
+  </data>
+  <data name="pages.videoLoungeOperator.managementSection" xml:space="preserve">
+    <value>Operator moderation</value>
+  </data>
+  <data name="pages.videoLoungeOperator.managementHint" xml:space="preserve">
+    <value>Stealth observers are hidden from the portal roster. Kick removes participants from the live session.</value>
+  </data>
+  <data name="pages.videoLoungeOperator.stealthJoin" xml:space="preserve">
+    <value>Join hidden (stealth)</value>
+  </data>
+  <data name="pages.videoLoungeOperator.kick" xml:space="preserve">
+    <value>Kick</value>
+  </data>
+  <data name="pages.videoLoungeOperator.kickAll" xml:space="preserve">
+    <value>Kick all and end session</value>
+  </data>
+  <data name="pages.videoLoungeOperator.liveParticipantsSection" xml:space="preserve">
+    <value>Live participants (operator view)</value>
+  </data>
+  <data name="pages.videoLoungeOperator.noLiveSession" xml:space="preserve">
+    <value>No active live session</value>
+  </data>
+  <data name="pages.videoLoungeOperator.participantsEmpty" xml:space="preserve">
+    <value>No participants in the live session</value>
+  </data>
+  <data name="pages.videoLoungeOperator.colParticipant" xml:space="preserve">
+    <value>Participant</value>
+  </data>
+  <data name="pages.videoLoungeOperator.colJoinMode" xml:space="preserve">
+    <value>Join mode</value>
+  </data>
+  <data name="pages.videoLoungeOperator.colStealth" xml:space="preserve">
+    <value>Stealth</value>
+  </data>
+  <data name="pages.videoLoungeOperator.stealthSuccess" xml:space="preserve">
+    <value>Stealth join issued</value>
+  </data>
+  <data name="pages.videoLoungeOperator.kickSuccess" xml:space="preserve">
+    <value>Participant kicked</value>
+  </data>
+  <data name="pages.videoLoungeOperator.kickAllSuccess" xml:space="preserve">
+    <value>All participants kicked</value>
   </data>
   <data name="pages.profileDetail.age" xml:space="preserve">
     <value>Age</value>

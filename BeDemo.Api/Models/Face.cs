@@ -47,6 +47,11 @@ public class Face
     /// </summary>
     public bool ChatRoomsCreate { get; set; }
 
+    /// <summary>
+    /// When true, non-host users may create VideoLounge rooms from the portal grid.
+    /// </summary>
+    public bool VideoLoungesCreate { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime? UpdatedAt { get; set; }
@@ -58,4 +63,6 @@ public class Face
     public ICollection<UserFaceProfile> UserFaceProfiles { get; set; } = new List<UserFaceProfile>();
 
     public ICollection<FaceChatRoom> ChatRooms { get; set; } = new List<FaceChatRoom>();
+
+    public ICollection<FaceVideoLounge> VideoLounges { get; set; } = new List<FaceVideoLounge>();
 }

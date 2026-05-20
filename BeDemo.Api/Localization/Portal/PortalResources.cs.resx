@@ -1126,4 +1126,151 @@
   <data name="welcome" xml:space="preserve">
     <value>Vítejte ve Vite + React</value>
   </data>
+  <data name="grid.videoLounge.liveBadge" xml:space="preserve">
+    <value>Živě · {{count}}</value>
+  </data>
+  <data name="gridBlocks.actions.hostCannotCreateVideoLounges" xml:space="preserve">
+    <value>Hostitelé nemohou vytvářet video lounge</value>
+  </data>
+  <data name="gridBlocks.actions.videoLoungeCreationDisabled" xml:space="preserve">
+    <value>Vytváření video lounge je pro tuto tvář vypnuto</value>
+  </data>
+  <data name="gridBlocks.createUnsupported.faceHostVideoLounge" xml:space="preserve">
+    <value>Hostitelé mohou prohlížet video lounge, ale nemohou je vytvářet ani se připojit.</value>
+  </data>
+  <data name="gridBlocks.createUnsupported.videoLoungeDisabled" xml:space="preserve">
+    <value>Vytváření video lounge není pro tuto tvář povoleno.</value>
+  </data>
+  <data name="gridBlocks.empty.videoLounges" xml:space="preserve">
+    <value>Zatím žádné video lounge.</value>
+  </data>
+  <data name="gridBlocks.guest.videoLounges" xml:space="preserve">
+    <value>Pro video lounge se přihlaste.</value>
+  </data>
+  <data name="gridBlocks.loadError.videoLounges" xml:space="preserve">
+    <value>Video lounge se nepodařilo načíst.</value>
+  </data>
+  <data name="pages.videoLounge.create.success" xml:space="preserve">
+    <value>Video lounge bylo vytvořeno</value>
+  </data>
+  <data name="pages.videoLounge.join.failed" xml:space="preserve">
+    <value>Připojení selhalo</value>
+  </data>
+  <data name="pages.videoLounge.join.join" xml:space="preserve">
+    <value>Připojit se do lounge</value>
+  </data>
+  <data name="pages.videoLounge.join.joined" xml:space="preserve">
+    <value>Připojili jste se do lounge.</value>
+  </data>
+  <data name="pages.videoLounge.join.pending" xml:space="preserve">
+    <value>Žádost čeká</value>
+  </data>
+  <data name="pages.videoLounge.join.requestFailed" xml:space="preserve">
+    <value>Žádost se nepodařilo odeslat</value>
+  </data>
+  <data name="pages.videoLounge.join.requestJoin" xml:space="preserve">
+    <value>Požádat o připojení</value>
+  </data>
+  <data name="pages.videoLounge.join.requestSent" xml:space="preserve">
+    <value>Žádost o připojení odeslána.</value>
+  </data>
+  <data name="pages.videoLounge.live.camToggle" xml:space="preserve">
+    <value>Kamera</value>
+  </data>
+  <data name="pages.videoLounge.live.joinedAs" xml:space="preserve">
+    <value>Připojen jako {{mode}}</value>
+  </data>
+  <data name="pages.videoLounge.live.leave" xml:space="preserve">
+    <value>Odejít</value>
+  </data>
+  <data name="pages.videoLounge.live.micToggle" xml:space="preserve">
+    <value>Mikrofon</value>
+  </data>
+  <data name="pages.videoLounge.live.realKitPending" xml:space="preserve">
+    <value>LiveKit klient není v této verzi.</value>
+  </data>
+  <data name="pages.videoLounge.live.sessionExpired" xml:space="preserve">
+    <value>Relace vypršela — vraťte se do lobby.</value>
+  </data>
+  <data name="pages.videoLounge.live.speaking" xml:space="preserve">
+    <value>Mluví…</value>
+  </data>
+  <data name="pages.videoLounge.live.stubNotice" xml:space="preserve">
+    <value>Demo režim: LiveKit je simulovaný — žádné skutečné audio/video.</value>
+  </data>
+  <data name="pages.videoLounge.lobby.cannotConnect" xml:space="preserve">
+    <value>Do tohoto lounge se nemůžete připojit.</value>
+  </data>
+  <data name="pages.videoLounge.lobby.connect" xml:space="preserve">
+    <value>Připojit</value>
+  </data>
+  <data name="pages.videoLounge.lobby.connectFailed" xml:space="preserve">
+    <value>Připojení selhalo</value>
+  </data>
+  <data name="pages.videoLounge.lobby.hostView" xml:space="preserve">
+    <value>Pohled hostitele — lobby vidíte, ale připojit se nemůžete.</value>
+  </data>
+  <data name="pages.videoLounge.lobby.hostViewShort" xml:space="preserve">
+    <value>Pohled hostitele</value>
+  </data>
+  <data name="pages.videoLounge.lobby.liveCount" xml:space="preserve">
+    <value>{{count}} v živém sezení</value>
+  </data>
+  <data name="pages.videoLounge.lobby.members" xml:space="preserve">
+    <value>členů</value>
+  </data>
+  <data name="pages.videoLounge.lobby.modeCounts" xml:space="preserve">
+    <value>{{viewers}} sleduje · {{speakers}} mluví</value>
+  </data>
+  <data name="pages.videoLounge.lobby.noLiveSession" xml:space="preserve">
+    <value>Nejprve spusťte sezení, nebo počkejte, až někdo jiný půjde živě.</value>
+  </data>
+  <data name="pages.videoLounge.lobby.noSession" xml:space="preserve">
+    <value>Zatím žádné živé sezení</value>
+  </data>
+  <data name="pages.videoLounge.lobby.rosterTitle" xml:space="preserve">
+    <value>Právě živě</value>
+  </data>
+  <data name="pages.videoLounge.lobby.roomFull" xml:space="preserve">
+    <value>Lounge je plné. Zkuste znovu, až někdo odejde.</value>
+  </data>
+  <data name="pages.videoLounge.lobby.selectMode" xml:space="preserve">
+    <value>Zvolte způsob připojení</value>
+  </data>
+  <data name="pages.videoLounge.lobby.sessionStarted" xml:space="preserve">
+    <value>Živé sezení spuštěno.</value>
+  </data>
+  <data name="pages.videoLounge.lobby.startSession" xml:space="preserve">
+    <value>Spustit sezení</value>
+  </data>
+  <data name="pages.videoLounge.modes.full" xml:space="preserve">
+    <value>Plný</value>
+  </data>
+  <data name="pages.videoLounge.modes.listener" xml:space="preserve">
+    <value>Posluchač</value>
+  </data>
+  <data name="pages.videoLounge.modes.viewer" xml:space="preserve">
+    <value>Sledující</value>
+  </data>
+  <data name="pages.videoLounge.noFace" xml:space="preserve">
+    <value>Nejprve vyberte tvář.</value>
+  </data>
+  <data name="pages.videoLounge.notFound" xml:space="preserve">
+    <value>Video lounge nenalezeno.</value>
+  </data>
+  <data name="pages.videoLounge.preview.denied" xml:space="preserve">
+    <value>Přístup k mikrofonu nebo kameře byl zamítnut. Povolte přístup pro připojení.</value>
+  </data>
+  <data name="pages.videoLounge.preview.retest" xml:space="preserve">
+    <value>Otestovat znovu</value>
+  </data>
+  <data name="pages.videoLounge.preview.testCam" xml:space="preserve">
+    <value>Otestovat mikrofon a kameru</value>
+  </data>
+  <data name="pages.videoLounge.preview.testMic" xml:space="preserve">
+    <value>Otestovat mikrofon</value>
+  </data>
+  <data name="pages.videoLounge.preview.title" xml:space="preserve">
+    <value>Před připojením otestujte zařízení</value>
+  </data>
 </root>

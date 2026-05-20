@@ -889,6 +889,18 @@
   <data name="pages.editFace.validation.titleRequired" xml:space="preserve">
     <value>Názov je povinný</value>
   </data>
+  <data name="pages.editFace.chatRoomsCreate" xml:space="preserve">
+    <value>Povoliť vytváranie chat miestností</value>
+  </data>
+  <data name="pages.editFace.chatRoomsCreateHelp" xml:space="preserve">
+    <value>Členovia (nie hostiteľ) môžu na tejto tvári vytvárať chat miestnosti</value>
+  </data>
+  <data name="pages.editFace.videoLoungesCreate" xml:space="preserve">
+    <value>Povoliť vytváranie video lounge</value>
+  </data>
+  <data name="pages.editFace.videoLoungesCreateHelp" xml:space="preserve">
+    <value>Členovia (nie hostiteľ) môžu na tejto tvári vytvárať video lounge</value>
+  </data>
   <data name="pages.editPage.description" xml:space="preserve">
     <value>Popis</value>
   </data>
@@ -912,6 +924,9 @@
   </data>
   <data name="pages.editPage.gridLayout.categories.chatRooms" xml:space="preserve">
     <value>Chat miestnosti</value>
+  </data>
+  <data name="pages.editPage.gridLayout.categories.videoLounges" xml:space="preserve">
+    <value>Video lounge</value>
   </data>
   <data name="pages.editPage.gridLayout.categories.reels" xml:space="preserve">
     <value>Reels</value>
@@ -996,6 +1011,24 @@
   </data>
   <data name="pages.editPage.gridLayout.components.chatRoomGridDesc" xml:space="preserve">
     <value>Stránkovaná mriežka chat miestností. Počet prvkov sa prispôsobí veľkosti bloku.</value>
+  </data>
+  <data name="pages.editPage.gridLayout.components.videoLounge" xml:space="preserve">
+    <value>Video lounge</value>
+  </data>
+  <data name="pages.editPage.gridLayout.components.videoLoungeDesc" xml:space="preserve">
+    <value>Jeden video lounge blok (voliteľne viazaný lounge)</value>
+  </data>
+  <data name="pages.editPage.gridLayout.components.videoLoungeGrid" xml:space="preserve">
+    <value>Mriežka video lounge</value>
+  </data>
+  <data name="pages.editPage.gridLayout.components.videoLoungeGridDesc" xml:space="preserve">
+    <value>Mriežka video lounge pre tvár</value>
+  </data>
+  <data name="pages.editPage.gridLayout.components.videoLoungeCarousel" xml:space="preserve">
+    <value>Karusel video lounge</value>
+  </data>
+  <data name="pages.editPage.gridLayout.components.videoLoungeCarouselDesc" xml:space="preserve">
+    <value>Karusel video lounge pre tvár</value>
   </data>
   <data name="pages.editPage.gridLayout.components.clear" xml:space="preserve">
     <value>Odstrániť komponent</value>
@@ -2038,6 +2071,135 @@
   </data>
   <data name="pages.chatRoomsTable.title" xml:space="preserve">
     <value>Chatovacie miestnosti</value>
+  </data>
+  <data name="pages.videoLoungesTable.title" xml:space="preserve">
+    <value>Video lounge</value>
+  </data>
+  <data name="pages.videoLoungesTable.colTitle" xml:space="preserve">
+    <value>Názov</value>
+  </data>
+  <data name="pages.videoLoungesTable.colPublic" xml:space="preserve">
+    <value>Viditeľnosť</value>
+  </data>
+  <data name="pages.videoLoungesTable.colSystem" xml:space="preserve">
+    <value>Systém</value>
+  </data>
+  <data name="pages.videoLoungesTable.colMembers" xml:space="preserve">
+    <value>Členovia</value>
+  </data>
+  <data name="pages.videoLoungesTable.colLive" xml:space="preserve">
+    <value>Naživo</value>
+  </data>
+  <data name="pages.videoLoungesTable.colCreatedAt" xml:space="preserve">
+    <value>Vytvorené</value>
+  </data>
+  <data name="pages.videoLoungesTable.public" xml:space="preserve">
+    <value>Verejné</value>
+  </data>
+  <data name="pages.videoLoungesTable.private" xml:space="preserve">
+    <value>Súkromné</value>
+  </data>
+  <data name="pages.videoLoungesTable.system" xml:space="preserve">
+    <value>Systém</value>
+  </data>
+  <data name="pages.videoLoungesTable.loading" xml:space="preserve">
+    <value>Načítavam video lounge…</value>
+  </data>
+  <data name="pages.videoLoungesTable.error" xml:space="preserve">
+    <value>Video lounge sa nepodarilo načítať</value>
+  </data>
+  <data name="pages.videoLoungesTable.noItems" xml:space="preserve">
+    <value>Na tejto tvári nie sú žiadne video lounge</value>
+  </data>
+  <data name="pages.videoLoungesTable.liveBadge" xml:space="preserve">
+    <value>Naživo · {{count}}</value>
+  </data>
+  <data name="pages.videoLoungeDetail.title" xml:space="preserve">
+    <value>Detail video lounge</value>
+  </data>
+  <data name="pages.videoLoungeDetail.loungeTitle" xml:space="preserve">
+    <value>Názov</value>
+  </data>
+  <data name="pages.videoLoungeDetail.loungeId" xml:space="preserve">
+    <value>ID lounge</value>
+  </data>
+  <data name="pages.videoLoungeDetail.visibility" xml:space="preserve">
+    <value>Viditeľnosť</value>
+  </data>
+  <data name="pages.videoLoungeDetail.faceLabel" xml:space="preserve">
+    <value>Tvár</value>
+  </data>
+  <data name="pages.videoLoungeDetail.creatorLabel" xml:space="preserve">
+    <value>Tvorca</value>
+  </data>
+  <data name="pages.videoLoungeDetail.memberCount" xml:space="preserve">
+    <value>Členovia</value>
+  </data>
+  <data name="pages.videoLoungeDetail.maxParticipants" xml:space="preserve">
+    <value>Max. účastníkov</value>
+  </data>
+  <data name="pages.videoLoungeDetail.liveStatus" xml:space="preserve">
+    <value>Živá relácia</value>
+  </data>
+  <data name="pages.videoLoungeDetail.liveActive" xml:space="preserve">
+    <value>Naživo · {{count}} účastníkov</value>
+  </data>
+  <data name="pages.videoLoungeDetail.liveInactive" xml:space="preserve">
+    <value>Nie je naživo</value>
+  </data>
+  <data name="pages.videoLoungeDetail.createdAt" xml:space="preserve">
+    <value>Vytvorené</value>
+  </data>
+  <data name="pages.videoLoungeDetail.updatedAt" xml:space="preserve">
+    <value>Upravené</value>
+  </data>
+  <data name="pages.videoLoungeDetail.descriptionSection" xml:space="preserve">
+    <value>Popis</value>
+  </data>
+  <data name="pages.videoLoungeDetail.descriptionEmpty" xml:space="preserve">
+    <value>Bez popisu</value>
+  </data>
+  <data name="pages.videoLoungeOperator.managementSection" xml:space="preserve">
+    <value>Operátorská moderácia</value>
+  </data>
+  <data name="pages.videoLoungeOperator.managementHint" xml:space="preserve">
+    <value>Stealth pozorovatelia nie sú v portálovom zozname. Kick odstráni účastníka zo živej relácie.</value>
+  </data>
+  <data name="pages.videoLoungeOperator.stealthJoin" xml:space="preserve">
+    <value>Pripojiť sa skryte (stealth)</value>
+  </data>
+  <data name="pages.videoLoungeOperator.kick" xml:space="preserve">
+    <value>Vykopnúť</value>
+  </data>
+  <data name="pages.videoLoungeOperator.kickAll" xml:space="preserve">
+    <value>Vykopnúť všetkých a ukončiť reláciu</value>
+  </data>
+  <data name="pages.videoLoungeOperator.liveParticipantsSection" xml:space="preserve">
+    <value>Živí účastníci (operátor)</value>
+  </data>
+  <data name="pages.videoLoungeOperator.noLiveSession" xml:space="preserve">
+    <value>Žiadna aktívna živá relácia</value>
+  </data>
+  <data name="pages.videoLoungeOperator.participantsEmpty" xml:space="preserve">
+    <value>V živej relácii nie sú účastníci</value>
+  </data>
+  <data name="pages.videoLoungeOperator.colParticipant" xml:space="preserve">
+    <value>Účastník</value>
+  </data>
+  <data name="pages.videoLoungeOperator.colJoinMode" xml:space="preserve">
+    <value>Režim pripojenia</value>
+  </data>
+  <data name="pages.videoLoungeOperator.colStealth" xml:space="preserve">
+    <value>Stealth</value>
+  </data>
+  <data name="pages.videoLoungeOperator.stealthSuccess" xml:space="preserve">
+    <value>Stealth pripojenie vydané</value>
+  </data>
+  <data name="pages.videoLoungeOperator.kickSuccess" xml:space="preserve">
+    <value>Účastník vykopnutý</value>
+  </data>
+  <data name="pages.videoLoungeOperator.kickAllSuccess" xml:space="preserve">
+    <value>Všetci účastníci vykopnutí</value>
   </data>
   <data name="pages.profileDetail.age" xml:space="preserve">
     <value>Vek</value>

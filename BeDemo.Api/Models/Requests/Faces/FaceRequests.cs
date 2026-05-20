@@ -23,6 +23,9 @@ public class CreateFaceModel
 
     /// <summary>When true, users (non-host) may create chat rooms from the app.</summary>
     public bool? ChatRoomsCreate { get; set; }
+
+    /// <summary>When true, users (non-host) may create video lounges from the app.</summary>
+    public bool? VideoLoungesCreate { get; set; }
 }
 
 /// <summary>
@@ -45,6 +48,8 @@ public class UpdateFaceModel
     public bool? AllowRecensions { get; set; }
 
     public bool? ChatRoomsCreate { get; set; }
+
+    public bool? VideoLoungesCreate { get; set; }
 }
 
 /// <summary>
@@ -87,5 +92,28 @@ public class UpdateFaceChatRoomDto
     public string? Title { get; set; }
     public string? Description { get; set; }
     public bool? IsPublic { get; set; }
+}
+
+public class CreateFaceVideoLoungeDto
+{
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public bool IsPublic { get; set; } = true;
+    public int MaxParticipants { get; set; } = 12;
+}
+
+public class CreateSystemFaceVideoLoungeDto
+{
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public int MaxParticipants { get; set; } = 12;
+}
+
+public class UpdateFaceVideoLoungeDto
+{
+    public string? Title { get; set; }
+    public string? Description { get; set; }
+    public bool? IsPublic { get; set; }
+    public int? MaxParticipants { get; set; }
 }
 

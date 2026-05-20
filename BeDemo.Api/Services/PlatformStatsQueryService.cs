@@ -48,6 +48,7 @@ public sealed class PlatformStatsQueryService : IPlatformStatsQueryService
             FaceWallTicketsCount = await _context.FaceWallTickets.AsNoTracking().CountAsync(cancellationToken),
             FaceChatRoomsCount = await _context.FaceChatRooms.AsNoTracking().CountAsync(cancellationToken),
             FaceChatRoomMessagesCount = await _context.FaceChatRoomMessages.AsNoTracking().CountAsync(cancellationToken),
+            FaceVideoLoungesCount = await _context.FaceVideoLounges.AsNoTracking().CountAsync(cancellationToken),
         };
     }
 
@@ -90,6 +91,11 @@ public sealed class PlatformStatsQueryService : IPlatformStatsQueryService
             FaceChatRoomMessagesCount = await _context.FaceChatRoomMessages.AsNoTracking().CountAsync(cancellationToken),
             FaceChatRoomJoinRequestsPendingCount = await _context.FaceChatRoomJoinRequests.AsNoTracking()
                 .CountAsync(j => j.Status == FaceChatRoomJoinRequestStatus.Pending, cancellationToken),
+
+            FaceVideoLoungesCount = await _context.FaceVideoLounges.AsNoTracking().CountAsync(cancellationToken),
+            FaceVideoLoungeMembersCount = await _context.FaceVideoLoungeMembers.AsNoTracking().CountAsync(cancellationToken),
+            FaceVideoLoungeLiveSessionsCount = await _context.FaceVideoLoungeSessions.AsNoTracking()
+                .CountAsync(s => s.EndedAt == null, cancellationToken),
 
             FaceWallTicketsCount = await _context.FaceWallTickets.AsNoTracking().CountAsync(cancellationToken),
             FaceWallTicketsByStatus = await BuildFaceWallTicketStatusCountsAsync(cancellationToken),

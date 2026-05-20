@@ -65,6 +65,27 @@ public sealed class FaceChatRoomJoinRequestsListQuery
     public int PageSize { get; set; } = 10;
 }
 
+public sealed class FaceVideoLoungeListQuery
+{
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 10;
+    public string? Search { get; set; }
+    public string? SortBy { get; set; }
+    public string? SortDir { get; set; }
+    public bool? IsPublic { get; set; }
+}
+
+public sealed class VideoLoungeLiveJoinDto
+{
+    public string JoinMode { get; set; } = string.Empty;
+}
+
+public sealed class VideoLoungePresenceDto
+{
+    public bool? AudioEnabled { get; set; }
+    public bool? VideoEnabled { get; set; }
+}
+
 public sealed class WallTicketListQuery
 {
     public int Page { get; set; } = 1;

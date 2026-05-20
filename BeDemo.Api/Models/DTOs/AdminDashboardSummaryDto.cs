@@ -54,6 +54,11 @@ public sealed class AdminDashboardSummaryDto
     public int FaceChatRoomMessagesCount { get; init; }
     public int FaceChatRoomJoinRequestsPendingCount { get; init; }
 
+    // --- Face-scoped video lounges (stats only — no AI moderation) ---
+    public int FaceVideoLoungesCount { get; init; }
+    public int FaceVideoLoungeMembersCount { get; init; }
+    public int FaceVideoLoungeLiveSessionsCount { get; init; }
+
     // --- Wall ---
     public int FaceWallTicketsCount { get; init; }
     /// <summary>Counts keyed by enum name: Active, Approved, Denied.</summary>

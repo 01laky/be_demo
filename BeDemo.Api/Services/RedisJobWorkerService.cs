@@ -111,6 +111,12 @@ public sealed class RedisJobWorkerService : BackgroundService
             case "chatroom.idle-check":
                 await ProcessChatRoomIdleJobAsync(env, ct);
                 break;
+            case VideoLoungeLifecycleService.JobIdleCheck:
+                await ProcessVideoLoungeIdleJobAsync(env, ct);
+                break;
+            case VideoLoungeLifecycleService.JobStaleParticipant:
+                await ProcessVideoLoungeStaleParticipantJobAsync(env, ct);
+                break;
             case FaceWallTicketLifecycleService.JobTypeWallTicketDelete:
                 await ProcessWallTicketDeleteJobAsync(env, ct);
                 break;
@@ -169,6 +175,42 @@ public sealed class RedisJobWorkerService : BackgroundService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Chat room idle job failed id={Id}", env.Id);
+        }
+    }
+
+    private async Task ProcessVideoLoungeIdleJobAsync(RedisJobEnvelope env, CancellationToken ct)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(env.Payload);
+            if (!doc.RootElement.TryGetProperty("sessionId", out var idEl) || !idEl.TryGetInt32(out var sessionId))
+                return;
+            using var scope = _scopeFactory.CreateScope();
+            var lifecycle = scope.ServiceProvider.GetRequiredService<IVideoLoungeLifecycleService>();
+            await lifecycle.ProcessIdleCheckAsync(sessionId, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Video lounge idle job failed id={Id}", env.Id);
+        }
+    }
+
+    private async Task ProcessVideoLoungeStaleParticipantJobAsync(RedisJobEnvelope env, CancellationToken ct)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(env.Payload);
+            if (!doc.RootElement.TryGetProperty("sessionId", out var sidEl) || !sidEl.TryGetInt32(out var sessionId))
+                return;
+            if (!doc.RootElement.TryGetProperty("participantId", out var pidEl) || !pidEl.TryGetInt32(out var participantId))
+                return;
+            using var scope = _scopeFactory.CreateScope();
+            var lifecycle = scope.ServiceProvider.GetRequiredService<IVideoLoungeLifecycleService>();
+            await lifecycle.ProcessStaleParticipantCheckAsync(sessionId, participantId, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Video lounge stale participant job failed id={Id}", env.Id);
         }
     }
 

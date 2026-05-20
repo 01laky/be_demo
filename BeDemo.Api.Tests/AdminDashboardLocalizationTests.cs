@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Resources;
 using System.Text.Json.Nodes;
+using BeDemo.Api.Localization;
 using BeDemo.Api.Localization.Admin;
 using BeDemo.Api.Services;
 using BeDemo.Api.Tests.TestDoubles;

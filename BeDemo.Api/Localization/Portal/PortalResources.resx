@@ -1126,4 +1126,151 @@
   <data name="welcome" xml:space="preserve">
     <value>Welcome to Vite + React</value>
   </data>
+  <data name="grid.videoLounge.liveBadge" xml:space="preserve">
+    <value>Live · {{count}}</value>
+  </data>
+  <data name="gridBlocks.actions.hostCannotCreateVideoLounges" xml:space="preserve">
+    <value>Hosts cannot create video lounges</value>
+  </data>
+  <data name="gridBlocks.actions.videoLoungeCreationDisabled" xml:space="preserve">
+    <value>Video lounge creation is disabled for this face</value>
+  </data>
+  <data name="gridBlocks.createUnsupported.faceHostVideoLounge" xml:space="preserve">
+    <value>Face hosts can browse video lounges but cannot create them or connect.</value>
+  </data>
+  <data name="gridBlocks.createUnsupported.videoLoungeDisabled" xml:space="preserve">
+    <value>Creating video lounges is not enabled for this face.</value>
+  </data>
+  <data name="gridBlocks.empty.videoLounges" xml:space="preserve">
+    <value>No video lounges yet.</value>
+  </data>
+  <data name="gridBlocks.guest.videoLounges" xml:space="preserve">
+    <value>Sign in to see video lounges.</value>
+  </data>
+  <data name="gridBlocks.loadError.videoLounges" xml:space="preserve">
+    <value>Could not load video lounges.</value>
+  </data>
+  <data name="pages.videoLounge.create.success" xml:space="preserve">
+    <value>Video lounge created</value>
+  </data>
+  <data name="pages.videoLounge.join.failed" xml:space="preserve">
+    <value>Could not join</value>
+  </data>
+  <data name="pages.videoLounge.join.join" xml:space="preserve">
+    <value>Join lounge</value>
+  </data>
+  <data name="pages.videoLounge.join.joined" xml:space="preserve">
+    <value>You joined the lounge.</value>
+  </data>
+  <data name="pages.videoLounge.join.pending" xml:space="preserve">
+    <value>Request pending</value>
+  </data>
+  <data name="pages.videoLounge.join.requestFailed" xml:space="preserve">
+    <value>Could not send request</value>
+  </data>
+  <data name="pages.videoLounge.join.requestJoin" xml:space="preserve">
+    <value>Request to join</value>
+  </data>
+  <data name="pages.videoLounge.join.requestSent" xml:space="preserve">
+    <value>Join request sent.</value>
+  </data>
+  <data name="pages.videoLounge.live.camToggle" xml:space="preserve">
+    <value>Camera</value>
+  </data>
+  <data name="pages.videoLounge.live.joinedAs" xml:space="preserve">
+    <value>Joined as {{mode}}</value>
+  </data>
+  <data name="pages.videoLounge.live.leave" xml:space="preserve">
+    <value>Leave</value>
+  </data>
+  <data name="pages.videoLounge.live.micToggle" xml:space="preserve">
+    <value>Microphone</value>
+  </data>
+  <data name="pages.videoLounge.live.realKitPending" xml:space="preserve">
+    <value>LiveKit client not bundled in v1.</value>
+  </data>
+  <data name="pages.videoLounge.live.sessionExpired" xml:space="preserve">
+    <value>Session expired — return to the lobby.</value>
+  </data>
+  <data name="pages.videoLounge.live.speaking" xml:space="preserve">
+    <value>Speaking…</value>
+  </data>
+  <data name="pages.videoLounge.live.stubNotice" xml:space="preserve">
+    <value>Demo mode: LiveKit is stubbed — no real audio/video is sent.</value>
+  </data>
+  <data name="pages.videoLounge.lobby.cannotConnect" xml:space="preserve">
+    <value>You cannot connect to this lounge.</value>
+  </data>
+  <data name="pages.videoLounge.lobby.connect" xml:space="preserve">
+    <value>Connect</value>
+  </data>
+  <data name="pages.videoLounge.lobby.connectFailed" xml:space="preserve">
+    <value>Could not connect</value>
+  </data>
+  <data name="pages.videoLounge.lobby.hostView" xml:space="preserve">
+    <value>Host view — you can watch the lobby but cannot connect.</value>
+  </data>
+  <data name="pages.videoLounge.lobby.hostViewShort" xml:space="preserve">
+    <value>Host view</value>
+  </data>
+  <data name="pages.videoLounge.lobby.liveCount" xml:space="preserve">
+    <value>{{count}} in live session</value>
+  </data>
+  <data name="pages.videoLounge.lobby.members" xml:space="preserve">
+    <value>members</value>
+  </data>
+  <data name="pages.videoLounge.lobby.modeCounts" xml:space="preserve">
+    <value>{{viewers}} watching · {{speakers}} speaking</value>
+  </data>
+  <data name="pages.videoLounge.lobby.noLiveSession" xml:space="preserve">
+    <value>Start a session first, or wait for someone else to go live.</value>
+  </data>
+  <data name="pages.videoLounge.lobby.noSession" xml:space="preserve">
+    <value>No live session yet</value>
+  </data>
+  <data name="pages.videoLounge.lobby.rosterTitle" xml:space="preserve">
+    <value>Live now</value>
+  </data>
+  <data name="pages.videoLounge.lobby.roomFull" xml:space="preserve">
+    <value>This lounge is full. Try again when someone leaves.</value>
+  </data>
+  <data name="pages.videoLounge.lobby.selectMode" xml:space="preserve">
+    <value>Choose how to join</value>
+  </data>
+  <data name="pages.videoLounge.lobby.sessionStarted" xml:space="preserve">
+    <value>Live session started.</value>
+  </data>
+  <data name="pages.videoLounge.lobby.startSession" xml:space="preserve">
+    <value>Start session</value>
+  </data>
+  <data name="pages.videoLounge.modes.full" xml:space="preserve">
+    <value>Full</value>
+  </data>
+  <data name="pages.videoLounge.modes.listener" xml:space="preserve">
+    <value>Listener</value>
+  </data>
+  <data name="pages.videoLounge.modes.viewer" xml:space="preserve">
+    <value>Watcher</value>
+  </data>
+  <data name="pages.videoLounge.noFace" xml:space="preserve">
+    <value>Select a face first.</value>
+  </data>
+  <data name="pages.videoLounge.notFound" xml:space="preserve">
+    <value>Video lounge not found.</value>
+  </data>
+  <data name="pages.videoLounge.preview.denied" xml:space="preserve">
+    <value>Microphone or camera permission was denied. Allow access to connect.</value>
+  </data>
+  <data name="pages.videoLounge.preview.retest" xml:space="preserve">
+    <value>Test again</value>
+  </data>
+  <data name="pages.videoLounge.preview.testCam" xml:space="preserve">
+    <value>Test microphone &amp; camera</value>
+  </data>
+  <data name="pages.videoLounge.preview.testMic" xml:space="preserve">
+    <value>Test microphone</value>
+  </data>
+  <data name="pages.videoLounge.preview.title" xml:space="preserve">
+    <value>Test your devices before connecting</value>
+  </data>
 </root>

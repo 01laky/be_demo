@@ -113,6 +113,7 @@ public class FacesController : ControllerBase
                 visibility = f.Visibility.ToString(),
                 allowRecensions = f.AllowRecensions,
                 chatRoomsCreate = f.ChatRoomsCreate,
+                videoLoungesCreate = f.VideoLoungesCreate,
                 createdAt = f.CreatedAt,
                 updatedAt = f.UpdatedAt,
             }).ToList();
@@ -276,6 +277,7 @@ public class FacesController : ControllerBase
                     visibility = f.Visibility.ToString(),
                     allowRecensions = f.AllowRecensions,
                     chatRoomsCreate = f.ChatRoomsCreate,
+                    videoLoungesCreate = f.VideoLoungesCreate,
                     myFaceRoleId,
                     myFaceRoleName,
                     myVisited,
@@ -630,6 +632,7 @@ public class FacesController : ControllerBase
                 visibility = face.Visibility.ToString(),
                 allowRecensions = face.AllowRecensions,
                 chatRoomsCreate = face.ChatRoomsCreate,
+                videoLoungesCreate = face.VideoLoungesCreate,
                 createdAt = face.CreatedAt,
                 updatedAt = face.UpdatedAt,
             };
@@ -686,6 +689,7 @@ public class FacesController : ControllerBase
                 Visibility = model.Visibility ?? FaceVisibility.Public,
                 AllowRecensions = model.AllowRecensions ?? false,
                 ChatRoomsCreate = model.ChatRoomsCreate ?? false,
+                VideoLoungesCreate = model.VideoLoungesCreate ?? false,
                 CreatedAt = DateTime.UtcNow,
             };
 
@@ -731,6 +735,7 @@ public class FacesController : ControllerBase
                 visibility = face.Visibility.ToString(),
                 allowRecensions = face.AllowRecensions,
                 chatRoomsCreate = face.ChatRoomsCreate,
+                videoLoungesCreate = face.VideoLoungesCreate,
                 createdAt = face.CreatedAt,
                 updatedAt = face.UpdatedAt,
             };
@@ -819,6 +824,12 @@ public class FacesController : ControllerBase
             {
                 face.ChatRoomsCreate = model.ChatRoomsCreate.Value;
             }
+
+            if (model.VideoLoungesCreate.HasValue)
+            {
+                face.VideoLoungesCreate = model.VideoLoungesCreate.Value;
+            }
+
             face.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -835,6 +846,7 @@ public class FacesController : ControllerBase
                 visibility = face.Visibility.ToString(),
                 allowRecensions = face.AllowRecensions,
                 chatRoomsCreate = face.ChatRoomsCreate,
+                videoLoungesCreate = face.VideoLoungesCreate,
                 createdAt = face.CreatedAt,
                 updatedAt = face.UpdatedAt,
             };

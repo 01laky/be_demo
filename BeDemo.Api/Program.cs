@@ -114,6 +114,10 @@ builder.Services.AddScoped<IPlatformDirectMessageService, PlatformDirectMessageS
 builder.Services.AddScoped<IOperatorUserChatService, OperatorUserChatService>();
 builder.Services.AddSingleton<IPlatformChatRateLimiter, PlatformChatRateLimiter>();
 builder.Services.AddScoped<IChatRoomLifecycleService, ChatRoomLifecycleService>();
+builder.Services.Configure<BeDemo.Api.Configuration.VideoLoungeOptions>(
+    builder.Configuration.GetSection(BeDemo.Api.Configuration.VideoLoungeOptions.SectionName));
+builder.Services.AddScoped<IVideoLoungeTokenService, VideoLoungeTokenService>();
+builder.Services.AddScoped<IVideoLoungeLifecycleService, VideoLoungeLifecycleService>();
 // User-generated content moderation: AI job worker, dashboard metrics, in-app notifications, and optional retention cleanup.
 builder.Services.AddScoped<IContentAiReviewService, ContentAiReviewService>();
 builder.Services.AddScoped<IContentModerationMetrics, ContentModerationMetrics>();
@@ -739,6 +743,7 @@ app.UseRateLimiter();
 app.MapHub<ChatHub>("/hubs/chat");
 app.MapHub<MessengerHub>("/hubs/messenger");
 app.MapHub<ChatRoomHub>("/hubs/chatroom");
+app.MapHub<VideoLoungeHub>("/hubs/video-lounge");
 
 // Maps all controllers - automatically finds all controllers and creates endpoints from them
 // E.g., OAuth2Controller with [Route("api/oauth2")] creates endpoints like /api/oauth2/token, /api/oauth2/register

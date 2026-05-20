@@ -51,6 +51,11 @@ public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<FaceChatRoomMember> FaceChatRoomMembers { get; set; } = null!;
     public DbSet<FaceChatRoomMessage> FaceChatRoomMessages { get; set; } = null!;
     public DbSet<FaceChatRoomJoinRequest> FaceChatRoomJoinRequests { get; set; } = null!;
+    public DbSet<FaceVideoLounge> FaceVideoLounges { get; set; } = null!;
+    public DbSet<FaceVideoLoungeMember> FaceVideoLoungeMembers { get; set; } = null!;
+    public DbSet<FaceVideoLoungeJoinRequest> FaceVideoLoungeJoinRequests { get; set; } = null!;
+    public DbSet<FaceVideoLoungeSession> FaceVideoLoungeSessions { get; set; } = null!;
+    public DbSet<FaceVideoLoungeSessionParticipant> FaceVideoLoungeSessionParticipants { get; set; } = null!;
     public DbSet<FaceWallTicket> FaceWallTickets { get; set; } = null!;
     public DbSet<FaceWallTicketComment> FaceWallTicketComments { get; set; } = null!;
     public DbSet<FaceWallTicketLike> FaceWallTicketLikes { get; set; } = null!;
@@ -98,6 +103,7 @@ public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.Visibility).IsRequired().HasConversion<int>();
             entity.Property(e => e.AllowRecensions).IsRequired();
             entity.Property(e => e.ChatRoomsCreate).IsRequired();
+            entity.Property(e => e.VideoLoungesCreate).IsRequired();
 
             // One-to-many relationship: Face -> Pages
             entity.HasMany(e => e.Pages)
@@ -952,6 +958,90 @@ public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.HasOne(e => e.Room)
                 .WithMany(r => r.JoinRequests)
                 .HasForeignKey(e => e.FaceChatRoomId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<FaceVideoLounge>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Description).HasMaxLength(2000);
+            entity.HasIndex(e => e.FaceId);
+
+            entity.HasOne(e => e.Face)
+                .WithMany(f => f.VideoLounges)
+                .HasForeignKey(e => e.FaceId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Creator)
+                .WithMany()
+                .HasForeignKey(e => e.CreatorUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        builder.Entity<FaceVideoLoungeMember>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.FaceVideoLoungeId, e.UserId }).IsUnique();
+            entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
+
+            entity.HasOne(e => e.Lounge)
+                .WithMany(r => r.Members)
+                .HasForeignKey(e => e.FaceVideoLoungeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<FaceVideoLoungeJoinRequest>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.Status).IsRequired().HasConversion<int>();
+            entity.HasIndex(e => new { e.FaceVideoLoungeId, e.UserId, e.Status });
+
+            entity.HasOne(e => e.Lounge)
+                .WithMany(r => r.JoinRequests)
+                .HasForeignKey(e => e.FaceVideoLoungeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<FaceVideoLoungeSession>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.StartedByUserId).IsRequired().HasMaxLength(450);
+            entity.HasIndex(e => e.FaceVideoLoungeId);
+            entity.HasIndex(e => new { e.FaceVideoLoungeId, e.EndedAt });
+
+            entity.HasOne(e => e.Lounge)
+                .WithMany(r => r.Sessions)
+                .HasForeignKey(e => e.FaceVideoLoungeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<FaceVideoLoungeSessionParticipant>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.JoinMode).IsRequired().HasConversion<int>();
+            entity.HasIndex(e => new { e.FaceVideoLoungeSessionId, e.UserId, e.LeftAt });
+
+            entity.HasOne(e => e.Session)
+                .WithMany(s => s.Participants)
+                .HasForeignKey(e => e.FaceVideoLoungeSessionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(e => e.User)

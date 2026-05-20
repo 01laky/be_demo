@@ -188,6 +188,7 @@ public static class DatabaseSeeder
             new { Id = (int)ComponentTypeId.UserProfile, Index = ComponentTypeIndex.UserProfile, Name = "User Profile" },
             new { Id = (int)ComponentTypeId.Story, Index = ComponentTypeIndex.Story, Name = "Story" },
             new { Id = (int)ComponentTypeId.Reel, Index = ComponentTypeIndex.Reel, Name = "Reel" },
+            new { Id = (int)ComponentTypeId.VideoLounge, Index = ComponentTypeIndex.VideoLounge, Name = "Video Lounge" },
         };
 
         foreach (var ct in componentTypes)
@@ -558,12 +559,13 @@ public static class DatabaseSeeder
     private const int GridDemoItemsPerUserPerFace = 5;
 
     /// <summary>
-    /// Idempotent demo content: for each @demo.com user and each face, ensure N wall tickets, albums, blogs, reels, stories, chat rooms.
+    /// Idempotent demo content: for each @demo.com user and each face, ensure N wall tickets, albums, blogs, reels, stories, chat rooms, video lounges.
     /// Also migrates seeded user01–user30 from FACE_HOST to FACE_USER so face profile grids are populated.
     /// </summary>
     public static async Task SeedFaceGridContentAsync(ApplicationDbContext context)
     {
         await NormalizeDemoUserFaceRolesForProfileGridAsync(context);
+        await EnsureDemoFaceSocialCreateFlagsAsync(context);
 
         var faces = await context.Faces.AsNoTracking().ToListAsync();
         if (faces.Count == 0)
@@ -586,10 +588,12 @@ public static class DatabaseSeeder
                 await EnsureReelsForUserFaceAsync(context, userId, face.Id);
                 await EnsureStoriesForUserFaceAsync(context, userId, face.Id);
                 await EnsureChatRoomsForUserFaceAsync(context, userId, face.Id, demoUserIds);
+                await EnsureVideoLoungesForUserFaceAsync(context, userId, face.Id, demoUserIds);
             }
         }
 
         await context.SaveChangesAsync();
+        await EnsureVideoLoungeLiveDemoSessionsAsync(context, demoUserIds);
         await EnsureSecondStoryImageForDemoStoriesAsync(context, demoUserIds);
         await ReactivateDemoExpiredStoriesAsync(context, demoUserIds);
         await EnsureOperatorStoryDetailSamplesAsync(context, demoUserIds);
@@ -1004,6 +1008,22 @@ public static class DatabaseSeeder
         }
     }
 
+    /// <summary>Enables portal create panels for chat rooms and video lounges on tenant faces (not admin scope).</summary>
+    private static async Task EnsureDemoFaceSocialCreateFlagsAsync(ApplicationDbContext context)
+    {
+        var faces = await context.Faces
+            .Where(f => f.Index != Utils.FaceScopeConstants.AdminFaceIndex)
+            .ToListAsync();
+
+        foreach (var face in faces)
+        {
+            face.ChatRoomsCreate = true;
+            face.VideoLoungesCreate = true;
+        }
+
+        await context.SaveChangesAsync();
+    }
+
     private static async Task EnsureChatRoomsForUserFaceAsync(
         ApplicationDbContext context,
         string userId,
@@ -1072,6 +1092,186 @@ public static class DatabaseSeeder
                         UserId = otherUserId,
                         Status = FaceChatRoomJoinRequestStatus.Pending,
                         CreatedAt = DateTime.UtcNow,
+                    });
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Idempotent: attach an active live session to first user-owned demo lounges (for Live badge) when missing.
+    /// </summary>
+    private static async Task EnsureVideoLoungeLiveDemoSessionsAsync(
+        ApplicationDbContext context,
+        IReadOnlyList<string> demoUserIds)
+    {
+        var candidateLounges = await context.FaceVideoLounges
+            .Where(l => l.CreatorUserId != null && l.Title == "Lounge 2 (user slice)")
+            .ToListAsync();
+
+        foreach (var lounge in candidateLounges)
+        {
+            var hasLive = await context.FaceVideoLoungeSessions
+                .AnyAsync(s => s.FaceVideoLoungeId == lounge.Id && s.EndedAt == null);
+            if (hasLive)
+                continue;
+
+            var userId = lounge.CreatorUserId!;
+            var session = new FaceVideoLoungeSession
+            {
+                FaceVideoLoungeId = lounge.Id,
+                StartedByUserId = userId,
+                StartedAt = DateTime.UtcNow.AddMinutes(-15),
+                LastActivityAt = DateTime.UtcNow,
+            };
+            context.FaceVideoLoungeSessions.Add(session);
+            await context.SaveChangesAsync();
+
+            context.FaceVideoLoungeSessionParticipants.Add(new FaceVideoLoungeSessionParticipant
+            {
+                FaceVideoLoungeSessionId = session.Id,
+                UserId = userId,
+                JoinMode = VideoLoungeJoinMode.Full,
+                AudioEnabled = true,
+                VideoEnabled = true,
+                IsListedInPublicRoster = true,
+                LastSeenAt = DateTime.UtcNow,
+            });
+
+            var otherUserId = demoUserIds.FirstOrDefault(id => id != userId);
+            if (!string.IsNullOrEmpty(otherUserId))
+            {
+                if (!await context.FaceVideoLoungeMembers.AnyAsync(
+                        m => m.FaceVideoLoungeId == lounge.Id && m.UserId == otherUserId))
+                {
+                    context.FaceVideoLoungeMembers.Add(new FaceVideoLoungeMember
+                    {
+                        FaceVideoLoungeId = lounge.Id,
+                        UserId = otherUserId,
+                        JoinedAt = DateTime.UtcNow,
+                    });
+                }
+
+                context.FaceVideoLoungeSessionParticipants.Add(new FaceVideoLoungeSessionParticipant
+                {
+                    FaceVideoLoungeSessionId = session.Id,
+                    UserId = otherUserId,
+                    JoinMode = VideoLoungeJoinMode.Viewer,
+                    AudioEnabled = false,
+                    VideoEnabled = false,
+                    IsListedInPublicRoster = true,
+                    LastSeenAt = DateTime.UtcNow,
+                });
+            }
+        }
+
+        await context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Same cardinality as <see cref="EnsureChatRoomsForUserFaceAsync"/> — five lounges per demo user per face,
+    /// with one active live session on the first user-owned lounge for grid Live badges.
+    /// </summary>
+    private static async Task EnsureVideoLoungesForUserFaceAsync(
+        ApplicationDbContext context,
+        string userId,
+        int faceId,
+        IReadOnlyList<string> demoUserIds)
+    {
+        var have = await context.FaceVideoLounges.CountAsync(r => r.CreatorUserId == userId && r.FaceId == faceId);
+        for (var k = 0; k < GridDemoItemsPerUserPerFace - have; k++)
+        {
+            var index = have + k;
+            var isPublic = index % 2 == 0;
+            var isSystem = index % 4 == 0;
+            var description = index % 3 == 0 ? null : $"Seeded video lounge for face {faceId}, index {index}.";
+
+            var lounge = new FaceVideoLounge
+            {
+                FaceId = faceId,
+                Title = isSystem ? $"System lounge {index + 1}" : $"Lounge {index + 1} (user slice)",
+                Description = description,
+                IsPublic = isSystem || isPublic,
+                IsSystemManaged = isSystem,
+                CreatorUserId = isSystem ? null : userId,
+                MaxParticipants = 12,
+                CreatedAt = DateTime.UtcNow,
+            };
+            context.FaceVideoLounges.Add(lounge);
+            await context.SaveChangesAsync();
+
+            if (!isSystem)
+            {
+                context.FaceVideoLoungeMembers.Add(new FaceVideoLoungeMember
+                {
+                    FaceVideoLoungeId = lounge.Id,
+                    UserId = userId,
+                    JoinedAt = DateTime.UtcNow,
+                });
+            }
+
+            // First user-owned lounge in each slice (index 1; index 0 is system): live session for "Live · N" badges.
+            if (index == 1)
+            {
+                var session = new FaceVideoLoungeSession
+                {
+                    FaceVideoLoungeId = lounge.Id,
+                    StartedByUserId = userId,
+                    StartedAt = DateTime.UtcNow.AddMinutes(-15),
+                    LastActivityAt = DateTime.UtcNow,
+                };
+                context.FaceVideoLoungeSessions.Add(session);
+                await context.SaveChangesAsync();
+
+                context.FaceVideoLoungeSessionParticipants.Add(new FaceVideoLoungeSessionParticipant
+                {
+                    FaceVideoLoungeSessionId = session.Id,
+                    UserId = userId,
+                    JoinMode = VideoLoungeJoinMode.Full,
+                    AudioEnabled = true,
+                    VideoEnabled = true,
+                    IsListedInPublicRoster = true,
+                    LastSeenAt = DateTime.UtcNow,
+                });
+
+                var otherUserId = demoUserIds.FirstOrDefault(id => id != userId);
+                if (!string.IsNullOrEmpty(otherUserId))
+                {
+                    if (!await context.FaceVideoLoungeMembers.AnyAsync(
+                            m => m.FaceVideoLoungeId == lounge.Id && m.UserId == otherUserId))
+                    {
+                        context.FaceVideoLoungeMembers.Add(new FaceVideoLoungeMember
+                        {
+                            FaceVideoLoungeId = lounge.Id,
+                            UserId = otherUserId,
+                            JoinedAt = DateTime.UtcNow,
+                        });
+                    }
+
+                    context.FaceVideoLoungeSessionParticipants.Add(new FaceVideoLoungeSessionParticipant
+                    {
+                        FaceVideoLoungeSessionId = session.Id,
+                        UserId = otherUserId,
+                        JoinMode = VideoLoungeJoinMode.Viewer,
+                        AudioEnabled = false,
+                        VideoEnabled = false,
+                        IsListedInPublicRoster = true,
+                        LastSeenAt = DateTime.UtcNow,
+                    });
+                }
+            }
+
+            if (!isPublic && index % 3 == 1)
+            {
+                var otherUserId = demoUserIds.FirstOrDefault(id => id != userId);
+                if (!string.IsNullOrEmpty(otherUserId))
+                {
+                    context.FaceVideoLoungeJoinRequests.Add(new FaceVideoLoungeJoinRequest
+                    {
+                        FaceVideoLoungeId = lounge.Id,
+                        UserId = otherUserId,
+                        Status = FaceVideoLoungeJoinRequestStatus.Pending,
+                        RequestedAt = DateTime.UtcNow,
                     });
                 }
             }

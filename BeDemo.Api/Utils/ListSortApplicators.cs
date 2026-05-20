@@ -152,4 +152,20 @@ public static class ListSortApplicators
             _ => query.OrderByDescending(r => r.LastMessageAt ?? r.CreatedAt),
         };
     }
+
+    public static IOrderedQueryable<FaceVideoLounge> ApplyFaceVideoLoungesSort(
+        IQueryable<FaceVideoLounge> query,
+        string? sortBy,
+        string? sortDir)
+    {
+        var desc = SortRules.IsDescending(sortDir);
+        return (sortBy?.ToLowerInvariant()) switch
+        {
+            "id" => desc ? query.OrderByDescending(r => r.Id) : query.OrderBy(r => r.Id),
+            "title" => desc ? query.OrderByDescending(r => r.Title) : query.OrderBy(r => r.Title),
+            "createdat" => desc ? query.OrderByDescending(r => r.CreatedAt) : query.OrderBy(r => r.CreatedAt),
+            "ispublic" => desc ? query.OrderByDescending(r => r.IsPublic) : query.OrderBy(r => r.IsPublic),
+            _ => query.OrderByDescending(r => r.CreatedAt),
+        };
+    }
 }

@@ -38,6 +38,7 @@ public enum ComponentTypeId
     UserProfile = 5,
     Story = 6,
     Reel = 7,
+    VideoLounge = 8,
 }
 
 /// <summary>
@@ -52,4 +53,5 @@ public static class ComponentTypeIndex
     public const string UserProfile = "userProfile";
     public const string Story = "story";
     public const string Reel = "reel";
+    public const string VideoLounge = "videoLounge";
 }
