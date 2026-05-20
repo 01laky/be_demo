@@ -13,6 +13,6 @@ public sealed class UpdateProfileRequestValidatorTests
     {
         var model = new UpdateProfileRequest();
         var result = _sut.TestValidate(model);
-        result.ShouldHaveAnyValidationError();
+        result.ShouldHaveValidationErrors();
     }
 }

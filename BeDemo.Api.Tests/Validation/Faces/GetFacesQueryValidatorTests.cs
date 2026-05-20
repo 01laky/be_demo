@@ -32,7 +32,7 @@ public sealed class GetFacesQueryValidatorTests
     [Fact]
     public void SortBy_without_sortDir_fails()
     {
-        _sut.TestValidate(new GetFacesQuery { SortBy = "title" }).ShouldHaveAnyValidationError();
+        _sut.TestValidate(new GetFacesQuery { SortBy = "title" }).ShouldHaveValidationErrors();
     }
 
     [Theory]

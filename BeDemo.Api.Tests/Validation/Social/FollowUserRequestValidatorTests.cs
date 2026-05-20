@@ -13,6 +13,6 @@ public sealed class FollowUserRequestValidatorTests
     {
         var model = new FollowUserDto();
         var result = _sut.TestValidate(model);
-        result.ShouldHaveAnyValidationError();
+        result.ShouldHaveValidationErrors();
     }
 }

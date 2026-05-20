@@ -13,6 +13,6 @@ public sealed class CreateAlbumRequestValidatorTests
     {
         var model = new CreateAlbumDto();
         var result = _sut.TestValidate(model);
-        result.ShouldHaveAnyValidationError();
+        result.ShouldHaveValidationErrors();
     }
 }

@@ -81,7 +81,7 @@ public sealed class {validator}Tests
     {{
         var model = new {type}();
         var result = _sut.TestValidate(model);
-        result.ShouldHaveAnyValidationError();
+        result.ShouldHaveValidationErrors();
     }}
 }}
 '''

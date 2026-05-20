@@ -14,6 +14,6 @@ public sealed class RegisterPushTokenRequestValidatorTests
     {
         var model = new RegisterPushTokenRequestDto();
         var result = _sut.TestValidate(model);
-        result.ShouldHaveAnyValidationError();
+        result.ShouldHaveValidationErrors();
     }
 }

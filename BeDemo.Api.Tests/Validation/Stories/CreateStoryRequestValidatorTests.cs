@@ -13,6 +13,6 @@ public sealed class CreateStoryRequestValidatorTests
     {
         var model = new CreateStoryDto();
         var result = _sut.TestValidate(model);
-        result.ShouldHaveAnyValidationError();
+        result.ShouldHaveValidationErrors();
     }
 }

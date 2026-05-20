@@ -13,6 +13,6 @@ public sealed class BlockUserRequestValidatorTests
     {
         var model = new BlockUserDto();
         var result = _sut.TestValidate(model);
-        result.ShouldHaveAnyValidationError();
+        result.ShouldHaveValidationErrors();
     }
 }

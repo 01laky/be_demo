@@ -13,6 +13,6 @@ public sealed class CreateBlogRequestValidatorTests
     {
         var model = new CreateBlogDto();
         var result = _sut.TestValidate(model);
-        result.ShouldHaveAnyValidationError();
+        result.ShouldHaveValidationErrors();
     }
 }

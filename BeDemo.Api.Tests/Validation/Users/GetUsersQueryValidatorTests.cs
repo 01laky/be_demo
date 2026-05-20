@@ -32,7 +32,7 @@ public sealed class GetUsersQueryValidatorTests
     [Fact]
     public void SortBy_without_sortDir_fails()
     {
-        _sut.TestValidate(new GetUsersQuery { SortBy = "email" }).ShouldHaveAnyValidationError();
+        _sut.TestValidate(new GetUsersQuery { SortBy = "email" }).ShouldHaveValidationErrors();
     }
 
     [Theory]

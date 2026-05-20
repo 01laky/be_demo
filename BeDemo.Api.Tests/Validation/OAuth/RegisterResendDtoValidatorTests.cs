@@ -14,6 +14,6 @@ public sealed class RegisterResendDtoValidatorTests
     {
         var model = new RegisterResendDto();
         var result = _sut.TestValidate(model);
-        result.ShouldHaveAnyValidationError();
+        result.ShouldHaveValidationErrors();
     }
 }

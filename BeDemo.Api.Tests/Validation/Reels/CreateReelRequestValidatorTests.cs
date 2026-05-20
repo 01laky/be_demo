@@ -13,6 +13,6 @@ public sealed class CreateReelRequestValidatorTests
     {
         var model = new CreateReelDto();
         var result = _sut.TestValidate(model);
-        result.ShouldHaveAnyValidationError();
+        result.ShouldHaveValidationErrors();
     }
 }

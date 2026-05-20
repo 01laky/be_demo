@@ -14,6 +14,6 @@ public sealed class RegisterPrefillQueryValidatorTests
     {
         var model = new RegisterPrefillQuery();
         var result = _sut.TestValidate(model);
-        result.ShouldHaveAnyValidationError();
+        result.ShouldHaveValidationErrors();
     }
 }

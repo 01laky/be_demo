@@ -13,6 +13,6 @@ public sealed class SendFriendRequestRequestValidatorTests
     {
         var model = new SendFriendRequestDto();
         var result = _sut.TestValidate(model);
-        result.ShouldHaveAnyValidationError();
+        result.ShouldHaveValidationErrors();
     }
 }
