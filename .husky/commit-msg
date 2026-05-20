@@ -1,2 +1,3 @@
 #!/usr/bin/env sh
+sh "$(dirname "$0")/../scripts/strip-cursor-commit-trailers.sh" "$1"
 yarn exec commitlint --edit "$1"

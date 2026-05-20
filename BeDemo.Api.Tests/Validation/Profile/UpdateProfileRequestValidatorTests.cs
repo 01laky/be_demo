@@ -15,4 +15,12 @@ public sealed class UpdateProfileRequestValidatorTests
         var result = _sut.TestValidate(model);
         result.ShouldHaveValidationErrors();
     }
+
+    [Fact]
+    public void EnableAnimatedGradient_only_is_valid()
+    {
+        var model = new UpdateProfileRequest { EnableAnimatedGradient = true };
+        var result = _sut.TestValidate(model);
+        result.ShouldNotHaveAnyValidationErrors();
+    }
 }

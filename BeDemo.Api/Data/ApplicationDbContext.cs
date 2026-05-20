@@ -173,6 +173,7 @@ public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.UserId).IsRequired().HasMaxLength(450); // Identity user ID length
             entity.Property(e => e.Nickname).HasMaxLength(100);
             entity.Property(e => e.Rod).HasMaxLength(10); // "M", "F", "O", etc.
+            entity.Property(e => e.EnableAnimatedGradient).HasDefaultValue(false);
             entity.Property(e => e.CreatedAt).IsRequired();
 
             // One-to-one relationship: ApplicationUser -> UserProfile

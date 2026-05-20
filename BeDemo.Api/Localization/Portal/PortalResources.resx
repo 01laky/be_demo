@@ -877,6 +877,18 @@
   <data name="settingsPanel.language" xml:space="preserve">
     <value>Language</value>
   </data>
+  <data name="settingsPanel.animatedGradient" xml:space="preserve">
+    <value>Animated background</value>
+  </data>
+  <data name="settingsPanel.animatedGradientHint" xml:space="preserve">
+    <value>Animate the face gradient in the header, footer, and panels. Off by default.</value>
+  </data>
+  <data name="settingsPanel.animatedGradientAria" xml:space="preserve">
+    <value>Enable animated background gradient</value>
+  </data>
+  <data name="settingsPanel.animatedGradientReducedMotion" xml:space="preserve">
+    <value>Disabled while reduced motion is enabled on your device.</value>
+  </data>
   <data name="settingsPanel.tabFaces" xml:space="preserve">
     <value>Faces</value>
   </data>

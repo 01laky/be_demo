@@ -49,6 +49,11 @@ public class UserProfile
     public string? AvatarUrl { get; set; }
 
     /// <summary>
+    /// When false (default), portal shell ignores face gradient animation JSON and renders a static background.
+    /// </summary>
+    public bool EnableAnimatedGradient { get; set; }
+
+    /// <summary>
     /// Timestamp when the profile was created
     /// </summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

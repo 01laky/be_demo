@@ -877,6 +877,18 @@
   <data name="settingsPanel.language" xml:space="preserve">
     <value>Jazyk</value>
   </data>
+  <data name="settingsPanel.animatedGradient" xml:space="preserve">
+    <value>Animované pozadie</value>
+  </data>
+  <data name="settingsPanel.animatedGradientHint" xml:space="preserve">
+    <value>Animuje gradient face v hlavičke, päte a paneloch. Predvolene vypnuté.</value>
+  </data>
+  <data name="settingsPanel.animatedGradientAria" xml:space="preserve">
+    <value>Zapnúť animovaný gradient pozadia</value>
+  </data>
+  <data name="settingsPanel.animatedGradientReducedMotion" xml:space="preserve">
+    <value>Vypnuté, pretože máte na zariadení zapnuté znížené animácie.</value>
+  </data>
   <data name="settingsPanel.tabFaces" xml:space="preserve">
     <value>Face</value>
   </data>

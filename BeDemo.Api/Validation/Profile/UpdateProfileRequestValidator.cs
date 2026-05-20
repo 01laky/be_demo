@@ -9,7 +9,10 @@ public sealed class UpdateProfileRequestValidator : AbstractValidator<BeDemo.Api
 {
     public UpdateProfileRequestValidator()
     {
-        RuleFor(x => x).Must(m => !string.IsNullOrWhiteSpace(m.FirstName) || !string.IsNullOrWhiteSpace(m.LastName))
+        RuleFor(x => x).Must(m =>
+                !string.IsNullOrWhiteSpace(m.FirstName) ||
+                !string.IsNullOrWhiteSpace(m.LastName) ||
+                m.EnableAnimatedGradient.HasValue)
             .WithMessage("At least one field is required.");
     }
 }

@@ -83,6 +83,7 @@ public class ProfileController : ControllerBase
             firstName = user.FirstName,
             lastName = user.LastName,
             email = user.Email,
+            enableAnimatedGradient = profile.EnableAnimatedGradient,
             globalAvatarUrl = _uploadUrls.ToAbsoluteSignedUrl(profile.AvatarUrl, Request.Scheme, Request.Host.Value!),
             faceAvatarUrl = _uploadUrls.ToAbsoluteSignedUrl(faceAvatarUrl, Request.Scheme, Request.Host.Value!),
         });
@@ -108,6 +109,21 @@ public class ProfileController : ControllerBase
             user.LastName = model.LastName.Trim().Length > 0 ? model.LastName.Trim() : null;
 
         await _userManager.UpdateAsync(user);
+
+        if (model.EnableAnimatedGradient.HasValue)
+        {
+            var profile = await _context.UserProfiles.FirstOrDefaultAsync(p => p.UserId == userId);
+            if (profile == null)
+            {
+                profile = new UserProfile { UserId = userId };
+                _context.UserProfiles.Add(profile);
+            }
+
+            profile.EnableAnimatedGradient = model.EnableAnimatedGradient.Value;
+            profile.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+
         return Ok(new { message = "Profile updated" });
     }
 
