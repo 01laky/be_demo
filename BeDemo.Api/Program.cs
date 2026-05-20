@@ -286,7 +286,16 @@ var defaultCorsOrigins = new[]
     "https://localhost:9080", "https://localhost:9081",
 };
 var extraOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? Array.Empty<string>();
-var corsOrigins = defaultCorsOrigins.Concat(extraOrigins).Where(o => !string.IsNullOrWhiteSpace(o)).Distinct().ToArray();
+var devLanHost = builder.Configuration["DEV_LAN_HOST"]?.Trim();
+if (string.IsNullOrEmpty(devLanHost))
+    devLanHost = Environment.GetEnvironmentVariable("DEV_LAN_HOST")?.Trim();
+var lanOrigins = BeDemo.Api.Dev.DevLanCorsOriginBuilder.Build(devLanHost);
+var corsOrigins = defaultCorsOrigins
+    .Concat(lanOrigins)
+    .Concat(extraOrigins)
+    .Where(o => !string.IsNullOrWhiteSpace(o))
+    .Distinct(StringComparer.OrdinalIgnoreCase)
+    .ToArray();
 
 builder.Services.AddCors(options =>
 {
