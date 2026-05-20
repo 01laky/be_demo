@@ -685,11 +685,71 @@
   <data name="pages.dashboard.metrics.rows.usersCount" xml:space="preserve">
     <value>Používatelia</value>
   </data>
+  <data name="pages.dashboard.metrics.chartEmpty" xml:space="preserve">
+    <value>Všetky hodnoty v tejto skupine sú nulové — zatiaľ nie je čo porovnávať.</value>
+  </data>
+  <data name="pages.dashboard.metrics.sectionLead" xml:space="preserve">
+    <value>Počty zoskupené podľa oblasti produktu. Každý blok má porovnávací graf s viditeľnými číslami a zoznam metrík.</value>
+  </data>
   <data name="pages.dashboard.metrics.sectionTitle" xml:space="preserve">
-    <value>Všetky metriky platformy</value>
+    <value>Metriky platformy podľa oblastí</value>
+  </data>
+  <data name="pages.dashboard.metrics.sectionTotal" xml:space="preserve">
+    <value>{{count}} spolu v tejto skupine</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.content" xml:space="preserve">
+    <value>Používateľský obsah</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.contentDesc" xml:space="preserve">
+    <value>Albumy, blogy, reels, stories a ich interakcie.</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.faceChat" xml:space="preserve">
+    <value>Face chat</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.faceChatDesc" xml:space="preserve">
+    <value>Miestnosti, členovia, správy a žiadosti o pripojenie.</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.messaging" xml:space="preserve">
+    <value>Priame správy</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.messagingDesc" xml:space="preserve">
+    <value>Súkromné správy a čakajúce žiadosti o správu.</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.profiles" xml:space="preserve">
+    <value>Face profily</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.profilesDesc" xml:space="preserve">
+    <value>Profily podľa face a reakcie na ne.</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.social" xml:space="preserve">
+    <value>Sociálna sieť</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.socialDesc" xml:space="preserve">
+    <value>Žiadosti o priateľstvo, priateľstvá, sledovania, blokovania a notifikácie.</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.structure" xml:space="preserve">
+    <value>CMS a štruktúra</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.structureDesc" xml:space="preserve">
+    <value>Stránky, komponenty, preklady rout a OAuth klienti.</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.trust" xml:space="preserve">
+    <value>Dôvera a bezpečnosť</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.trustDesc" xml:space="preserve">
+    <value>AI review úlohy a udalosti moderácie.</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.wall" xml:space="preserve">
+    <value>Wall tickety podľa stavu</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.wallDesc" xml:space="preserve">
+    <value>Rozdelenie wall ticketov podľa stavu workflow.</value>
   </data>
   <data name="pages.dashboard.metrics.wallByStatus" xml:space="preserve">
     <value>Wall tickety podľa stavu</value>
+  </data>
+  <data name="pages.dashboard.metrics.wallTotal" xml:space="preserve">
+    <value>{{count}} wall ticketov spolu</value>
   </data>
   <data name="pages.dashboard.moderationWidget.aiFailed" xml:space="preserve">
     <value>Zlyhané AI úlohy</value>

@@ -685,11 +685,71 @@
   <data name="pages.dashboard.metrics.rows.usersCount" xml:space="preserve">
     <value>Users</value>
   </data>
+  <data name="pages.dashboard.metrics.chartEmpty" xml:space="preserve">
+    <value>All values in this group are zero — nothing to compare yet.</value>
+  </data>
+  <data name="pages.dashboard.metrics.sectionLead" xml:space="preserve">
+    <value>Counts grouped by product area. Each block has a comparison chart with visible values and a quick stat list.</value>
+  </data>
   <data name="pages.dashboard.metrics.sectionTitle" xml:space="preserve">
-    <value>All platform metrics</value>
+    <value>Platform metrics by area</value>
+  </data>
+  <data name="pages.dashboard.metrics.sectionTotal" xml:space="preserve">
+    <value>{{count}} combined in this group</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.content" xml:space="preserve">
+    <value>User-generated content</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.contentDesc" xml:space="preserve">
+    <value>Albums, blogs, reels, stories, and their engagement.</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.faceChat" xml:space="preserve">
+    <value>Face chat</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.faceChatDesc" xml:space="preserve">
+    <value>Rooms, members, messages, and join requests.</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.messaging" xml:space="preserve">
+    <value>Direct messaging</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.messagingDesc" xml:space="preserve">
+    <value>Private messages and pending message requests.</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.profiles" xml:space="preserve">
+    <value>Face profiles</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.profilesDesc" xml:space="preserve">
+    <value>Per-face profile records and reactions.</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.social" xml:space="preserve">
+    <value>Social graph</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.socialDesc" xml:space="preserve">
+    <value>Friend requests, friendships, follows, blocks, and notifications.</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.structure" xml:space="preserve">
+    <value>CMS &amp; structure</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.structureDesc" xml:space="preserve">
+    <value>Pages, components, route translations, and OAuth clients.</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.trust" xml:space="preserve">
+    <value>Trust &amp; safety</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.trustDesc" xml:space="preserve">
+    <value>AI review jobs and moderation events.</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.wall" xml:space="preserve">
+    <value>Wall tickets by status</value>
+  </data>
+  <data name="pages.dashboard.metrics.sections.wallDesc" xml:space="preserve">
+    <value>Breakdown of face wall tickets per workflow status.</value>
   </data>
   <data name="pages.dashboard.metrics.wallByStatus" xml:space="preserve">
     <value>Wall tickets by status</value>
+  </data>
+  <data name="pages.dashboard.metrics.wallTotal" xml:space="preserve">
+    <value>{{count}} wall tickets total</value>
   </data>
   <data name="pages.dashboard.moderationWidget.aiFailed" xml:space="preserve">
     <value>AI failed jobs</value>
