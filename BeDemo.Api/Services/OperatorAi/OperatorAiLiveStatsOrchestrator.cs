@@ -101,7 +101,7 @@ public sealed class OperatorAiLiveStatsOrchestrator : IOperatorAiLiveStatsOrches
             };
         }
 
-        var cache = await prefetchTask;
+        var cache = (await prefetchTask).Entries;
 
         if (broadOverview)
         {

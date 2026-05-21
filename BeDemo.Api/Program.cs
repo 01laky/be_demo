@@ -529,12 +529,18 @@ if (!string.IsNullOrWhiteSpace(redisConfiguration) && !builder.Environment.IsEnv
     builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
         ConnectionMultiplexer.Connect(redisConfiguration));
     builder.Services.AddSingleton<IRedisJobQueue, RedisJobQueue>();
+    builder.Services.AddSingleton<IOperatorAiRedisStringStore, StackExchangeOperatorAiRedisStringStore>();
+    builder.Services.AddSingleton<IOperatorAiBundleRedisCache, OperatorAiBundleRedisCache>();
     builder.Services.AddHostedService<RedisJobWorkerService>();
 }
 else
 {
     builder.Services.AddSingleton<IRedisJobQueue, NoOpRedisJobQueue>();
+    builder.Services.AddSingleton<IOperatorAiBundleRedisCache, NoOpOperatorAiBundleRedisCache>();
 }
+
+builder.Services.AddSingleton<IOperatorAiLiveStatsCacheSettingsProvider, OperatorAiLiveStatsCacheSettingsService>();
+builder.Services.AddHostedService<OperatorAiLiveBundleCacheStartupWarm>();
 
 // ============================================================================
 // APPLICATION CREATION AND HTTP PIPELINE CONFIGURATION

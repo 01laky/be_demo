@@ -2807,6 +2807,24 @@
   <data name="pages.settings.aiStats.liveParallel.unknownRam" xml:space="preserve">
     <value>unknown RAM</value>
   </data>
+  <data name="pages.settings.aiStats.liveCache.sectionLabel" xml:space="preserve">
+    <value>Live stats cache TTL</value>
+  </data>
+  <data name="pages.settings.aiStats.liveCache.ttlLabel" xml:space="preserve">
+    <value>Cache duration (minutes)</value>
+  </data>
+  <data name="pages.settings.aiStats.liveCache.ttlHint" xml:space="preserve">
+    <value>Shared Redis cache for live statistics bundle prefetch (default {{defaultMinutes}} min). Applies to all operators on this backend.</value>
+  </data>
+  <data name="pages.settings.aiStats.liveCache.loading" xml:space="preserve">
+    <value>Loading cache settings…</value>
+  </data>
+  <data name="pages.settings.aiStats.liveCache.error" xml:space="preserve">
+    <value>Could not load cache settings from the server.</value>
+  </data>
+  <data name="pages.settings.aiStats.liveCache.saveError" xml:space="preserve">
+    <value>Could not save cache TTL to the server. Local stats mode was not updated.</value>
+  </data>
   <data name="pages.settings.aiWorkerHost.sectionTitle" xml:space="preserve">
     <value>AI worker host</value>
   </data>

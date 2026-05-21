@@ -42,4 +42,27 @@ public sealed class OperatorAiOptions
     public int LiveTotalTimeoutSeconds { get; set; } = 300;
 
     public int LiveTimeseriesDays { get; set; } = 7;
+
+    // Live stats Redis bundle cache — see docs/prompts/operator-ai-live-stats-redis-cache-agent-prompt.md
+
+    /// <summary>Fallback TTL when PostgreSQL singleton row is missing (milliseconds).</summary>
+    public long LiveBundleCacheTtlMilliseconds { get; set; } = OperatorAiLiveStatsCacheConstraints.DefaultTtlMilliseconds;
+
+    /// <summary>Single-flight lock safety TTL (seconds).</summary>
+    public int LiveBundleCacheLockSeconds { get; set; } = 30;
+
+    /// <summary>Waiter poll interval while another worker holds the bundle lock (milliseconds).</summary>
+    public int LiveBundleCacheWaitPollMilliseconds { get; set; } = 50;
+
+    /// <summary>L1 in-process cache duration for TTL settings reads (seconds).</summary>
+    public int LiveBundleCacheSettingsMemoryCacheSeconds { get; set; } = 30;
+
+    /// <summary>When true, prefetch all bundles into Redis shortly after backend start.</summary>
+    public bool WarmLiveBundleCacheOnStartup { get; set; }
+
+    /// <summary>Delay before startup warm begins (seconds).</summary>
+    public int WarmLiveBundleCacheStartupDelaySeconds { get; set; } = 5;
+
+    /// <summary>Max wall time for startup warm prefetch (seconds).</summary>
+    public int WarmLiveBundleCacheStartupTimeoutSeconds { get; set; } = 120;
 }

@@ -5,6 +5,7 @@ using BeDemo.Api.Hubs;
 using BeDemo.Api.Models.DTOs.OperatorAi;
 using BeDemo.Api.Models.Requests.OperatorAi;
 using BeDemo.Api.Services;
+using BeDemo.Api.Services.OperatorAi;
 using BeDemo.Api.Validation.OperatorAi;
 
 namespace BeDemo.Api.Controllers;
@@ -19,6 +20,7 @@ public sealed class OperatorAiConversationsController : ControllerBase
     private readonly IOperatorAiConversationService _operatorAi;
     private readonly IAiGrpcService _aiGrpc;
     private readonly IAiWorkerHostProfileService _workerHost;
+    private readonly IOperatorAiLiveStatsCacheSettingsProvider _liveStatsCacheSettings;
     private readonly IHubContext<ChatHub> _hub;
     private readonly ILogger<OperatorAiConversationsController> _logger;
 
@@ -27,6 +29,7 @@ public sealed class OperatorAiConversationsController : ControllerBase
         IOperatorAiConversationService operatorAi,
         IAiGrpcService aiGrpc,
         IAiWorkerHostProfileService workerHost,
+        IOperatorAiLiveStatsCacheSettingsProvider liveStatsCacheSettings,
         IHubContext<ChatHub> hub,
         ILogger<OperatorAiConversationsController> logger)
     {
@@ -34,6 +37,7 @@ public sealed class OperatorAiConversationsController : ControllerBase
         _operatorAi = operatorAi;
         _aiGrpc = aiGrpc;
         _workerHost = workerHost;
+        _liveStatsCacheSettings = liveStatsCacheSettings;
         _hub = hub;
         _logger = logger;
     }
@@ -71,6 +75,37 @@ public sealed class OperatorAiConversationsController : ControllerBase
 
         await _workerHost.RefreshFromWorkerAsync(cancellationToken);
         return Ok(await _workerHost.GetOperatorViewAsync(cancellationToken));
+    }
+
+    [HttpGet("~/api/operator-ai/live-stats-cache")]
+    public async Task<ActionResult<OperatorAiLiveStatsCacheSettingsDto>> GetLiveStatsCacheSettings(
+        CancellationToken cancellationToken)
+    {
+        if (!RequireOperator())
+            return Forbid();
+
+        var ttlMs = await _liveStatsCacheSettings.GetTtlMillisecondsAsync(cancellationToken);
+        return Ok(_liveStatsCacheSettings.ToDto(ttlMs));
+    }
+
+    [HttpPut("~/api/operator-ai/live-stats-cache")]
+    public async Task<ActionResult<OperatorAiLiveStatsCacheSettingsDto>> UpdateLiveStatsCacheSettings(
+        [FromBody] UpdateOperatorAiLiveStatsCacheSettingsRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!RequireOperator())
+            return Forbid();
+
+        var validation = new UpdateOperatorAiLiveStatsCacheSettingsValidator().Validate(request);
+        if (!validation.IsValid)
+            return BadRequest(validation.Errors.Select(e => e.ErrorMessage));
+
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var ttlMs = await _liveStatsCacheSettings.SetTtlMillisecondsAsync(
+            request.TtlMilliseconds,
+            userId,
+            cancellationToken);
+        return Ok(_liveStatsCacheSettings.ToDto(ttlMs));
     }
 
     [HttpGet]

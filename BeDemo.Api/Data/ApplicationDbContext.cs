@@ -86,6 +86,9 @@ public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     /// <summary>Latest AI worker host hardware snapshot (GetHostProfile).</summary>
     public DbSet<AiWorkerHostProfile> AiWorkerHostProfiles { get; set; } = null!;
 
+    /// <summary>Global Redis TTL for operator AI live stats bundle cache (singleton Id=1).</summary>
+    public DbSet<OperatorAiLiveStatsCacheSettings> OperatorAiLiveStatsCacheSettings { get; set; } = null!;
+
     /// <summary>Singleton refresh metadata for AI worker host profile.</summary>
     public DbSet<AiWorkerHostRefreshMeta> AiWorkerHostRefreshMetas { get; set; } = null!;
 
@@ -1253,6 +1256,14 @@ public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.UpdatedAtUtc).IsRequired();
             entity.HasIndex(e => e.WorkerInstanceId).IsUnique();
             entity.HasIndex(e => e.UpdatedAtUtc);
+        });
+
+        builder.Entity<OperatorAiLiveStatsCacheSettings>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.TtlMilliseconds).IsRequired();
+            entity.Property(e => e.UpdatedAtUtc).IsRequired();
+            entity.Property(e => e.UpdatedByUserId).HasMaxLength(450);
         });
 
         builder.Entity<AiWorkerHostRefreshMeta>(entity =>

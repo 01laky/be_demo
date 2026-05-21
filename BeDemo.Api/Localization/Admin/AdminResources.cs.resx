@@ -2807,6 +2807,24 @@
   <data name="pages.settings.aiStats.liveParallel.unknownRam" xml:space="preserve">
     <value>neznámá RAM</value>
   </data>
+  <data name="pages.settings.aiStats.liveCache.sectionLabel" xml:space="preserve">
+    <value>TTL cache live statistik</value>
+  </data>
+  <data name="pages.settings.aiStats.liveCache.ttlLabel" xml:space="preserve">
+    <value>Délka cache (minuty)</value>
+  </data>
+  <data name="pages.settings.aiStats.liveCache.ttlHint" xml:space="preserve">
+    <value>Sdílená Redis cache pro prefetch bundle live statistik (výchozí {{defaultMinutes}} min). Platí pro všechny operátory na tomto backendu.</value>
+  </data>
+  <data name="pages.settings.aiStats.liveCache.loading" xml:space="preserve">
+    <value>Načítám nastavení cache…</value>
+  </data>
+  <data name="pages.settings.aiStats.liveCache.error" xml:space="preserve">
+    <value>Nepodařilo se načíst nastavení cache ze serveru.</value>
+  </data>
+  <data name="pages.settings.aiStats.liveCache.saveError" xml:space="preserve">
+    <value>Nepodařilo se uložit TTL cache na server. Režim statistik nebyl aktualizován.</value>
+  </data>
   <data name="pages.settings.aiWorkerHost.sectionTitle" xml:space="preserve">
     <value>AI worker host</value>
   </data>

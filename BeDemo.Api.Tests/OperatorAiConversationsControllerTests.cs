@@ -86,4 +86,44 @@ public sealed class OperatorAiConversationsControllerTests : IClassFixture<Custo
         var response = await client.GetAsync("/api/operator-ai/worker-host");
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
+
+    [Fact]
+    public async Task Live_stats_cache_get_on_admin_face_scope()
+    {
+        var client = _factory.CreateFaceClient("admin");
+        var token = await IntegrationTestSeed.GetAdminAccessTokenAsync(client);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await client.GetAsync("/api/operator-ai/live-stats-cache");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var payload = await response.Content.ReadFromJsonAsync<OperatorAiLiveStatsCacheSettingsDto>();
+        payload.Should().NotBeNull();
+        payload!.TtlMilliseconds.Should().BeInRange(30_000, 3_600_000);
+    }
+
+    [Fact]
+    public async Task Live_stats_cache_put_roundtrip_on_admin_face_scope()
+    {
+        var client = _factory.CreateFaceClient("admin");
+        var token = await IntegrationTestSeed.GetAdminAccessTokenAsync(client);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var put = await client.PutAsJsonAsync(
+            "/api/operator-ai/live-stats-cache",
+            new { ttlMilliseconds = 420_000L });
+        put.StatusCode.Should().Be(HttpStatusCode.OK);
+        var saved = await put.Content.ReadFromJsonAsync<OperatorAiLiveStatsCacheSettingsDto>();
+        saved!.TtlMilliseconds.Should().Be(420_000);
+    }
+
+    [Fact]
+    public async Task Live_stats_cache_returns_Forbidden_on_public_face_scope()
+    {
+        var client = _factory.CreateClient();
+        var token = await IntegrationTestSeed.GetAdminAccessTokenAsync(client);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await client.GetAsync("/api/operator-ai/live-stats-cache");
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
 }
