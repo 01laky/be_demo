@@ -433,7 +433,11 @@ builder.Services.AddOptions<BeDemo.Api.Configuration.UploadsOptions>()
 builder.Services.AddSingleton<IUploadSignedUrlService, UploadSignedUrlService>();
 
 // AI gRPC client - singleton to reuse the HTTP/2 channel across requests
+builder.Services.AddOptions<BeDemo.Api.Configuration.AiServiceOptions>()
+    .BindConfiguration(BeDemo.Api.Configuration.AiServiceOptions.SectionName);
 builder.Services.AddSingleton<IAiGrpcService, AiGrpcService>();
+builder.Services.AddScoped<IAiWorkerHostProfileService, AiWorkerHostProfileService>();
+builder.Services.AddHostedService<AiWorkerHostProfileStartupRefresh>();
 
 // Gets signing key from ECDSAKeyService - this key is used to sign JWT tokens
 var signingKey = ecdsaKeyService.GetSigningKey();

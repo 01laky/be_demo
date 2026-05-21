@@ -62,4 +62,28 @@ public sealed class OperatorAiConversationsControllerTests : IClassFixture<Custo
         var status = await response.Content.ReadFromJsonAsync<OperatorAiModelStatusDto>();
         status.Should().NotBeNull();
     }
+
+    [Fact]
+    public async Task Worker_host_on_admin_face_scope()
+    {
+        var client = _factory.CreateFaceClient("admin");
+        var token = await IntegrationTestSeed.GetAdminAccessTokenAsync(client);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await client.GetAsync("/api/operator-ai/worker-host");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var payload = await response.Content.ReadFromJsonAsync<OperatorAiWorkerHostDto>();
+        payload.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task Worker_host_returns_Forbidden_on_public_face_scope()
+    {
+        var client = _factory.CreateClient();
+        var token = await IntegrationTestSeed.GetAdminAccessTokenAsync(client);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await client.GetAsync("/api/operator-ai/worker-host");
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
 }

@@ -83,6 +83,12 @@ public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     /// <summary>Messages within <see cref="OperatorAiConversation"/>.</summary>
     public DbSet<OperatorAiMessage> OperatorAiMessages { get; set; } = null!;
 
+    /// <summary>Latest AI worker host hardware snapshot (GetHostProfile).</summary>
+    public DbSet<AiWorkerHostProfile> AiWorkerHostProfiles { get; set; } = null!;
+
+    /// <summary>Singleton refresh metadata for AI worker host profile.</summary>
+    public DbSet<AiWorkerHostRefreshMeta> AiWorkerHostRefreshMetas { get; set; } = null!;
+
     /// <summary>Operator face-scoped bans (not peer <see cref="UserBlock"/>).</summary>
     public DbSet<UserFaceModeration> UserFaceModerations { get; set; } = null!;
 
@@ -1232,6 +1238,28 @@ public partial class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 .WithMany(c => c.Messages)
                 .HasForeignKey(e => e.ConversationId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<AiWorkerHostProfile>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.WorkerInstanceId).IsRequired().HasMaxLength(128);
+            entity.Property(e => e.GrpcAddressLastSeen).IsRequired().HasMaxLength(512);
+            entity.Property(e => e.ProfileJson).IsRequired();
+            entity.Property(e => e.Hostname).HasMaxLength(256);
+            entity.Property(e => e.OsDisplayName).HasMaxLength(256);
+            entity.Property(e => e.GpuPrimaryName).HasMaxLength(256);
+            entity.Property(e => e.CollectedAtUtc).IsRequired();
+            entity.Property(e => e.UpdatedAtUtc).IsRequired();
+            entity.HasIndex(e => e.WorkerInstanceId).IsUnique();
+            entity.HasIndex(e => e.UpdatedAtUtc);
+        });
+
+        builder.Entity<AiWorkerHostRefreshMeta>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.LastRefreshError).HasMaxLength(2000);
+            entity.Property(e => e.GrpcAddressConfigured).HasMaxLength(512);
         });
 
         builder.Entity<UserFaceModeration>(entity =>

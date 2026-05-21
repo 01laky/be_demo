@@ -2789,6 +2789,99 @@
   <data name="pages.settings.aiStats.liveParallel.hint" xml:space="preserve">
     <value>How many bundle-level AI requests run at once (default 2). Higher values need stronger GPU/RAM.</value>
   </data>
+  <data name="pages.settings.aiWorkerHost.sectionTitle" xml:space="preserve">
+    <value>AI worker host</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.description" xml:space="preserve">
+    <value>Hardware snapshot from the connected Python AI worker (refreshed when the backend starts).</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.unreachable" xml:space="preserve">
+    <value>Worker unreachable on the last backend refresh attempt.</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.stale" xml:space="preserve">
+    <value>Profile is older than 24 hours — restart the backend to refresh.</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.noProfile" xml:space="preserve">
+    <value>No host profile collected yet.</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.loading" xml:space="preserve">
+    <value>Loading worker host profile…</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.error" xml:space="preserve">
+    <value>Could not load worker host profile.</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.os" xml:space="preserve">
+    <value>Operating system</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.cpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.gpu" xml:space="preserve">
+    <value>GPU</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.gpuNone" xml:space="preserve">
+    <value>None detected</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.memory" xml:space="preserve">
+    <value>Memory</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.swap" xml:space="preserve">
+    <value>Swap</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.disk" xml:space="preserve">
+    <value>Disk</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.model" xml:space="preserve">
+    <value>Ollama model</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.lastUpdated" xml:space="preserve">
+    <value>Collected at (UTC)</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.grpcAddress" xml:space="preserve">
+    <value>gRPC address configured</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.scopeLabel" xml:space="preserve">
+    <value>Profile scope</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.scopeHost" xml:space="preserve">
+    <value>host</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.scopeContainer" xml:space="preserve">
+    <value>container (may under-report GPU)</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.ollamaContext" xml:space="preserve">
+    <value>Context length</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.ollamaGpuLayers" xml:space="preserve">
+    <value>GPU layers: {{count}}</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.ollamaParameterSize" xml:space="preserve">
+    <value>Parameters</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.ollamaQuantization" xml:space="preserve">
+    <value>Quantization</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.ollamaModelSize" xml:space="preserve">
+    <value>On-disk size</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.ollamaModelDetail" xml:space="preserve">
+    <value>Model detail</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.ollamaLoadedModels" xml:space="preserve">
+    <value>Loaded models</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.ollamaProcessor" xml:space="preserve">
+    <value>Processor</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.ollamaVram" xml:space="preserve">
+    <value>VRAM</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.ollamaReachable" xml:space="preserve">
+    <value>Ollama reachable</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.ollamaUnreachable" xml:space="preserve">
+    <value>Ollama unreachable</value>
+  </data>
   <data name="pages.chat.liveLoading" xml:space="preserve">
     <value>Loading statistics and analyzing your question…</value>
   </data>

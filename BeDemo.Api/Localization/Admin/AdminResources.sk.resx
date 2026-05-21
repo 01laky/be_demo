@@ -2789,6 +2789,99 @@
   <data name="pages.settings.aiStats.liveParallel.hint" xml:space="preserve">
     <value>Koľko bundle AI požiadaviek beží naraz (predvolene 2).</value>
   </data>
+  <data name="pages.settings.aiWorkerHost.sectionTitle" xml:space="preserve">
+    <value>AI worker host</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.description" xml:space="preserve">
+    <value>Hardvérový snapshot z pripojeného Python AI workera (obnoví sa pri štarte backendu).</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.unreachable" xml:space="preserve">
+    <value>Worker bol pri poslednom pokuse backendu nedostupný.</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.stale" xml:space="preserve">
+    <value>Profil je starší ako 24 hodín — reštartujte backend pre obnovu.</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.noProfile" xml:space="preserve">
+    <value>Zatiaľ nebol zozbieraný žiadny host profil.</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.loading" xml:space="preserve">
+    <value>Načítava sa host profil workera…</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.error" xml:space="preserve">
+    <value>Nepodarilo sa načítať host profil workera.</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.os" xml:space="preserve">
+    <value>Operačný systém</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.cpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.gpu" xml:space="preserve">
+    <value>GPU</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.gpuNone" xml:space="preserve">
+    <value>Nedetegované</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.memory" xml:space="preserve">
+    <value>Pamäť</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.swap" xml:space="preserve">
+    <value>Swap</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.disk" xml:space="preserve">
+    <value>Disk</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.model" xml:space="preserve">
+    <value>Ollama model</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.lastUpdated" xml:space="preserve">
+    <value>Zozbierané (UTC)</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.grpcAddress" xml:space="preserve">
+    <value>Nakonfigurovaná gRPC adresa</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.scopeLabel" xml:space="preserve">
+    <value>Rozsah profilu</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.scopeHost" xml:space="preserve">
+    <value>host</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.scopeContainer" xml:space="preserve">
+    <value>kontajner (môže podhodnotiť GPU)</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.ollamaContext" xml:space="preserve">
+    <value>Dĺžka kontextu</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.ollamaGpuLayers" xml:space="preserve">
+    <value>GPU vrstvy: {{count}}</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.ollamaParameterSize" xml:space="preserve">
+    <value>Parametre</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.ollamaQuantization" xml:space="preserve">
+    <value>Kvantizácia</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.ollamaModelSize" xml:space="preserve">
+    <value>Veľkosť na disku</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.ollamaModelDetail" xml:space="preserve">
+    <value>Detail modelu</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.ollamaLoadedModels" xml:space="preserve">
+    <value>Načítané modely</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.ollamaProcessor" xml:space="preserve">
+    <value>Procesor</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.ollamaVram" xml:space="preserve">
+    <value>VRAM</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.ollamaReachable" xml:space="preserve">
+    <value>Ollama dostupná</value>
+  </data>
+  <data name="pages.settings.aiWorkerHost.ollamaUnreachable" xml:space="preserve">
+    <value>Ollama nedostupná</value>
+  </data>
   <data name="pages.chat.liveLoading" xml:space="preserve">
     <value>Načítavam štatistiky a analyzujem otázku…</value>
   </data>

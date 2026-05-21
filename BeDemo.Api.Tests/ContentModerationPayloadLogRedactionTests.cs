@@ -219,5 +219,8 @@ public class ContentModerationPayloadLogRedactionTests
 
         public Task<AiModelStatus> GetModelStatusAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(new AiModelStatus(true, false, false, "test-model"));
+
+        public Task<AiHostProfileFetchResult> GetHostProfileAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult(new AiHostProfileFetchResult(null, null));
     }
 }

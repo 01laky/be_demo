@@ -244,6 +244,54 @@ public class AiGrpcService : IAiGrpcService, IDisposable
         return new AiModelStatus(false, false, true, null);
     }
 
+    /// <inheritdoc />
+    public async Task<AiHostProfileFetchResult> GetHostProfileAsync(CancellationToken cancellationToken = default)
+    {
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(TimeSpan.FromSeconds(15));
+        var callOptions = new CallOptions(deadline: DateTime.UtcNow.AddSeconds(15), cancellationToken: cts.Token);
+
+        for (var attempt = 1; attempt <= 2; attempt++)
+        {
+            try
+            {
+                var channel = GetOrCreateChannel();
+                var client = new HealthService.HealthServiceClient(channel);
+                var response = await client.GetHostProfileAsync(new HostProfileRequest(), callOptions);
+                if (!string.IsNullOrWhiteSpace(response.Error))
+                {
+                    _logger.LogWarning("GetHostProfile returned error: {Error}", response.Error);
+                    return new AiHostProfileFetchResult(null, response.Error);
+                }
+
+                return new AiHostProfileFetchResult(response.JsonBody, null);
+            }
+            catch (RpcException ex) when (ex.StatusCode == StatusCode.Unavailable || ex.StatusCode == StatusCode.Unimplemented)
+            {
+                _logger.LogWarning(ex, "GetHostProfile gRPC unavailable/unimplemented (attempt {Attempt})", attempt);
+                InvalidateChannel();
+                if (attempt == 2)
+                    return new AiHostProfileFetchResult(null, $"AI service unavailable ({ex.StatusCode})");
+            }
+            catch (RpcException ex)
+            {
+                _logger.LogWarning(ex, "GetHostProfile gRPC failed: Status={Status}", ex.StatusCode);
+                return new AiHostProfileFetchResult(null, $"AI service unavailable ({ex.StatusCode})");
+            }
+            catch (OperationCanceledException)
+            {
+                return new AiHostProfileFetchResult(null, "AI service timed out");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "GetHostProfile failed");
+                return new AiHostProfileFetchResult(null, ex.Message);
+            }
+        }
+
+        return new AiHostProfileFetchResult(null, "AI service unavailable");
+    }
+
     private static AiModelStatus ParseModelStatus(string? message)
     {
         if (string.IsNullOrWhiteSpace(message))

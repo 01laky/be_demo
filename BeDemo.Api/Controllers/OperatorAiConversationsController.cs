@@ -18,6 +18,7 @@ public sealed class OperatorAiConversationsController : ControllerBase
     private readonly IAccessEvaluator _access;
     private readonly IOperatorAiConversationService _operatorAi;
     private readonly IAiGrpcService _aiGrpc;
+    private readonly IAiWorkerHostProfileService _workerHost;
     private readonly IHubContext<ChatHub> _hub;
     private readonly ILogger<OperatorAiConversationsController> _logger;
 
@@ -25,12 +26,14 @@ public sealed class OperatorAiConversationsController : ControllerBase
         IAccessEvaluator access,
         IOperatorAiConversationService operatorAi,
         IAiGrpcService aiGrpc,
+        IAiWorkerHostProfileService workerHost,
         IHubContext<ChatHub> hub,
         ILogger<OperatorAiConversationsController> logger)
     {
         _access = access;
         _operatorAi = operatorAi;
         _aiGrpc = aiGrpc;
+        _workerHost = workerHost;
         _hub = hub;
         _logger = logger;
     }
@@ -49,6 +52,15 @@ public sealed class OperatorAiConversationsController : ControllerBase
             Unavailable = status.Unavailable,
             ModelName = status.ModelName,
         });
+    }
+
+    [HttpGet("~/api/operator-ai/worker-host")]
+    public async Task<ActionResult<OperatorAiWorkerHostDto>> GetWorkerHost(CancellationToken cancellationToken)
+    {
+        if (!RequireOperator())
+            return Forbid();
+
+        return Ok(await _workerHost.GetOperatorViewAsync(cancellationToken));
     }
 
     [HttpGet]
