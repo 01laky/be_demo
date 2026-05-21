@@ -56,6 +56,93 @@ public static class OperatorAiLiveStatsPlanner
         };
     }
 
+    /// <summary>Merge keyword-derived bundle indices so planner misses (e.g. users + chat rooms) are covered.</summary>
+    public static IReadOnlyList<int> SupplementIndicesFromMessage(
+        string userMessage,
+        IReadOnlyList<int> plannerIndices,
+        int catalogLength,
+        int maxSelected)
+    {
+        var merged = new List<int>(plannerIndices);
+        var m = userMessage.Trim().ToLowerInvariant();
+
+        foreach (var (keywords, indices) in KeywordRoutes)
+        {
+            if (!keywords.Any(k => m.Contains(k, StringComparison.Ordinal)))
+                continue;
+
+            foreach (var idx in indices)
+            {
+                if (idx >= 0 && idx < catalogLength && !merged.Contains(idx))
+                    merged.Add(idx);
+            }
+        }
+
+        merged.Sort();
+        return merged.Count <= maxSelected ? merged : merged.Take(maxSelected).ToList();
+    }
+
+    private static readonly (string[] Keywords, int[] Indices)[] KeywordRoutes =
+    [
+        (["user", "users", "userov", "používateľ", "pouzivatel"], [0]),
+        (["chat room", "chatroom", "chat rooms"], [42, 43, 44]),
+        (["message", "messages", "správ", "sprav", "dm "], [10, 44]),
+        (["friend", "priateľ", "priatel"], [6, 7]),
+        (["face", "faces", "tvár", "tvar", "tenant"], [12]),
+        (["page", "pages", "cms"], [13]),
+        (["album", "albums"], [23]),
+        (["blog", "blogs"], [28]),
+        (["reel", "reels"], [32]),
+        (["story", "stories"], [36]),
+        (["video lounge", "lounge"], [46, 49]),
+        (["wall ticket", "wall tickets"], [51]),
+        (["moderation", "moderate"], [54, 55, 56]),
+        (["notification"], [11]),
+    ];
+
+    public static string BuildSynthesisPrompt(
+        string userMessage,
+        string draftAnswer,
+        string responseLocale)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("You are the MFAI Demo operator dashboard assistant.");
+        sb.AppendLine("Synthesize ONE clear, helpful answer for the operator using ONLY the facts below.");
+        sb.AppendLine("Use exact numbers. Do not ask the user to attach JSON. No greeting.");
+        sb.AppendLine($"Reply in {responseLocale}.");
+        sb.AppendLine();
+        sb.AppendLine("Operator question:");
+        sb.AppendLine(userMessage.Trim());
+        sb.AppendLine();
+        sb.AppendLine("Facts from database bundles:");
+        sb.AppendLine(draftAnswer.Trim());
+        sb.AppendLine();
+        sb.AppendLine("AI:");
+        return sb.ToString();
+    }
+
+    public static string BuildOverviewPrompt(
+        string userMessage,
+        string overviewJson,
+        string responseLocale)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("You are the MFAI Demo operator dashboard assistant.");
+        sb.AppendLine("The JSON below is an aggregate snapshot of ALL entity counts in the platform.");
+        sb.AppendLine("Summarize the most important metrics for the operator. Use exact numbers.");
+        sb.AppendLine("Group by area (users, social, content, chat, moderation). No greeting.");
+        sb.AppendLine($"Reply in {responseLocale}.");
+        sb.AppendLine();
+        sb.AppendLine("Operator question:");
+        sb.AppendLine(userMessage.Trim());
+        sb.AppendLine();
+        sb.AppendLine("Platform snapshot JSON:");
+        sb.AppendLine(overviewJson);
+        sb.AppendLine();
+        sb.AppendLine("AI:");
+        return sb.ToString();
+    }
+
     private static List<int> TryExtractIndices(string modelOutput, int catalogLength)
     {
         if (string.IsNullOrWhiteSpace(modelOutput))

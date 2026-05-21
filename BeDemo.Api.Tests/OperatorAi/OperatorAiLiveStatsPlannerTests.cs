@@ -68,6 +68,19 @@ public sealed class OperatorAiLiveStatsPlannerTests
         result.Indices.Should().HaveCount(2);
         result.Indices.Should().Equal(0, 1);
     }
+
+    [Fact]
+    public void SupplementIndicesFromMessage_adds_users_and_chat_room_indices()
+    {
+        var result = OperatorAiLiveStatsPlanner.SupplementIndicesFromMessage(
+            "Give me info about users and chat rooms",
+            [10],
+            CatalogLength,
+            maxSelected: 4);
+        result.Should().Contain(0);
+        result.Should().Contain(10);
+        result.Should().Contain(42);
+    }
 }
 
 public sealed class OperatorAiLiveStatsStitchTests

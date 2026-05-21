@@ -34,6 +34,11 @@ public sealed class OperatorAiOptions
 
     public int LiveBundleMaxNewTokens { get; set; } = 256;
 
+    /// <summary>Final AI pass that turns stitched bundle facts into one operator-friendly reply.</summary>
+    public bool LiveUseAiSynthesisStitch { get; set; } = true;
+
+    public int LiveStitchMaxNewTokens { get; set; } = 512;
+
     public int LiveTotalTimeoutSeconds { get; set; } = 300;
 
     public int LiveTimeseriesDays { get; set; } = 7;

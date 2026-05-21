@@ -2763,7 +2763,25 @@
     <value>Vypnuto</value>
   </data>
   <data name="pages.settings.aiStats.sectionTitle" xml:space="preserve">
-    <value>AI chat — veřejné statistiky</value>
+    <value>Veřejné statistiky</value>
+  </data>
+  <data name="pages.settings.aiConfiguration.description" xml:space="preserve">
+    <value>Chování operátorského AI chatu v tomto prohlížeči. Změny se projeví po uložení.</value>
+  </data>
+  <data name="pages.settings.aiConfiguration.sectionTitle" xml:space="preserve">
+    <value>Konfigurace AI</value>
+  </data>
+  <data name="pages.settings.general.description" xml:space="preserve">
+    <value>Jazyk rozhraní a zobrazení pro tento prohlížeč.</value>
+  </data>
+  <data name="pages.settings.general.languageHint" xml:space="preserve">
+    <value>Použije se okamžitě a aktualizuje URL na zvolený jazyk.</value>
+  </data>
+  <data name="pages.settings.general.languageLabel" xml:space="preserve">
+    <value>Jazyk</value>
+  </data>
+  <data name="pages.settings.general.sectionTitle" xml:space="preserve">
+    <value>Obecné</value>
   </data>
   <data name="pages.settings.aiStats.liveParallel.label" xml:space="preserve">
     <value>Live režim — max paralelních bundle AI volání</value>

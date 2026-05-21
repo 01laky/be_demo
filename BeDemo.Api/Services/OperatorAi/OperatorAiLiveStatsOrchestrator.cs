@@ -62,29 +62,71 @@ public sealed class OperatorAiLiveStatsOrchestrator : IOperatorAiLiveStatsOrches
 
         var parallel = Math.Clamp(maxParallelBundleAiCalls, 1, _options.MaxParallelBundleAiCalls);
         var catalog = OperatorAiEntityBundleCatalog.ToPlannerCatalogDto();
+        var broadOverview = OperatorAiStatsIntent.IsBroadOverviewQuestion(userMessage);
 
-        // Stage 1 + 2 in parallel: prefetch all bundles while planner selects indices.
+        // Stage 1 — prefetch all bundles (DB only).
         var prefetchTask = _prefetcher.PrefetchAllAsync(timeoutCts.Token);
-        var plannerPrompt = OperatorAiLiveStatsPlanner.BuildPrompt(userMessage, catalog);
-        var plannerRaw = await _ai.GenerateAsync(
-            plannerPrompt,
-            _options.LivePlannerMaxNewTokens,
-            responseLocale: "en",
-            cancellationToken: timeoutCts.Token);
 
-        var planner = OperatorAiLiveStatsPlanner.ParseIndices(
-            plannerRaw,
-            OperatorAiEntityBundleCatalog.BundleCount,
-            _options.MaxSelectedBundleIndices,
-            metricsLike);
+        // Stage 2 — planner (skip for broad overview; we use compact all-bundle JSON instead).
+        OperatorAiLivePlannerResultDto planner;
+        if (broadOverview)
+        {
+            planner = new OperatorAiLivePlannerResultDto { Indices = [], Reason = "broad-overview" };
+        }
+        else
+        {
+            var plannerPrompt = OperatorAiLiveStatsPlanner.BuildPrompt(userMessage, catalog);
+            var plannerRaw = await _ai.GenerateAsync(
+                plannerPrompt,
+                _options.LivePlannerMaxNewTokens,
+                responseLocale: "en",
+                cancellationToken: timeoutCts.Token);
+
+            planner = OperatorAiLiveStatsPlanner.ParseIndices(
+                plannerRaw,
+                OperatorAiEntityBundleCatalog.BundleCount,
+                _options.MaxSelectedBundleIndices,
+                metricsLike);
+
+            var supplemented = OperatorAiLiveStatsPlanner.SupplementIndicesFromMessage(
+                userMessage,
+                planner.Indices,
+                OperatorAiEntityBundleCatalog.BundleCount,
+                _options.MaxSelectedBundleIndices);
+
+            planner = new OperatorAiLivePlannerResultDto
+            {
+                Indices = supplemented,
+                Reason = planner.Reason,
+            };
+        }
 
         var cache = await prefetchTask;
 
+        if (broadOverview)
+        {
+            var overviewJson = OperatorAiLiveStatsOverview.BuildCompactJson(cache);
+            var overviewPrompt = OperatorAiLiveStatsPlanner.BuildOverviewPrompt(
+                userMessage,
+                overviewJson,
+                responseLocale);
+            return await _ai.GenerateAsync(
+                overviewPrompt,
+                _options.LiveStitchMaxNewTokens,
+                responseLocale: responseLocale,
+                cancellationToken: timeoutCts.Token);
+        }
+
         if (planner.Indices.Count == 0)
         {
+            var overviewJson = OperatorAiLiveStatsOverview.BuildCompactJson(cache);
+            var fallbackPrompt = OperatorAiLiveStatsPlanner.BuildOverviewPrompt(
+                userMessage,
+                overviewJson,
+                responseLocale);
             return await _ai.GenerateAsync(
-                BuildPlainPrompt(userMessage),
-                _options.MaxNewTokens,
+                fallbackPrompt,
+                _options.LiveStitchMaxNewTokens,
                 responseLocale: responseLocale,
                 cancellationToken: timeoutCts.Token);
         }
@@ -104,7 +146,37 @@ public sealed class OperatorAiLiveStatsOrchestrator : IOperatorAiLiveStatsOrches
             timeoutCts.Token)).ToArray();
 
         var parts = await Task.WhenAll(partTasks);
-        return OperatorAiLiveStatsStitch.Stitch(parts);
+        var draft = OperatorAiLiveStatsStitch.Stitch(parts);
+        return await SynthesizeAsync(userMessage, responseLocale, draft, timeoutCts.Token);
+    }
+
+    private async Task<string> SynthesizeAsync(
+        string userMessage,
+        string responseLocale,
+        string draftAnswer,
+        CancellationToken cancellationToken)
+    {
+        if (!_options.LiveUseAiSynthesisStitch || string.IsNullOrWhiteSpace(draftAnswer))
+            return draftAnswer;
+
+        try
+        {
+            var prompt = OperatorAiLiveStatsPlanner.BuildSynthesisPrompt(
+                userMessage,
+                draftAnswer,
+                responseLocale);
+            var synthesized = await _ai.GenerateAsync(
+                prompt,
+                _options.LiveStitchMaxNewTokens,
+                responseLocale: responseLocale,
+                cancellationToken: cancellationToken);
+            return string.IsNullOrWhiteSpace(synthesized) ? draftAnswer : synthesized.Trim();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Live stats synthesis stitch failed; returning draft answer");
+            return draftAnswer;
+        }
     }
 
     private async Task<OperatorAiLiveStatsStitch.Part> RunBundleAiAsync(
@@ -169,11 +241,12 @@ public sealed class OperatorAiLiveStatsOrchestrator : IOperatorAiLiveStatsOrches
         sb.AppendLine("User question:");
         sb.AppendLine(userMessage.Trim());
         sb.AppendLine();
-        sb.AppendLine("Authoritative bundle JSON:");
+        sb.AppendLine("Authoritative bundle JSON (fields: totalCount, byStatus, byType, byAiReviewStatus, timeseriesLast7Days):");
         sb.AppendLine(bundleJson);
         sb.AppendLine();
-        sb.AppendLine($"Reply in {responseLocale}. Use only this JSON. No greeting. No markdown tables unless user asked.");
-        sb.AppendLine("If insufficient, one sentence stating what is missing.");
+        sb.AppendLine($"Reply in {responseLocale}. Answer the user question using totalCount and breakdown fields.");
+        sb.AppendLine("State exact numbers from the JSON. 2–4 sentences max. No greeting.");
+        sb.AppendLine("Only say data is missing if totalCount is absent or zero and the question needs more detail.");
         sb.AppendLine();
         sb.AppendLine("AI:");
         return sb.ToString();

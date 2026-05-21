@@ -2763,7 +2763,25 @@
     <value>Off</value>
   </data>
   <data name="pages.settings.aiStats.sectionTitle" xml:space="preserve">
-    <value>AI chat — public statistics</value>
+    <value>Public statistics</value>
+  </data>
+  <data name="pages.settings.aiConfiguration.description" xml:space="preserve">
+    <value>Operator AI chat behavior for this browser. Changes apply after you save.</value>
+  </data>
+  <data name="pages.settings.aiConfiguration.sectionTitle" xml:space="preserve">
+    <value>AI configuration</value>
+  </data>
+  <data name="pages.settings.general.description" xml:space="preserve">
+    <value>Interface language and display preferences for this browser.</value>
+  </data>
+  <data name="pages.settings.general.languageHint" xml:space="preserve">
+    <value>Applies immediately and updates the URL to the selected language.</value>
+  </data>
+  <data name="pages.settings.general.languageLabel" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="pages.settings.general.sectionTitle" xml:space="preserve">
+    <value>General</value>
   </data>
   <data name="pages.settings.aiStats.liveParallel.label" xml:space="preserve">
     <value>Live mode — max parallel bundle AI calls</value>
